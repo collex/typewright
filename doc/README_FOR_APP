@@ -1,0 +1,12 @@
+USERS
+- A user is identified by the federation they belong to and the id that federation gave them.
+- Unfortunately, this app doesn't have access to the user info table from that federation, so needs to use a
+web service to get the info, and needs to store the url of the federation as well as the user id.
+- The first time a user appears, a row is added to the user table, so that gives us a different id for the user that
+can be used internally.
+- The user is logged in before the page is requested. The log in happens as a web service that stores a cookie.
+
+TO ATTACH:
+- The parent app sends a /login?federation=federation&user_id=user_id
+- The parent app displays /documents?uri=uri in an iframe
+

@@ -1,0 +1,542 @@
+#main_container {
+	    width: 950px;
+}
+
+#login_container {
+	left: 800px;
+}
+
+.editing_title {
+	background-color: #909cbc;
+	font-size: 34px;
+	text-align: center;
+	font-family: 'Verdana', sans-serif;
+	padding-top: 4px;
+	padding-bottom: 4px;
+}
+
+.spelling_choice {
+	font-family: 'Verdana', sans-serif;
+	color: gray;
+	font-size: 1.3em;
+	margin-bottom: 8px;
+}
+
+.line_book_selector {
+	position: absolute;
+	left: 170px;
+	top: 5px;
+	font-size: 10px;
+}
+
+.source {
+	position: absolute;
+	left: 650px;
+	top: 8px;
+	font-size: 10px;
+	color: white;
+}
+
+.source a:link {
+	color: white;
+}
+
+.source a:visited {
+	color: white;
+}
+
+.line_text {
+	border-top: 1px solid black;
+	background-color: #e1e6f1;
+	padding-bottom: 20px;
+}
+
+#line_thumb {
+	width: 99px;
+	border: 1px solid black;
+}
+
+#line_full {
+	border: 1px solid black;
+	width: 800px;
+	height: 160px;
+}
+
+#line_full span {
+/*	position:absolute;
+	clip:rect(0px, auto, 100px, auto);*/
+	width: 800px;
+	display: block;
+	height: 160px;
+	background-repeat: no-repeat;
+}
+
+.line_page_nav {
+	font-family: 'Verdana', sans-serif;
+	font-size: .7em;
+	text-align: right;
+	margin-top: 3px;
+	float:right;
+}
+
+.toolbar {
+	background:url(../images/toolbar_bg.jpg) top left no-repeat;
+    padding-bottom: 12px;
+    padding-top: 10px;
+	padding-left: 4px;
+	padding-right: 24px;
+}
+
+.button_left {
+	padding-bottom: 4px;
+	padding-left: 22px;
+}
+
+.button_right {
+	padding-bottom: 4px;
+	padding-right: 22px;
+}
+
+.button_left:hover {
+	background-position: 0 -18px;
+}
+
+.button_right:hover {
+	background-position: right -18px;
+}
+
+.first_page {
+	background:url(../images/pagination_first_arrow.png) top left no-repeat;
+}
+
+.prev_page {
+	background:url(../images/pagination_previous_arrow.png) top left no-repeat;
+}
+
+.next_page {
+	background:url(../images/pagination_next_arrow.png) top right no-repeat;
+}
+
+.last_page {
+	background:url(../images/pagination_last_arrow.png) top right no-repeat;
+}
+
+.line_image {
+	text-align: left;
+}
+
+.line_num {
+	text-align:right;
+	padding-right: 8px;
+	width: 30px;
+	overflow: hidden;
+	display: block;
+}
+
+.history_icon {
+	width: 25px;
+	padding-left: 40px;
+}
+
+.change_icon {
+	width: 25px;
+}
+
+a.deleted_line:link, a.deleted_line:visited {
+	text-decoration: line-through;
+}
+
+input.deleted_line {
+	text-decoration: line-through;
+	background-color: #cccccc;
+}
+
+.icon {
+	font-family: 'Verdana', sans-serif;
+	font-size: .7em;
+	color: white;
+	padding-bottom:8px;
+	padding-left:8px;
+	padding-right:15px;
+	padding-top:3px;
+}
+
+.icon_edit_history {
+	background:url(../images/icon_other_edit.png) top right no-repeat;
+}
+
+.icon_edit {
+	background:url(../images/icon_edit.png) top right no-repeat;
+}
+
+.icon_checkmark {
+	background:url(../images/icon_checkmark.png) top right no-repeat;
+}
+
+.icon_delete {
+	background:url(../images/icon_x.png) top right no-repeat;
+}
+
+.find_button {
+	background:url(../images/find_button.png) top left no-repeat;
+	padding-left: 30px;
+	padding-right: 30px;
+}
+
+.review_history_button {
+	background:url(../images/review_history_button.png) top left no-repeat;
+	padding-left: 61px;
+	padding-right: 61px;
+}
+
+.insert_above_button {
+	background:url(../images/insert_above_button.png) top left no-repeat;
+	padding-left: 53px;
+	padding-right: 53px;
+}
+
+.insert_below_button {
+	background:url(../images/insert_below_button.png) top left no-repeat;
+	padding-left: 53px;
+	padding-right: 53px;
+}
+
+.undo_button {
+	background:url(../images/undo_button.png) top left no-repeat;
+}
+
+.redo_button {
+	background:url(../images/redo_button.png) top left no-repeat;
+}
+
+.correct {
+	background:url(../images/correct_button.png) top left no-repeat;
+}
+
+.delete_line {
+	background:url(../images/delete_line_button.png) top left no-repeat;
+}
+
+.up_arrow_top {
+	background:url(../images/up_arrow.png) top left no-repeat;
+	margin-bottom: 50px;
+}
+
+.down_arrow_top {
+	background:url(../images/down_arrow.png) top left no-repeat;
+}
+
+.up_arrow_bottom {
+	background:url(../images/up_arrow.png) top left no-repeat;
+}
+
+.down_arrow_bottom {
+	background:url(../images/down_arrow.png) top left no-repeat;
+}
+
+.button:hover {
+	cursor: pointer;
+	background-position: 0 -22px;
+}
+
+.button {
+	font-family: 'Verdana', sans-serif;
+	font-size: .7em;
+	color: white;
+	padding: 3px 14px 4px;
+}
+
+.button2:hover {
+	cursor: pointer;
+	background-position: 0 -27px;
+}
+
+.button2 {
+	font-family: 'Verdana', sans-serif;
+	font-size: .7em;
+	color: white;
+	padding-top: 6px;
+	padding-bottom: 6px;
+}
+
+.button3:hover {
+	cursor: pointer;
+	background-position: 0 -22px;
+}
+
+.button3 {
+	font-family: 'Verdana', sans-serif;
+	font-size: .7em;
+	color: white;
+	padding: 3px 11px 6px;
+}
+
+.correct.disabled {
+	cursor: auto;
+	background-position: 0 -44px;
+}
+
+.line_jump {
+	float: right;
+}
+
+table.line_editing th {
+	border: none;
+	font-family: 'Verdana', sans-serif;
+	font-size: .7em;
+	text-align: left;
+	padding-left: 8px;
+	padding-right: 8px;
+	padding-bottom: 8px;
+}
+
+table.line_editing td {
+}
+
+table.line_editing {
+}
+
+#text_0 {
+	border-top: 1px solid #a4abbc;
+	background-color: #cdd4e9;
+}
+
+#text_0 td {
+	padding-top:4px;
+}
+
+#text_1 {
+	background-color: #cdd4e9;
+}
+
+#text_1 td {
+	padding-top:4px;
+}
+
+#text_2 {
+	border-bottom: 1px solid #a4abbc;
+	background-color: #cdd4e9;
+}
+
+#text_2 td {
+	padding-top:4px;
+	padding-bottom:8px;
+}
+
+.line_instructions {
+	font-size: .8em;
+	text-align: left;
+	font-family: 'Verdana', sans-serif;
+	padding:2em;
+}
+
+.text {
+	width: 794px;
+}
+
+#input_focus {
+    width: 680px;
+}
+
+.todo {
+	color: gray;
+	font-style: italic;
+}
+
+.legend {
+	font-size: 10px;
+    color: #3C4869;
+}
+
+.legend table {
+	background:url(../images/shortcuts_box_light_blue_repeat.jpg) top left repeat-y;
+	float: left;
+	margin-right: 1em;
+	padding: 1em;
+}
+
+.legend caption {
+	background:url(../images/shortcuts_box_top.jpg) top left no-repeat;
+	text-align: center;
+	font-weight: bold;
+    height: 23px;
+    padding-top: 5px;
+}
+
+.legend th {
+	font-weight: bold;
+    padding-bottom: 2px;
+    padding-left: .75em;
+    padding-top: 6px;
+}
+
+.legend td {
+	padding-left: .75em;
+	padding-right: .75em;
+}
+
+.legend_bottom {
+	background:url(../images/shortcuts_box_bottom.jpg) top left no-repeat;
+    clear: both;
+    float: left;
+    width: 252px;
+}
+
+.line_instructions .header {
+	font-weight: bold;
+}
+
+.left_row {
+	width: 110px;
+    padding-left: 5px;
+    padding-top: 10px;
+}
+
+.middle_row {
+	padding-top: 10px;
+	padding-bottom: 10px;
+	width: 800px;
+}
+
+.right_row {
+	padding-left: 3px;
+	width:30px;
+}
+
+.line_top {
+	text-align: center;
+}
+
+span.etooltip{
+    /* position:relative; /*this is the key*/
+	position: absolute;
+    left: 150px;
+    top: 5px;
+}
+
+span.etooltip:hover {
+	z-index:25;
+}
+
+span.etooltip span {
+	display: none;
+}
+
+span.etooltip:hover span{ /*the span will display just on :hover state*/
+	display: block;
+    position:absolute;
+    top:2em;
+	left:2em;
+	width:20em;
+    border:1px solid #914C29;
+    background-color: #F7ECDB;
+	color:#000;
+    text-align: left;
+	font-weight: normal;
+	padding: .3em;
+}
+
+.explanation_tooltip {
+	font-size: 14px;
+	text-decoration: none;
+}
+
+span.etooltip:hover span.explanation_tooltip {
+	width:35em;
+	left:1.5em;
+	top: 2em;
+}
+
+.history_tooltip_wrapper:hover .tooltip {
+	display: block;
+	position: absolute;
+	float: left;
+	background-color: #ffe1ce;
+	border: 1px solid black;
+	padding: .5em;
+	text-align: left;
+	margin-top: 0px;
+	margin-left: 20px;
+	color: #4a2e1c;
+}
+
+.history_tooltip_wrapper:hover .tooltip .header {
+	font-weight: bold;
+}
+
+.history_tooltip_wrapper:hover .tooltip td {
+	padding-left: 12px;
+	padding-right: 12px;
+	padding-top: 0px !important;
+}
+
+.word_stats {
+	font-family: 'Verdana', sans-serif;
+	font-size: 12px;
+}
+
+.word_stats caption {
+	font-weight: bold;
+	text-align: center;
+}
+
+.word_stats td {
+	padding-left: 4px;
+	padding-right: 4px;
+	border:1px solid gray;
+}
+
+/* Overlay Look/Feel */
+.yui3-overlay-content {
+    padding:2px;
+    border:1px solid #000;
+    background-color:#aaa;
+}
+
+.yui3-overlay-content .yui3-widget-hd {
+	background:url("http://yui.yahooapis.com/2.8.2/build/assets/skins/sam/sprite.png") repeat-x scroll 0 -200px transparent;
+	color:#000000;
+	font-size:93%;
+	font-weight:bold;
+	line-height:2;
+	padding:0 10px;
+	text-align: center;
+}
+
+.yui3-overlay-content .yui3-widget-bd {
+    padding:12px;
+    background-color:#F2F2F2;
+}
+
+.yui3-overlay-content .yui3-widget-ft {
+    padding:5px;
+    border:2px solid #00aa00;
+    background-color:#fff;
+}
+
+.yui3-dlg-footer {
+	height:26px;
+	padding-top:12px;
+	border-top:1px solid gray;
+}
+
+.yui3-dlg-footer input{
+	float: right;
+}
+
+/* find */
+.dlg_flash_ok {
+	color: green;
+}
+
+.dlg_flash_error {
+	color: red;
+}
+
+.dlg_find_line {
+	height:30px;
+}
+
+#post_user {
+	 font-size:10px;
+}

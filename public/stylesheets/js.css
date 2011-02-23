@@ -1,0 +1,12 @@
+.hidden {
+	display:none;
+}
+
+.highlighted.gale {
+	border: 3px solid red;
+}
+
+.gale {
+	border: 1px solid black;
+	color: black;
+}

@@ -1,5 +1,24 @@
+body {
+	background-color: #eeeeee;
+}
+
 #main_container {
-	    width: 950px;
+	width: 950px;
+	border:10px solid #34436C;
+}
+
+.overview_top {
+	padding: 24px;
+	border-bottom: 1px solid black;
+}
+
+.overview_top p {
+	padding-bottom: 1.5em;
+}
+
+.overview_bottom {
+	padding: 24px;
+	background-color: #E1E6F1;
 }
 
 #login_container {
@@ -52,14 +71,20 @@
 }
 
 #line_thumb {
-	width: 99px;
+	width: 130px;
 	border: 1px solid black;
+	float: left;
+	margin-right: 24px;
 }
 
 #line_full {
 	border: 1px solid black;
 	width: 800px;
 	height: 160px;
+}
+
+.clear_both {
+	clear: both;
 }
 
 #line_full span {

@@ -40,6 +40,10 @@ class DocumentsController < ApplicationController
 		end
 		@id = doc.id
 		@title = doc[:title]
+		@title_abbrev = doc.title_abbrev()
+		@num_pages = "TODO"
+		@year = "TODO"
+		@information = "TODO: I have no idea what is supposed to go here."
 
 		ud = UserDoc.find_by_user_id_and_document_id(@user.id, @id)
 		if ud == nil

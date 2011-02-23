@@ -1,4 +1,16 @@
-<h1>Overview for <%= @title %></h1>
+<div id="main_container">
+	<div class="editing_title"><a title='<%= @title %>'>"<%= @title_abbrev %>"</a></div>
 
-<img id="line_thumb" src="<%= @thumb %>" alt="cover page" />
-<%= link_to "Begin editing", { :controller => 'documents', :action => 'edit', :id => @id } %>
+	<div class="overview_top">
+		<img id="line_thumb" src="<%= @thumb %>" alt="cover page" />
+		<p><%= @title %></p>
+		<p>Pages: <%= @num_pages %></p>
+		<p>Year: <%= @year %></p>
+		<p>Information:<br /><%= @information %></p>
+		<% #= link_to "Start editing", { :controller => 'documents', :action => 'edit', :id => @id } %>
+		<div class="clear_both">&nbsp;</div>
+	</div>
+	<div class="overview_bottom">
+		TODO: correction history goes here.
+	</div>
+</div>

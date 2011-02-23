@@ -107,7 +107,7 @@ class DocumentsController < ApplicationController
 	def destroy
 		# this actually passes through to the user_doc
 		doc = Document.find_by_uri(params[:id])
-		user = User.find_by_federation_and_orig_id(params[:federation], params[:orig_id])
+		user = User.find_by_federation_and_orig_id(params[:federation], params[:user_id])
 		if (doc && user)
 			@user_doc = UserDoc.find_by_user_id_and_document_id(user.id, doc.id)
 			@user_doc.destroy if @user_doc

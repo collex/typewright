@@ -8,26 +8,10 @@
 /*global currLine:true, currUser */
 /*global YUI */
 /*global window */
-/*extern serverNotify */
 /*global showDebugItems */
 /*global alert, Image */
 /*global line */
-/*global book, page */
-
-// This just sends a notification to the server and doesn't need a response.
-var serverNotify = function(url, params) {
-	YUI().use('io', 'querystring-stringify', function(Y) {
-		function onFailure(num, resp) {
-			if (resp.status === 500)
-				alert("Server error: see log for details.");
-			else
-				alert(resp.responseText);
-		}
-		// The default call of stringify doesn't create the array parameters in the right format for ruby, so we call it explicitly here.
-		var str = Y.QueryString.stringify( params, { arrayKey: true } );
-		Y.io(url, { method: 'POST', data: str, on: { failure: onFailure } });
-	});
-};
+/*global book, page, updateUrl */
 
 YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-custom', function(Y) {
 	function getImgSize(imgSrc) {
@@ -98,8 +82,9 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 		params.book = book;
 		params.page = page;
 		params.user = currUser;
+		params._method = 'PUT';
 
-		serverNotify('/correction', params);
+		serverNotify(updateUrl, params);
 	}
 
 	function tooltipIcon(iconStyle, tooltipText) {

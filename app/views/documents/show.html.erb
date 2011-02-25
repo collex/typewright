@@ -1,3 +1,7 @@
+<script type="text/javascript">
+	var currLine = 0;
+	var lines = [];
+</script>
 <div id="main_container">
 	<div class="editing_title"><a title='<%= @title %>'>"<%= @title_abbrev %>"</a></div>
 
@@ -7,7 +11,7 @@
 		<p>Pages: <%= @num_pages %></p>
 		<p>Year: <%= @year %></p>
 		<p>Information:<br /><%= @information %></p>
-		<% #= link_to "Start editing", { :controller => 'documents', :action => 'edit', :id => @id } %>
+		<%= link_to raw("&nbsp;"), { :controller => 'documents', :action => 'edit', :id => @id }, { :class => "button4 start_editing_button" } %>
 		<div class="clear_both">&nbsp;</div>
 	</div>
 	<div class="overview_bottom">

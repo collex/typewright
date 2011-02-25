@@ -1,32 +1,14 @@
 <script type="text/javascript">
-	var lines = <%= raw(@lines.to_json()) %>;
+	var lines = <%= raw(@params[:lines].to_json()) %>;
 	var currLine = 0;
-	var book = "<%= @book %>";
-	var page = <%= @page %>;
-	var currUser = <%= @user %>;	
+	var book = "<%= @params[:book] %>";
+	var page = <%= @params[:page] %>;
+	var currUser = <%= @user.id %>;
 	var showDebugItems = <%= @debugging ? 'true' : 'false' %>;
+	var updateUrl = "/documents/"+book;
 </script>
-<select id="book" class="line_book_selector" data-url="/line">
-	<% for book in @books %>
-	<option value="<%= book[:num]%>"<%= " selected='selected'" if @book == book[:num] %>><%= "#{book[:num]}: #{book[:desc]}" %></option>
-	<% end %>
-</select>
-<span class='source'>XML from: <%= @is_gale ? 'GALE' : 'GAMERA' %> <%= link_to 'switch', create_url(@book, @page, !@is_gale) %>&nbsp;<%= link_to 'debug', "/toggle_debugging" %></span>
-	<span class="etooltip"><%= image_tag("help_thumb.sm.gif", { :alt => "help" }) %><span class="explanation_tooltip">
-		This is just a mock up of the system that is just intended as a proof of concept for the UI.<br /><br />
-		There are four users defined. To impersonate a user, look at the dropdown on the top right corner. You can use this to test the interactions between different user's edits.<br /><br />>
-		You may choose one of the sample documents from the drop down list at the top, and you may view the OCR output from either Gale or Gamera by clicking the
-		link to the right of that drop down.<br /><br />
-		At the bottom of the screen is some word analysis for the current page and the first 100 pages. This gives you an idea of the distribution of words in the document.<br /><br />
-		There are a number of limitations:<br /><br />
-		1) This is not connected to the 18thConnect system, so the way to request particular documents is through the drop down list on the top of the screen.<br /><br />
-		2) The images are not yet processed to be unstealable, so this site is behind a password so that access is limited.<br /><br />
-		3) Corrections are not recorded, so any changes made will have no effect.<br /><br />
-		4) The following buttons and links have no effect: Review History, More Information.<br /><br />
-		5) The choice of whether to keep original spelling or modernize has been hardcoded.<br /><br />
-	</span></span>
 
-<div class="editing_title"><a title='<%= @title %>'>"<%= @title_abbrev %>"</a></div>
+<div class="editing_title"><a title='<%= @params[:title] %>'>"<%= @params[:title_abbrev] %>"</a></div>
 
 <div class="line_text">
 	<table class="line_editing">
@@ -36,26 +18,15 @@
 				<span class="button2 insert_above_button">&nbsp;</span>
 				<span class="button2 insert_below_button">&nbsp;</span>
 				<span class="button2 review_history_button">&nbsp;</span>
-				<div class="line_page_nav">
-					<%= link_to "first", create_url(@book, 1, @is_gale), { :class => 'nav_link button_left first_page' } if @page > 1 %>&nbsp;
-					<%= link_to "prev", create_url(@book, @page-1, @is_gale), { :class => 'nav_link button_left prev_page' } if @page > 1 %>&nbsp;&nbsp;&nbsp;
-					Page
-				<select id="page" data-url='<%= create_url(@book, nil, @is_gale) %>'>
-				<% @num_pages.times { |i| %>
-					<option value="<%= i+1 %>"<%= " selected='selected'" if i+1 == @page %>><%= i+1 %></option>
-				<% } %>
-				</select>&nbsp;&nbsp;&nbsp;
-					<%= link_to "next", create_url(@book, @page+1, @is_gale), { :class => 'nav_link button_right next_page' } if @page < @num_pages %>&nbsp;
-					<%= link_to "last", create_url(@book, @num_pages, @is_gale), { :class => 'nav_link button_right last_page' } if @page < @num_pages %>
-				</div>
+				<%= render :partial => 'pagination', :locals => { :book => @params[:book], :page => @params[:page], :num_pages => @params[:num_pages] } %>
 			</td>
 		</tr>
 		<tr>
 			<td class="left_row">
-				<img id="line_thumb" src="/data/<%= @img_folder %>/images/<%= @img_name %>.png" alt="original image" /></td>
+				<img id="line_thumb" src="<%= @params[:img_thumb] %>" alt="original image" /></td>
 			<td class="middle_row">
 				<div id="line_full">
-					<span style="background-image: url(/data/<%= @img_folder %>/images_800/<%= @img_name %>.png);"></span>
+					<span style="background-image: url(<%= @params[:img_full] %>);"></span>
 				</div>
 			</td>
 			<td class="right_row">
@@ -88,34 +59,7 @@
 			<td><div class="button3 change_line down_arrow_bottom" data-amount="1" title="Next line">&nbsp;</div></td>
 		</tr>
 	</table>
-	<div class="line_instructions">
-		<div id="debugging_table"></div>
-		<div class="legend">
-			<table>
-				<caption>Keyboard Shortcuts</caption>
-				<tr><th>Key</th><th>Action</th></tr>
-				<tr><td>Ctrl+Delete</td><td>Delete the line</td></tr>
-				<tr><td>Ctrl+Enter</td><td>Assert the line is correct</td></tr>
-				<tr><td>Ctrl+Y</td><td>Undo/Redo</td></tr>
-				<tr><td>Ctrl+I</td><td>Insert line above</td></tr>
-				<tr><td>Ctrl+Shift+H</td><td>Find and replace</td></tr>
-				<tr><td>Ctrl+Shift+I</td><td>Insert line below</td></tr>
-				<tr><td>Down Arrow</td><td>Go down one line</td></tr>
-				<tr><td>End</td><td>Move cursor to end of line</td></tr>
-				<tr><td>Enter</td><td>Go down one line</td></tr>
-				<tr><td>Home</td><td>Move cursor to beginning of line</td></tr>
-				<tr><td>Page Down</td><td>Go down three lines</td></tr>
-				<tr><td>Page Up</td><td>Go up three lines</td></tr>
-				<tr><td>Up Arrow</td><td>Go up one line</td></tr>
-			</table>
-			<div class="legend_bottom">&nbsp;</div>
-		</div>
-		<div class="spelling_choice">In this document the original spelling should be retained.</div>
-		<div class="header">Instructions:</div>
-		If a word or portion of a word is illegible, type "@" in its place.<br />
-		Click on the thumbnail to jump around the page.<br /><br />
-		<%= link_to "More information about how to edit", "#", { :class => 'nav_link' } %>
-	</div>
+	<%= render :partial => 'line_instructions' %>
 	<div class="clear_both"></div>
 </div>
 <div id="pointer_thumb" style="position:absolute;border:1px solid red;"></div>
@@ -123,38 +67,4 @@
 <% 20.times {|x|  %>
 <div id="pointer_word_1_<%= x %>" style="position:absolute;border:2px dotted #3333ff;"></div>
 <% } %>
-<% if @word_stats != nil %>
-	<table class="word_stats">
-		<caption>DEBUGGING INFO: Word statistics by occurrence</caption>
-		<tr>
-			<th></th>
-			<th>Odd punctuation</th><th>1 occurrence</th>
-			<th>2 occurrences</th><th>3 occurrences</th>
-			<th>Many occurrences</th>
-		</tr>
-		<tr>
-			<td>This page:</td>
-<% 5.times { |x| %>
-			<td><%= @word_stats[x].length %>:
-				<select>
-<% @word_stats[x].each { |w| %>
-	<option><%= w %></option>
-<% } %>
-				</select>
-			</td>
-<% } %>
-		</tr>
-		<tr>
-			<td>First 100 pages:</td>
-<% 5.times { |x| %>
-			<td><%= @doc_word_stats[x].length %>:
-				<select>
-<% @doc_word_stats[x].each { |w| %>
-	<option><%= w %></option>
-<% } %>
-				</select>
-			</td>
-<% } %>
-		</tr>
-	</table>
-<% end %>
+<%= render :partial => 'word_stats', :locals => { :word_stats => @params[:word_stats], :doc_word_stats => @params[:doc_word_stats]} %>

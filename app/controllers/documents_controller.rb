@@ -64,10 +64,22 @@ class DocumentsController < ApplicationController
 #  end
 
   # GET /documents/1/edit
-  def edit
-	  # This goes to the editing page of a particular document
-	@uri = params[:uri]
-  end
+	def edit
+		# This goes to the editing page of a particular document
+		document_id = params[:id]
+		doc = Document.find_by_id(document_id)
+		if doc == nil
+			redirect_to :back
+		else
+			uri = doc[:uri]
+			book = uri.gsub("lib://ECCO/", '')
+			page = params[:page]
+
+			@params = Book.setup_page(book, page)
+			@user = session[:user]
+			@debugging = session[:debugging] ? session[:debugging] : false
+		end
+	end
 
 	# POST /documents
 	# POST /documents.xml
@@ -88,31 +100,52 @@ class DocumentsController < ApplicationController
 	# PUT /documents/1
 	# PUT /documents/1.xml
 	def update
-		# This receives notifications of changes from the user's interaction with the web page.
-		@document = Document.find(params[:id])
-
-		respond_to do |format|
-			if @document.update_attributes(params[:document])
-				format.html { redirect_to(@document, :notice => 'Document was successfully updated.') }
-				format.xml  { head :ok }
-			else
-				format.html { render :action => "edit" }
-				format.xml  { render :xml => @document.errors, :status => :unprocessable_entity }
+		# this is called whenever the user corrects a line.
+		book = params[:book]
+		page = params[:page]
+		line = params[:line].to_f if params[:line]
+		user_id = params[:user].to_i if params[:user]
+		status = params[:status]
+		words = params[:words]
+		if book == nil || page == nil || line == nil || user_id == nil || status == nil
+			render :text => 'Illegal parameters.', :status => :bad_request
+		else
+			rec = Line.get_undoable_record(book, page, line, user_id)
+			if rec
+				rec.destroy()
 			end
+			if status != 'undo'
+				Line.create({ :user_id => user_id, :book => book, :page => page, :line => line, :status => status, :words => Line.words_to_db(words) })
+			end
+
+			render :text => ""
 		end
+#		# This receives notifications of changes from the user's interaction with the web page.
+#		@document = Document.find(params[:id])
+#
+#		respond_to do |format|
+#			if @document.update_attributes(params[:document])
+#				format.html { redirect_to(@document, :notice => 'Document was successfully updated.') }
+#				format.xml  { head :ok }
+#			else
+#				format.html { render :action => "edit" }
+#				format.xml  { render :xml => @document.errors, :status => :unprocessable_entity }
+#			end
+#		end
 	end
 
 	# DELETE /documents/1
 	# DELETE /documents/1.xml
 	def destroy
-		# this actually passes through to the user_doc
+		# this actually passes through to the user_doc. It doesn't destroy this document, but just the
+		# user's connection to it.
 		doc = Document.find_by_uri(params[:id])
 		user = User.find_by_federation_and_orig_id(params[:federation], params[:user_id])
 		if (doc && user)
 			@user_doc = UserDoc.find_by_user_id_and_document_id(user.id, doc.id)
 			@user_doc.destroy if @user_doc
-			redirect_to :index
 		end
+		redirect_to :index
 
 #    @document = Document.find(params[:id])
 #    @document.destroy
@@ -122,4 +155,10 @@ class DocumentsController < ApplicationController
 #      format.xml  { head :ok }
 #    end
 	end
+
+	##########################################################################
+	##########################################################################
+	##########################################################################
+	##########################################################################
+
 end

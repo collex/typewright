@@ -208,6 +208,14 @@ input.deleted_line {
 	padding-right: 30px;
 }
 
+.start_editing_button {
+	background:url(../images/start_editing_button.png) top left no-repeat;
+	padding-left: 44px;
+	padding-right: 44px;
+	float: right;
+	text-decoration: none;
+}
+
 .review_history_button {
 	background:url(../images/review_history_button.png) top left no-repeat;
 	padding-left: 61px;
@@ -294,6 +302,19 @@ input.deleted_line {
 	font-size: .7em;
 	color: white;
 	padding: 3px 11px 6px;
+}
+
+.button4:hover {
+	cursor: pointer;
+	background-position: 0 -25px;
+}
+
+.button4 {
+	font-family: 'Verdana', sans-serif;
+	font-size: .7em;
+	color: white;
+	padding-top: 7px;
+	padding-bottom: 7px;
 }
 
 .correct.disabled {

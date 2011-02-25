@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Typewright</title>
+	<title>Typewright</title>
 	<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/combo?3.3.0/build/cssreset/reset-min.css&3.3.0/build/cssfonts/fonts-min.css&3.3.0/build/cssgrids/grids-min.css" />
-  <%= stylesheet_link_tag 'js', 'line' %>
-  <% #= javascript_include_tag :defaults %>
-  <%= csrf_meta_tag %>
+	<%= stylesheet_link_tag :all %>
+	<script type="text/javascript" charset="utf-8" src="http://yui.yahooapis.com/3.3.0/build/yui/yui-min.js"></script>
+	<%= javascript_include_tag 'server_wrapper', 'yui_dialog', 'change_line', 'diff_match_patch_uncompressed', 'find_dlg', 'select_page', 'reparse_words', 'line' %>
+	<%= csrf_meta_tag %>
 </head>
 <body>
 

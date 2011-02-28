@@ -11,17 +11,9 @@
 /*global showDebugItems */
 /*global alert, Image */
 /*global line */
-/*global book, page, updateUrl */
+/*global doc_id, page, updateUrl, imgWidth, imgHeight */
 
 YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-custom', function(Y) {
-	function getImgSize(imgSrc) {
-		var newImg = new Image();
-		newImg.src = imgSrc;
-		var height = newImg.height;
-		var width = newImg.width;
-		return { width: width, height: height };
-	}
-
 	function create_display_line(str) {
 		str= '' + str;
 		return str.replace(/\'/g, '&apos;');
@@ -36,16 +28,15 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 
 	function get_scaling() {
 		var imageUrl = Y.one('#line_thumb')._node.src;
-		var origSize = getImgSize(imageUrl);
 
 		// Get the scaling and offset of the thumbnail image.
 		var imgThumb = Y.one("#line_thumb");
 		var ofsXThumb = imgThumb.getX();
 		var ofsYThumb = imgThumb.getY();
 		var displaySizeThumb = { width: imgThumb._node.width, height: imgThumb._node.height };
-		var xFactorThumb = displaySizeThumb.width / origSize.width;
-		var yFactorThumb = displaySizeThumb.height / origSize.height;
-		return { origWidth: origSize.width, ofsXThumb: ofsXThumb, ofsYThumb: ofsYThumb, xFactorThumb: xFactorThumb, yFactorThumb: yFactorThumb };
+		var xFactorThumb = displaySizeThumb.width / imgWidth;
+		var yFactorThumb = displaySizeThumb.height / imgHeight;
+		return { origWidth: imgWidth, ofsXThumb: ofsXThumb, ofsYThumb: ofsYThumb, xFactorThumb: xFactorThumb, yFactorThumb: yFactorThumb };
 	}
 
 	function convertThumbToOrig(x, y) {
@@ -79,7 +70,6 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 
 	function updateServer() {
 		var params = line.serialize(currLine);
-		params.book = book;
 		params.page = page;
 		params.user = currUser;
 		params._method = 'PUT';
@@ -180,10 +170,10 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 	function setImageCursor(scaling) {
 		// Get the scaling and offset of the larger image.
 		// Also get the height of the window so we know how to scroll.
-		var img = Y.one("#line_full span");
+		var img = Y.one("#line_full div");
 		var ofsX = img.getX();
 		var ofsY = img.getY();
-		var displaySize = { width: img._node.offsetWidth, height: img._node.offsetHeight };
+		var displaySize = { width: img._node.offsetWidth, height: img._node.offsetHeight * 3 };
 		var ratio = displaySize.width/scaling.origWidth;
 		var xFactor = ratio;
 		var yFactor = ratio;
@@ -203,7 +193,7 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 		if (scrollY < 0)
 			scrollY = 0;
 		//Y.one("#line_full").setStyles({ width: displaySize.width + 'px' });
-		img.setStyles({ backgroundPosition: '0px -' + scrollY + 'px' });
+		//img.setStyles({ backgroundPosition: '0px -' + scrollY + 'px' });
 
 		setPointer('#pointer_doc', rect, xFactor, yFactor, ofsX, ofsY, scrollY);
 

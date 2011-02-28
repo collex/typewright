@@ -3,10 +3,7 @@ class XmlReader
 require 'nokogiri'
 
 	def self.base_folder()
-		folders = "#{Rails.root}".split('/')
-		folders.pop()
-		folder = folders.join('/')
-		return "#{folder}/ocr_viewer/public/data"
+		return XML_PATH
 	end
 
 	def self.format_page(page)
@@ -18,7 +15,7 @@ require 'nokogiri'
 	end
 
 	def self.read_gale(book, page)
-		fname = "#{XmlReader.base_folder()}/#{book}/xml/#{book}.xml"
+		fname = "#{XmlReader.base_folder()}/#{book}/#{book}.xml"
 		number = "#{book}#{self.format_page(page)}0"
 
 		slash = fname.rindex('/')
@@ -91,7 +88,7 @@ require 'nokogiri'
 	end
 
 	def self.read_metadata(book)
-		fname = "#{XmlReader.base_folder()}/#{book}/xml/#{book}_meta.yml"
+		fname = "#{XmlReader.base_folder()}/#{book}/#{book}_meta.yml"
 		if File.exists?(fname)
 			meta = YAML.load_file(fname)
 			return meta[:title]

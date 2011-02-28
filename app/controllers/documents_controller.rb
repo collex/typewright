@@ -16,7 +16,7 @@ class DocumentsController < ApplicationController
 				str = ''
 				docs.each { |ud|
 					doc = Document.find_by_id(ud.document_id)
-					str += "#{doc[:uri]}\t#{doc.thumb()}\t#{doc[:title]}\n"
+					str += "#{doc[:uri]}\thttp://localhost:3099#{doc.thumb()}\t#{doc[:title]}\n"
 				}
 				render :text => str
 			end
@@ -33,15 +33,17 @@ class DocumentsController < ApplicationController
 		session[:user] = @user
 
 		@uri = params[:uri]
-		title = params[:title]
 		doc = Document.find_by_uri(@uri)
 		if doc == nil
-			doc = Document.create({ :uri => @uri, :title => title })
+			doc = Document.create({ :uri => @uri })
 		end
-		@id = doc.id
-		@title = doc[:title]
-		@title_abbrev = doc.title_abbrev()
-		@num_pages = "TODO"
+		params = Book.setup_doc(doc)
+
+		@id = params[:doc_id]
+		@title = params[:title]
+		@title_abbrev = params[:title_abbrev]
+		@thumb = params[:img_thumb]
+		@num_pages = params[:num_pages]
 		@year = "TODO"
 		@information = "TODO: I have no idea what is supposed to go here."
 
@@ -49,7 +51,6 @@ class DocumentsController < ApplicationController
 		if ud == nil
 			UserDoc.create({ :user_id => @user.id, :document_id => @id })
 		end
-		@thumb = doc.thumb()
 	end
 
 	# GET /documents/new
@@ -71,11 +72,9 @@ class DocumentsController < ApplicationController
 		if doc == nil
 			redirect_to :back
 		else
-			uri = doc[:uri]
-			book = uri.gsub("lib://ECCO/", '')
 			page = params[:page]
 
-			@params = Book.setup_page(book, page)
+			@params = Book.setup_page(doc, page)
 			@user = session[:user]
 			@debugging = session[:debugging] ? session[:debugging] : false
 		end
@@ -101,21 +100,21 @@ class DocumentsController < ApplicationController
 	# PUT /documents/1.xml
 	def update
 		# this is called whenever the user corrects a line.
-		book = params[:book]
+		doc_id = params[:doc_id]
 		page = params[:page]
 		line = params[:line].to_f if params[:line]
 		user_id = params[:user].to_i if params[:user]
 		status = params[:status]
 		words = params[:words]
-		if book == nil || page == nil || line == nil || user_id == nil || status == nil
+		if doc_id == nil || page == nil || line == nil || user_id == nil || status == nil
 			render :text => 'Illegal parameters.', :status => :bad_request
 		else
-			rec = Line.get_undoable_record(book, page, line, user_id)
+			rec = Line.get_undoable_record(doc_id, page, line, user_id)
 			if rec
 				rec.destroy()
 			end
 			if status != 'undo'
-				Line.create({ :user_id => user_id, :book => book, :page => page, :line => line, :status => status, :words => Line.words_to_db(words) })
+				Line.create({ :user_id => user_id, :document => doc_id, :page => page, :line => line, :status => status, :words => Line.words_to_db(words) })
 			end
 
 			render :text => ""

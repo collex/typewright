@@ -3,7 +3,7 @@
 	var lines = [];
 </script>
 <div id="main_container">
-	<div class="editing_title"><a title='<%= @title %>'>"<%= @title_abbrev %>"</a></div>
+	<div class="editing_title"><a title='<%= raw(@title.gsub("'", "&apos;")) %>'>"<%= @title_abbrev %>"</a></div>
 
 	<div class="overview_top">
 		<img id="line_thumb" src="<%= @thumb %>" alt="cover page" />

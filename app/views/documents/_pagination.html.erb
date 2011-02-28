@@ -1,13 +1,13 @@
-<%# pagination -- params: string book, int page, int num_pages %>
+<%# pagination -- params: int doc_id, int page, int num_pages %>
 <div class="line_page_nav">
-	<%= link_to "first", create_url(book, 1), { :class => 'nav_link button_left first_page' } if page > 1 %>&nbsp;
-	<%= link_to "prev", create_url(book, page-1), { :class => 'nav_link button_left prev_page' } if page > 1 %>&nbsp;&nbsp;&nbsp;
+	<%= link_to "first", create_url(doc_id, 1), { :class => 'nav_link button_left first_page' } if page > 1 %>&nbsp;
+	<%= link_to "prev", create_url(doc_id, page-1), { :class => 'nav_link button_left prev_page' } if page > 1 %>&nbsp;&nbsp;&nbsp;
 	Page
-	<select id="page" data-url='<%= create_url(book, nil) %>'>
+	<select id="page" data-url='<%= create_url(doc_id, nil) %>'>
 		<% num_pages.times { |i| %>
 			<option value="<%= i+1 %>"<%= " selected='selected'" if i+1 == page %>><%= i+1 %></option>
 		<% } %>
 	</select>&nbsp;&nbsp;&nbsp;
-	<%= link_to "next", create_url(book, page+1), { :class => 'nav_link button_right next_page' } if page < num_pages %>&nbsp;
-	<%= link_to "last", create_url(book, num_pages), { :class => 'nav_link button_right last_page' } if page < num_pages %>
+	<%= link_to "next", create_url(doc_id, page+1), { :class => 'nav_link button_right next_page' } if page < num_pages %>&nbsp;
+	<%= link_to "last", create_url(doc_id, num_pages), { :class => 'nav_link button_right last_page' } if page < num_pages %>
 </div>

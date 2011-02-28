@@ -1,32 +1,34 @@
 <script type="text/javascript">
 	var lines = <%= raw(@params[:lines].to_json()) %>;
 	var currLine = 0;
-	var book = "<%= @params[:book] %>";
+	var doc_id = <%= @params[:doc_id] %>;
 	var page = <%= @params[:page] %>;
 	var currUser = <%= @user.id %>;
 	var showDebugItems = <%= @debugging ? 'true' : 'false' %>;
-	var updateUrl = "/documents/"+book;
+	var updateUrl = "/documents/"+doc_id;
+	var imgWidth = <%= @params[:img_size][:width] %>;
+	var imgHeight = <%= @params[:img_size][:height] %>;
 </script>
 
-<div class="editing_title"><a title='<%= @params[:title] %>'>"<%= @params[:title_abbrev] %>"</a></div>
+<div class="editing_title"><a title='<%= @params[:title].gsub("'", "&apos;") %>'>"<%= @params[:title_abbrev] %>"</a></div>
 
+<div class="toolbar">
+	<span class="button2 find_button">&nbsp;</span>
+	<span class="button2 insert_above_button">&nbsp;</span>
+	<span class="button2 insert_below_button">&nbsp;</span>
+	<span class="button2 review_history_button">&nbsp;</span>
+	<%= render :partial => 'pagination', :locals => { :doc_id => @params[:doc_id], :page => @params[:page], :num_pages => @params[:num_pages] } %>
+</div>
 <div class="line_text">
 	<table class="line_editing">
-		<tr>
-			<td colspan="3" class="toolbar">
-				<span class="button2 find_button">&nbsp;</span>
-				<span class="button2 insert_above_button">&nbsp;</span>
-				<span class="button2 insert_below_button">&nbsp;</span>
-				<span class="button2 review_history_button">&nbsp;</span>
-				<%= render :partial => 'pagination', :locals => { :book => @params[:book], :page => @params[:page], :num_pages => @params[:num_pages] } %>
-			</td>
-		</tr>
 		<tr>
 			<td class="left_row">
 				<img id="line_thumb" src="<%= @params[:img_thumb] %>" alt="original image" /></td>
 			<td class="middle_row">
 				<div id="line_full">
-					<span style="background-image: url(<%= @params[:img_full] %>);"></span>
+					<div style="background-image: url(<%= @params[:img_full].gsub('*', '001') %>);"></div>
+					<div style="background-image: url(<%= @params[:img_full].gsub('*', '002') %>);"></div>
+					<div style="background-image: url(<%= @params[:img_full].gsub('*', '003') %>);"></div>
 				</div>
 			</td>
 			<td class="right_row">

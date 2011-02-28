@@ -51,6 +51,10 @@ class DocumentsController < ApplicationController
 		if ud == nil
 			UserDoc.create({ :user_id => @user.id, :document_id => @id })
 		end
+
+		if @title.length == 0
+			render :text => "<br /><br /><br /><br />&nbsp;&nbsp;DEBUG NOTICE: This document is not yet prepared for editing."
+		end
 	end
 
 	# GET /documents/new

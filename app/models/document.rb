@@ -44,8 +44,12 @@ class Document < ActiveRecord::Base
 
 	def get_num_pages()
 		size_file = "#{Rails.root}/public/#{img_folder}/sizes.csv"
-		f = File.open(size_file, "r")
-		lines = f.readlines
-		return lines.length
+		if File.exists?(size_file)
+			f = File.open(size_file, "r")
+			lines = f.readlines
+			return lines.length
+		else
+			return 0
+		end
 	end
 end

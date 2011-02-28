@@ -93,7 +93,7 @@ require 'nokogiri'
 			meta = YAML.load_file(fname)
 			return meta[:title]
 		end
-		return nil
+		return ''
 	end
 
 	def self.read_gamera(book, page)

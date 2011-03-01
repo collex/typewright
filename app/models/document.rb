@@ -26,7 +26,7 @@ class Document < ActiveRecord::Base
 			arr = line.split('.')
 			if arr[0] == page_name
 				arr = arr[1].split(',')
-				return { :width => arr[1].to_i, :height => arr[1].to_i }
+				return { :width => arr[1].to_i, :height => arr[2].to_i }
 			end
 		end
 		return { :width => 0, :height => 0 }

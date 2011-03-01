@@ -12,6 +12,7 @@
 /*global alert, Image */
 /*global line */
 /*global doc_id, page, updateUrl, imgWidth, imgHeight */
+/*global imgCursor */
 
 YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-custom', function(Y) {
 	function create_display_line(str) {
@@ -24,24 +25,6 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 		if (isDeleted)
 			classes += " deleted_line";
 		return "<a href='#' class='"+classes + "' data-amount='" + amount + "'>" + create_display_line(str) + "</a>";
-	}
-
-	function get_scaling() {
-		var imageUrl = Y.one('#line_thumb')._node.src;
-
-		// Get the scaling and offset of the thumbnail image.
-		var imgThumb = Y.one("#line_thumb");
-		var ofsXThumb = imgThumb.getX();
-		var ofsYThumb = imgThumb.getY();
-		var displaySizeThumb = { width: imgThumb._node.width, height: imgThumb._node.height };
-		var xFactorThumb = displaySizeThumb.width / imgWidth;
-		var yFactorThumb = displaySizeThumb.height / imgHeight;
-		return { origWidth: imgWidth, ofsXThumb: ofsXThumb, ofsYThumb: ofsYThumb, xFactorThumb: xFactorThumb, yFactorThumb: yFactorThumb };
-	}
-
-	function convertThumbToOrig(x, y) {
-		var scaling = get_scaling();
-		return { x: (x-scaling.ofsXThumb) / scaling.xFactorThumb, y: (y-scaling.ofsYThumb) / scaling.yFactorThumb };
 	}
 
 	function setUndoButtons() {
@@ -143,72 +126,6 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 		}
 	}
 
-	function setPointer(id, box, xFactor, yFactor, ofsX, ofsY, scrollY) {
-		var pointer = Y.one(id);
-		var left = box.l * xFactor + ofsX;
-		var top = box.t * yFactor + ofsY;
-		var width = (box.r - box.l) * xFactor;
-		var height = (box.b - box.t) * yFactor;
-		pointer.setStyles({ left: left + 'px', top: (top-scrollY) + 'px', width: width + 'px', height: height + 'px', display: 'block' });
-	}
-
-	function hidePointer(id) {
-		var pointer = Y.one(id);
-		pointer.setStyles({ display: 'none' });
-	}
-
-	function setThumbnailCursor(scaling) {
-		var pointer = Y.one('#pointer_thumb');
-		var rect = line.getRect(currLine);
-		var left = rect.l * scaling.xFactorThumb + scaling.ofsXThumb;
-		var top = rect.t * scaling.yFactorThumb + scaling.ofsYThumb;
-		var width = (rect.r - rect.l) * scaling.xFactorThumb;
-		var height = (rect.b - rect.t) * scaling.yFactorThumb;
-		pointer.setStyles({ left: left + 'px', top: top + 'px', width: width + 'px', height: height + 'px' });
-	}
-
-	function setImageCursor(scaling) {
-		// Get the scaling and offset of the larger image.
-		// Also get the height of the window so we know how to scroll.
-		var img = Y.one("#line_full div");
-		var ofsX = img.getX();
-		var ofsY = img.getY();
-		var displaySize = { width: img._node.offsetWidth, height: img._node.offsetHeight * 3 };
-		var ratio = displaySize.width/scaling.origWidth;
-		var xFactor = ratio;
-		var yFactor = ratio;
-
-		// Scroll the window and move the cursor for the full size window.
-		var rect = line.getRect(currLine);
-		var left = rect.l * xFactor + ofsX;
-		var top = rect.t * yFactor + ofsY;
-		var width = (rect.r - rect.l) * xFactor;
-		var height = (rect.b - rect.t) * yFactor;
-		// Now we have the coordinates for the window, if the entire image were shown.
-		// Figure out how much to scroll to get the cursor in the visible part.
-
-		var midCursor = top + height/2;
-		var midWindow = ofsY + displaySize.height/2;
-		var scrollY = midCursor - midWindow;
-		if (scrollY < 0)
-			scrollY = 0;
-		//Y.one("#line_full").setStyles({ width: displaySize.width + 'px' });
-		//img.setStyles({ backgroundPosition: '0px -' + scrollY + 'px' });
-
-		setPointer('#pointer_doc', rect, xFactor, yFactor, ofsX, ofsY, scrollY);
-
-		// Set the word boundaries
-		if (showDebugItems) {
-			var words = line.getCurrentWords(currLine);
-			for (var i = 0; i < 20; i++) {
-				if (words && words.length > i)
-					setPointer('#pointer_word_1_'+i, words[i], xFactor, yFactor, ofsX, ofsY, scrollY);
-				else
-					hidePointer('#pointer_word_1_'+i);
-			}
-		}
-	}
-
 	function redraw() {
 		var elHist = Y.one('#text_0 .history_icon');
 		var elChg = Y.one('#text_0 .change_icon');
@@ -245,12 +162,7 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 		}
 
 		// Get the original/full size of the image so we know how to much to scale.
-		var scaling = get_scaling();
-
-		// Move the cursor for the thumbnail image.
-		setThumbnailCursor(scaling);
-
-		setImageCursor(scaling);
+		imgCursor.update();
 	}
 
 	function change_line_abs(lineNum) {
@@ -387,10 +299,10 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 		}
 	}, '#input_focus');
 
-	Y.on("click", function(e) {
-		 var coords = convertThumbToOrig(e.clientX, e.clientY);
-		 var lineNum = line.findLine(coords.x, coords.y);
-		 change_line_abs(lineNum);
+	Y.delegate("click", function(e) {
+		var coords = imgCursor.convertThumbToOrig(e.clientX, e.clientY);
+		var lineNum = line.findLine(coords.x, coords.y);
+		change_line_abs(lineNum);
 	 }, 'body', ".line_thumb");
 
 	//

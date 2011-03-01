@@ -16,7 +16,7 @@ class DocumentsController < ApplicationController
 				str = ''
 				docs.each { |ud|
 					doc = Document.find_by_id(ud.document_id)
-					str += "#{doc[:uri]}\thttp://localhost:3099#{doc.thumb()}\t#{doc[:title]}\n"
+					str += "#{doc[:uri]}\thttp://#{request.env['HTTP_HOST']}#{doc.thumb()}\n"
 				}
 				render :text => str
 			end
@@ -37,7 +37,7 @@ class DocumentsController < ApplicationController
 		if doc == nil
 			doc = Document.create({ :uri => @uri })
 		end
-		params = Book.setup_doc(doc)
+		params = doc.setup_doc()
 
 		@id = params[:doc_id]
 		@title = params[:title]
@@ -78,7 +78,7 @@ class DocumentsController < ApplicationController
 		else
 			page = params[:page]
 
-			@params = Book.setup_page(doc, page)
+			@params = doc.setup_page(page)
 			@user = session[:user]
 			@debugging = session[:debugging] ? session[:debugging] : false
 		end
@@ -118,7 +118,7 @@ class DocumentsController < ApplicationController
 				rec.destroy()
 			end
 			if status != 'undo'
-				Line.create({ :user_id => user_id, :document => doc_id, :page => page, :line => line, :status => status, :words => Line.words_to_db(words) })
+				Line.create({ :user_id => user_id, :document_id => doc_id, :page => page, :line => line, :status => status, :words => Line.words_to_db(words) })
 			end
 
 			render :text => ""

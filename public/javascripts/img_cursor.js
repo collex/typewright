@@ -13,7 +13,7 @@ var imgCursor = { };
 YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-custom', function(Y) {
 	function get_scaling() {
 		// Get the scaling and offset of the thumbnail image.
-		var imgThumb = Y.one("#line_thumb");
+		var imgThumb = Y.one("#tw_img_thumb");
 		var ofsXThumb = imgThumb.getX();
 		var ofsYThumb = imgThumb.getY();
 		var displaySizeThumb = { width: imgThumb._node.width, height: imgThumb._node.height };
@@ -33,7 +33,7 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 	}
 
 	function setThumbnailCursor(scaling) {
-		var pointer = Y.one('#pointer_thumb');
+		var pointer = Y.one('#tw_pointer_thumb');
 		var rect = line.getRect(currLine);
 		var left = rect.l * scaling.xFactorThumb + scaling.ofsXThumb;
 		var top = rect.t * scaling.yFactorThumb + scaling.ofsYThumb;
@@ -68,7 +68,7 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 		// Get the scaling and offset of the larger image.
 		// Also get the height of the window so we know how to scroll.
 
-		var imgs = Y.all("#line_full div");
+		var imgs = Y.all("#tw_img_full div");
 		var numImages = imgs.size();
 		var middleImage = Math.floor(numImages/2);
 		var topNode = imgs.item(0);
@@ -100,16 +100,16 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 		//img.setStyles({ backgroundPosition: '0px -' + scrollY + 'px' });
 		setImages(imgs, sector);
 
-		setPointer('#pointer_doc', left, top, width, height, ofsX, ofsY, scrollY);
+		setPointer('#tw_pointer_doc', left, top, width, height, ofsX, ofsY, scrollY);
 
 		// Set the word boundaries
 		if (showDebugItems) {
 			var words = line.getCurrentWords(currLine);
 			for (var i = 0; i < 20; i++) {
 				if (words && words.length > i)
-					setPointer('#pointer_word_1_'+i, words[i], xFactor, yFactor, ofsX, ofsY, scrollY);
+					setPointer('#tw_pointer_word_1_'+i, words[i], xFactor, yFactor, ofsX, ofsY, scrollY);
 				else
-					hidePointer('#pointer_word_1_'+i);
+					hidePointer('#tw_pointer_word_1_'+i);
 			}
 		}
 	}

@@ -27,12 +27,12 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-custom', function(Y) {
 	function find_dlg() {
 
 		var body = { layout: [
-				[ { type: 'label', klass: 'dlg_find_label', text: 'Find:' }, { type: 'input', klass: 'dlg_find', name: 'find', focus: true }]
+				[ { type: 'label', klass: 'tw_dlg_find_label', text: 'Find:' }, { type: 'input', klass: 'tw_dlg_find', name: 'find', focus: true }]
 			]
 		};
 
 		dialogMaker.dialog({
-			config: { id: 'find_dlg', action: "", div: '', align: ".find_button", lineClass: 'dlg_find_line' },
+			config: { id: 'tw_find_dlg', action: "", div: '', align: ".tw_find_button", lineClass: 'tw_dlg_find_line' },
 			header: { title: 'Find Text on Page' },
 			body: body,
 			footer: {
@@ -48,7 +48,7 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-custom', function(Y) {
 
     Y.on("click", function(e) {
 		find_dlg();
-    }, ".find_button");
+    }, ".tw_find_button");
 
 	Y.on('key', function(e) {
 		e.halt();

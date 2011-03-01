@@ -16,5 +16,5 @@ YUI().use('node', function(Y) {
 
     Y.on("change", function(e) {
         select_page(e.target);
-    }, "#page");
+    }, "#tw_page");
 });

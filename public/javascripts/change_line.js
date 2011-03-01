@@ -21,15 +21,15 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 	}
 
 	function create_jump_link(str, amount, isDeleted) {
-		var classes = 'nav_link change_line';
+		var classes = 'nav_link tw_change_line';
 		if (isDeleted)
-			classes += " deleted_line";
+			classes += " tw_deleted_line";
 		return "<a href='#' class='"+classes + "' data-amount='" + amount + "'>" + create_display_line(str) + "</a>";
 	}
 
 	function setUndoButtons() {
-		var un = Y.one('.undo_button');
-		var re = Y.one('.redo_button');
+		var un = Y.one('.tw_undo_button');
+		var re = Y.one('.tw_redo_button');
 		if (line.canRedo(currLine)) {
 			un.addClass('hidden');
 			re.removeClass('hidden');
@@ -41,7 +41,7 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 			re.addClass('hidden');
 		}
 
-		var correct = Y.one('.correct');
+		var correct = Y.one('.tw_correct');
 		if (correct) {
 			if (line.hasChanged(currLine))
 				correct.addClass('disabled');
@@ -61,48 +61,48 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 	}
 
 	function tooltipIcon(iconStyle, tooltipText) {
-		return "<span class='icon " + iconStyle + " history_tooltip_wrapper'>&nbsp;<span class='tooltip hidden'>" + tooltipText + "</span></span>";
+		return "<span class='tw_icon " + iconStyle + " tw_history_tooltip_wrapper'>&nbsp;<span class='tw_tooltip hidden'>" + tooltipText + "</span></span>";
 
 	}
 
 	function createHistory(lineNum) {
 		var str = line.getAllHistory(lineNum);
 		if (str) {
-			return tooltipIcon("icon_edit_history", "<h4 class='header'>History:</h4><hr />" + str);
+			return tooltipIcon("tw_icon_edit_history", "<h4 class='header'>History:</h4><hr />" + str);
 		}
 		return "";
 	}
 
 	function createIcon(lineNum) {
 		switch (line.getChangeType(lineNum)) {
-			case 'change': return tooltipIcon("icon_edit", "Originally: "+line.getStartingText(lineNum));
-			case 'delete': return tooltipIcon("icon_delete", 'Line has been deleted.');
-			case 'correct': return tooltipIcon("icon_checkmark", 'Line is correct.');
+			case 'change': return tooltipIcon("tw_icon_edit", "Originally: "+line.getStartingText(lineNum));
+			case 'delete': return tooltipIcon("tw_icon_delete", 'Line has been deleted.');
+			case 'correct': return tooltipIcon("tw_icon_checkmark", 'Line is correct.');
 		}
 		return "";
 	}
 
 	function redrawCurrIcons() {
-		var el = Y.one('#text_1 .change_icon');
+		var el = Y.one('#tw_text_1 .tw_change_icon');
 		el._node.innerHTML = createIcon(currLine);
 		setUndoButtons();
 	}
 
 	function redrawCurrLine() {
 		redrawCurrIcons();
-		var elHist = Y.one('#text_1 .history_icon');
-		var elNum = Y.one('#text_1 .line_num');
+		var elHist = Y.one('#tw_text_1 .tw_history_icon');
+		var elNum = Y.one('#tw_text_1 .tw_line_num');
 		elHist._node.innerHTML = createHistory(currLine);
 		elNum._node.innerHTML = create_display_line(line.getLineNum(currLine));
 		var displayLine = line.getCurrentText(currLine);
 		displayLine = displayLine.replace(/\'/g, '&apos;');
-		var editingLine = Y.one("#editing_line");
+		var editingLine = Y.one("#tw_editing_line");
 		if (line.isDeleted(currLine))
-			editingLine._node.innerHTML = "<input id='input_focus' class='deleted_line' readonly='readonly' type='text' value='" + displayLine + "' />";
+			editingLine._node.innerHTML = "<input id='tw_input_focus' class='tw_deleted_line' readonly='readonly' type='text' value='" + displayLine + "' />";
 		else
-			editingLine._node.innerHTML = "<input id='input_focus' type='text' value='" + displayLine + "' />";
+			editingLine._node.innerHTML = "<input id='tw_input_focus' type='text' value='" + displayLine + "' />";
 
-		var foc = Y.one("#input_focus");
+		var foc = Y.one("#tw_input_focus");
 		foc.focus();
 	}
 
@@ -115,7 +115,7 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 	var mostRecentLine = "";
 
 	function line_changed() {
-		var input = Y.one("#input_focus");
+		var input = Y.one("#tw_input_focus");
 		if (input) {
 			if (input._node.value !== mostRecentLine) {
 				lineDirty = true;
@@ -127,10 +127,10 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 	}
 
 	function redraw() {
-		var elHist = Y.one('#text_0 .history_icon');
-		var elChg = Y.one('#text_0 .change_icon');
-		var elNum = Y.one('#text_0 .line_num');
-		var elText = Y.one('#text_0 .text');
+		var elHist = Y.one('#tw_text_0 .tw_history_icon');
+		var elChg = Y.one('#tw_text_0 .tw_change_icon');
+		var elNum = Y.one('#tw_text_0 .tw_line_num');
+		var elText = Y.one('#tw_text_0 .tw_text');
 		if (currLine > 0) {
 			elHist._node.innerHTML = createHistory(currLine-1);
 			elChg._node.innerHTML = createIcon(currLine-1);
@@ -145,10 +145,10 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 
 		redrawCurrLine();
 
-		elHist = Y.one('#text_2 .history_icon');
-		elChg = Y.one('#text_2 .change_icon');
-		elNum = Y.one('#text_2 .line_num');
-		elText = Y.one('#text_2 .text');
+		elHist = Y.one('#tw_text_2 .tw_history_icon');
+		elChg = Y.one('#tw_text_2 .tw_change_icon');
+		elNum = Y.one('#tw_text_2 .tw_line_num');
+		elText = Y.one('#tw_text_2 .tw_text');
 		if (!line.isLast(currLine)) {
 			elHist._node.innerHTML = createHistory(currLine+1);
 			elChg._node.innerHTML = createIcon(currLine+1);
@@ -173,7 +173,7 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 			}
 			currLine = lineNum;
 			redraw();
-			var input = Y.one("#input_focus");
+			var input = Y.one("#tw_input_focus");
 			mostRecentLine = input._node.value;
 		}
 	}
@@ -235,12 +235,12 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 		e.halt();
 		line.doConfirm(currLine);
 		lineModified();
-	}, 'body', '#input_focus', 'press:'+enter+'+ctrl', Y);
+	}, 'body', '#tw_input_focus', 'press:'+enter+'+ctrl', Y);
 
 	Y.on("click", function(e) {
 		line.doConfirm(currLine);
 		lineModified();
-	 }, ".correct");
+	 }, ".tw_correct");
 
 	//
 	// move to different line
@@ -250,7 +250,7 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 		change_line_abs(lineNum);
 		var pos = line.getStartingText(lineNum).indexOf(text);
 		if (pos >= 0) {
-			var foc = Y.one("#input_focus");
+			var foc = Y.one("#tw_input_focus");
 			setCaretPosition(foc._node, pos, text.length);
 		}
 	});
@@ -258,7 +258,7 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
     Y.delegate("click", function(e) {
 		var amount = e.target._node.getAttribute('data-amount');
         change_line_rel(parseInt(amount));
-    }, 'body', ".change_line");
+    }, 'body', ".tw_change_line");
 
     Y.on("load", function(e) {
         change_line_rel(0);
@@ -267,27 +267,27 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 	Y.delegate('key', function(e) {
 		e.halt();
         change_line_rel(1);
-	}, 'body', '#input_focus', 'press:'+enter, Y);
+	}, 'body', '#tw_input_focus', 'press:'+enter, Y);
 
 	Y.delegate('key', function(e) {
 		e.halt();
         change_line_rel(-1);
-	}, 'body', '#input_focus', 'down:'+up_arrow, Y);
+	}, 'body', '#tw_input_focus', 'down:'+up_arrow, Y);
 
 	Y.delegate('key', function(e) {
 		e.halt();
         change_line_rel(1);
-	}, 'body', '#input_focus', 'down:'+down_arrow, Y);
+	}, 'body', '#tw_input_focus', 'down:'+down_arrow, Y);
 
 	Y.delegate('key', function(e) {
 		e.halt();
         change_line_rel(-3);
-	}, 'body', '#input_focus', 'down:'+page_up, Y);
+	}, 'body', '#tw_input_focus', 'down:'+page_up, Y);
 
 	Y.delegate('key', function(e) {
 		e.halt();
         change_line_rel(3);
-	}, 'body', '#input_focus', 'down:'+page_down, Y);
+	}, 'body', '#tw_input_focus', 'down:'+page_down, Y);
 
 	Y.on('mousewheel', function(e) {
 		// The mouse wheel should work any time the input has the focus even if the wheel isn't over it.
@@ -297,13 +297,13 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 			change_line_rel(-delta);
 			e.halt();
 		}
-	}, '#input_focus');
+	}, '#tw_input_focus');
 
 	Y.delegate("click", function(e) {
 		var coords = imgCursor.convertThumbToOrig(e.clientX, e.clientY);
 		var lineNum = line.findLine(coords.x, coords.y);
 		change_line_abs(lineNum);
-	 }, 'body', ".line_thumb");
+	 }, 'body', ".tw_img_thumb");
 
 	//
 	// delete line
@@ -313,18 +313,18 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 		e.halt();
 		line.doDelete(currLine);
 		lineModified();
-	}, 'body', '#input_focus', 'press:'+kdelete+'+ctrl', Y);
+	}, 'body', '#tw_input_focus', 'press:'+kdelete+'+ctrl', Y);
 
 	Y.delegate('key', function(e) {
 		e.halt();
 		line.doDelete(currLine);
 		lineModified();
-	}, 'body', '#input_focus', 'press:'+backspace+'+ctrl', Y);
+	}, 'body', '#tw_input_focus', 'press:'+backspace+'+ctrl', Y);
 
 	Y.on("click", function(e) {
 		line.doDelete(currLine);
 		lineModified();
-	 }, ".delete_line");
+	 }, ".tw_delete_line");
 
 	//
 	// Navigate in input
@@ -332,15 +332,15 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 
 	Y.delegate('key', function(e) {
 		e.halt();
-        var foc = Y.one("#input_focus");
+        var foc = Y.one("#tw_input_focus");
 		setCaretPosition(foc._node, 0, 0);
-	}, 'body', '#input_focus', 'press:'+home, Y);
+	}, 'body', '#tw_input_focus', 'press:'+home, Y);
 
 	Y.delegate('key', function(e) {
 		e.halt();
-        var foc = Y.one("#input_focus");
+        var foc = Y.one("#tw_input_focus");
 		setCaretPosition(foc._node, foc._node.value.length, 0);
-	}, 'body', '#input_focus', 'press:'+end, Y);
+	}, 'body', '#tw_input_focus', 'press:'+end, Y);
 
 	//
 	// Change line
@@ -348,7 +348,7 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 
 	Y.delegate('keyup', function(e) {
 		line_changed();
-	}, 'body', '#input_focus');
+	}, 'body', '#tw_input_focus');
 
 	//
 	// undo
@@ -357,7 +357,7 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 	Y.on("click", function(e) {
 		line.doUndo(currLine);
 		lineModified();
-	 }, ".undo_button");
+	 }, ".tw_undo_button");
 
 	Y.delegate('key', function(e) {
 		e.halt();
@@ -368,12 +368,12 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 			line.doUndo(currLine);
 			lineModified();
 		}
-	}, 'body', '#input_focus', 'down:'+kY+'+ctrl', Y);
+	}, 'body', '#tw_input_focus', 'down:'+kY+'+ctrl', Y);
 
 	Y.on("click", function(e) {
 		line.doRedo(currLine);
 		lineModified();
-	 }, ".redo_button");
+	 }, ".tw_redo_button");
 
 	//
 	// Insert
@@ -382,20 +382,20 @@ YUI().use('node', 'event-delegate', 'event-key', 'event-mousewheel', 'event-cust
 	Y.delegate('key', function(e) {
 		e.halt();
 		insert_above();
-	}, 'body', '#input_focus', 'down:'+kI+'+shift+ctrl', Y);
+	}, 'body', '#tw_input_focus', 'down:'+kI+'+shift+ctrl', Y);
 
 	Y.on("click", function(e) {
 		insert_above();
-	 }, ".insert_above_button");
+	 }, ".tw_insert_above_button");
 
 	Y.delegate('key', function(e) {
 		e.halt();
 		insert_below();
-	}, 'body', '#input_focus', 'down:'+kI+'+ctrl', Y);
+	}, 'body', '#tw_input_focus', 'down:'+kI+'+ctrl', Y);
 
 	Y.on("click", function(e) {
 		insert_below();
-	 }, ".insert_below_button");
+	 }, ".tw_insert_below_button");
 
 	Y.on("unload", function(e) {
 		if (lineDirty)

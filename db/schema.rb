@@ -14,16 +14,15 @@ ActiveRecord::Schema.define(:version => 20110221202638) do
 
   create_table "documents", :force => true do |t|
     t.string   "uri"
-    t.text     "title"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
   create_table "lines", :force => true do |t|
     t.integer  "user_id"
-    t.string   "document"
+    t.string   "document_id"
     t.integer  "page"
-    t.decimal  "line",       :precision => 10, :scale => 4
+    t.decimal  "line",        :precision => 10, :scale => 4
     t.string   "status"
     t.text     "words"
     t.datetime "created_at"

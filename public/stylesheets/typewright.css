@@ -1,30 +1,22 @@
-body {
-	background-color: #eeeeee;
-}
-
-#main_container {
+#tw_main_container {
 	width: 950px;
 }
 
-.overview_top {
+.tw_overview_top {
 	padding: 24px;
 	border-bottom: 1px solid black;
 }
 
-.overview_top p {
+.tw_overview_top p {
 	padding-bottom: 1.5em;
 }
 
-.overview_bottom {
+.tw_overview_bottom {
 	padding: 24px;
 	background-color: #E1E6F1;
 }
 
-#login_container {
-	left: 800px;
-}
-
-.editing_title {
+.tw_editing_title {
 	background-color: #909cbc;
 	font-size: 34px;
 	text-align: center;
@@ -33,68 +25,36 @@ body {
 	padding-bottom: 4px;
 }
 
-.spelling_choice {
+.tw_spelling_choice {
 	font-family: 'Verdana', sans-serif;
 	color: gray;
 	font-size: 1.3em;
 	margin-bottom: 8px;
 }
 
-.line_book_selector {
-	position: absolute;
-	left: 170px;
-	top: 5px;
-	font-size: 10px;
-}
-
-.source {
-	position: absolute;
-	left: 650px;
-	top: 8px;
-	font-size: 10px;
-	color: white;
-}
-
-.source a:link {
-	color: white;
-}
-
-.source a:visited {
-	color: white;
-}
-
-.line_text {
+.tw_edit_text {
 	border-top: 1px solid black;
 	background-color: #e1e6f1;
 	padding-bottom: 20px;
 }
 
-#line_thumb {
+#tw_img_thumb {
 	border: 1px solid black;
 	float: left;
 	margin-right: 24px;
 }
 
-#line_full {
+#tw_img_full {
 	border: 1px solid black;
 	height: 150px;
 }
 
-.clear_both {
-	clear: both;
-}
-
-#line_full div {
-/*	position:absolute;
-	clip:rect(0px, auto, 100px, auto);*/
-/*	width: 800px;
-	display: block;
-	height: 160px;*/
+#tw_img_full div {
 	height: 50px;
 	background-repeat: no-repeat;
 }
 
-.line_page_nav {
+.tw_edit_page_nav {
 	font-family: 'Verdana', sans-serif;
 	font-size: .7em;
 	text-align: right;
@@ -102,7 +62,7 @@ body {
 	float:right;
 }
 
-.toolbar {
+.tw_toolbar {
 	background:url(../images/toolbar_bg.jpg) top left no-repeat;
     padding-bottom: 12px;
     padding-top: 10px;
@@ -111,45 +71,41 @@ body {
     width: 930px;
 }
 
-.button_left {
+.tw_button_left {
 	padding-bottom: 4px;
 	padding-left: 22px;
 }
 
-.button_right {
+.tw_button_right {
 	padding-bottom: 4px;
 	padding-right: 22px;
 }
 
-.button_left:hover {
+.tw_button_left:hover {
 	background-position: 0 -18px;
 }
 
-.button_right:hover {
+.tw_button_right:hover {
 	background-position: right -18px;
 }
 
-.first_page {
+.tw_first_page {
 	background:url(../images/pagination_first_arrow.png) top left no-repeat;
 }
 
-.prev_page {
+.tw_prev_page {
 	background:url(../images/pagination_previous_arrow.png) top left no-repeat;
 }
 
-.next_page {
+.tw_next_page {
 	background:url(../images/pagination_next_arrow.png) top right no-repeat;
 }
 
-.last_page {
+.tw_last_page {
 	background:url(../images/pagination_last_arrow.png) top right no-repeat;
 }
 
-.line_image {
-	text-align: left;
-}
-
-.line_num {
+.tw_line_num {
 	text-align:right;
 	padding-right: 8px;
 	width: 30px;
@@ -157,25 +113,25 @@ body {
 	display: block;
 }
 
-.history_icon {
+.tw_history_icon {
 	width: 25px;
 	padding-left: 40px;
 }
 
-.change_icon {
+.tw_change_icon {
 	width: 25px;
 }
 
-a.deleted_line:link, a.deleted_line:visited {
+a.tw_deleted_line:link, a.tw_deleted_line:visited {
 	text-decoration: line-through;
 }
 
-input.deleted_line {
+input.tw_deleted_line {
 	text-decoration: line-through;
 	background-color: #cccccc;
 }
 
-.icon {
+.tw_icon {
 	font-family: 'Verdana', sans-serif;
 	font-size: .7em;
 	color: white;
@@ -185,29 +141,29 @@ input.deleted_line {
 	padding-top:3px;
 }
 
-.icon_edit_history {
+.tw_icon_edit_history {
 	background:url(../images/icon_other_edit.png) top right no-repeat;
 }
 
-.icon_edit {
+.tw_icon_edit {
 	background:url(../images/icon_edit.png) top right no-repeat;
 }
 
-.icon_checkmark {
+.tw_icon_checkmark {
 	background:url(../images/icon_checkmark.png) top right no-repeat;
 }
 
-.icon_delete {
+.tw_icon_delete {
 	background:url(../images/icon_x.png) top right no-repeat;
 }
 
-.find_button {
+.tw_find_button {
 	background:url(../images/find_button.png) top left no-repeat;
 	padding-left: 30px;
 	padding-right: 30px;
 }
 
-.start_editing_button {
+.tw_start_editing_button {
 	background:url(../images/start_editing_button.png) top left no-repeat;
 	padding-left: 44px;
 	padding-right: 44px;
@@ -215,75 +171,75 @@ input.deleted_line {
 	text-decoration: none;
 }
 
-.review_history_button {
+.tw_review_history_button {
 	background:url(../images/review_history_button.png) top left no-repeat;
 	padding-left: 61px;
 	padding-right: 61px;
 }
 
-.insert_above_button {
+.tw_insert_above_button {
 	background:url(../images/insert_above_button.png) top left no-repeat;
 	padding-left: 53px;
 	padding-right: 53px;
 }
 
-.insert_below_button {
+.tw_insert_below_button {
 	background:url(../images/insert_below_button.png) top left no-repeat;
 	padding-left: 53px;
 	padding-right: 53px;
 }
 
-.undo_button {
+.tw_undo_button {
 	background:url(../images/undo_button.png) top left no-repeat;
 }
 
-.redo_button {
+.tw_redo_button {
 	background:url(../images/redo_button.png) top left no-repeat;
 }
 
-.correct {
+.tw_correct {
 	background:url(../images/correct_button.png) top left no-repeat;
 }
 
-.delete_line {
+.tw_delete_line {
 	background:url(../images/delete_line_button.png) top left no-repeat;
 }
 
-.up_arrow_top {
+.tw_up_arrow_top {
 	background:url(../images/up_arrow.png) top left no-repeat;
 	margin-bottom: 50px;
 }
 
-.down_arrow_top {
+.tw_down_arrow_top {
 	background:url(../images/down_arrow.png) top left no-repeat;
 }
 
-.up_arrow_bottom {
+.tw_up_arrow_bottom {
 	background:url(../images/up_arrow.png) top left no-repeat;
 }
 
-.down_arrow_bottom {
+.tw_down_arrow_bottom {
 	background:url(../images/down_arrow.png) top left no-repeat;
 }
 
-.button:hover {
+.tw_button:hover {
 	cursor: pointer;
 	background-position: 0 -22px;
 }
 
-.button {
+.tw_button {
 	font-family: 'Verdana', sans-serif;
 	font-size: .7em;
 	color: white;
 	padding: 3px 14px 4px;
 }
 
-.button2:hover {
+.tw_button2:hover {
 	cursor: pointer;
 	background-position: 0 -27px;
 }
 
-.button2 {
+.tw_button2 {
 	font-family: 'Verdana', sans-serif;
 	font-size: .7em;
 	color: white;
@@ -291,24 +247,24 @@ input.deleted_line {
 	padding-bottom: 6px;
 }
 
-.button3:hover {
+.tw_button3:hover {
 	cursor: pointer;
 	background-position: 0 -22px;
 }
 
-.button3 {
+.tw_button3 {
 	font-family: 'Verdana', sans-serif;
 	font-size: .7em;
 	color: white;
 	padding: 3px 11px 6px;
 }
 
-.button4:hover {
+.tw_button4:hover {
 	cursor: pointer;
 	background-position: 0 -25px;
 }
 
-.button4 {
+.tw_button4 {
 	font-family: 'Verdana', sans-serif;
 	font-size: .7em;
 	color: white;
@@ -316,16 +272,12 @@ input.deleted_line {
 	padding-bottom: 7px;
 }
 
-.correct.disabled {
+.tw_correct.disabled {
 	cursor: auto;
 	background-position: 0 -44px;
 }
 
-.line_jump {
-	float: right;
-}
-
-table.line_editing th {
+table.tw_editing th {
 	border: none;
 	font-family: 'Verdana', sans-serif;
 	font-size: .7em;
@@ -335,72 +287,61 @@ table.line_editing th {
 	padding-bottom: 8px;
 }
 
-table.line_editing td {
-}
-
-table.line_editing {
-}
-
-#text_0 {
+#tw_text_0 {
 	border-top: 1px solid #a4abbc;
 	background-color: #cdd4e9;
 }
 
-#text_0 td {
+#tw_text_0 td {
 	padding-top:4px;
 }
 
-#text_1 {
+#tw_text_1 {
 	background-color: #cdd4e9;
 }
 
-#text_1 td {
+#tw_text_1 td {
 	padding-top:4px;
 }
 
-#text_2 {
+#tw_text_2 {
 	border-bottom: 1px solid #a4abbc;
 	background-color: #cdd4e9;
 }
 
-#text_2 td {
+#tw_text_2 td {
 	padding-top:4px;
 	padding-bottom:8px;
 }
 
-.line_instructions {
+.tw_edit_instructions {
 	font-size: .8em;
 	text-align: left;
 	font-family: 'Verdana', sans-serif;
 	padding:2em;
 }
 
-.text {
+.tw_text {
 	width: 794px;
 }
 
-#input_focus {
+#tw_input_focus {
     width: 680px;
 }
 
-.todo {
-	color: gray;
-	font-style: italic;
-}
-
-.legend {
+.tw_legend {
 	font-size: 10px;
     color: #3C4869;
 }
 
-.legend table {
+.tw_legend table {
 	background:url(../images/shortcuts_box_light_blue_repeat.jpg) top left repeat-y;
 	float: left;
 	margin-right: 1em;
 	padding: 1em;
 }
 
-.legend caption {
+.tw_legend caption {
 	background:url(../images/shortcuts_box_top.jpg) top left no-repeat;
 	text-align: center;
 	font-weight: bold;
@@ -408,91 +349,47 @@ table.line_editing {
     padding-top: 5px;
 }
 
-.legend th {
+.tw_legend th {
 	font-weight: bold;
     padding-bottom: 2px;
     padding-left: .75em;
     padding-top: 6px;
 }
 
-.legend td {
+.tw_legend td {
 	padding-left: .75em;
 	padding-right: .75em;
 }
 
-.legend_bottom {
+.tw_legend_bottom {
 	background:url(../images/shortcuts_box_bottom.jpg) top left no-repeat;
     clear: both;
     float: left;
     width: 252px;
 }
 
-.line_instructions .header {
+.tw_edit_instructions .tw_header {
 	font-weight: bold;
 }
 
-.left_row {
+.tw_left_row {
 	width: 110px;
     padding-left: 5px;
     padding-top: 10px;
 }
 
-.middle_row {
+.tw_middle_row {
 	padding-top: 10px;
 	padding-bottom: 10px;
 	width: 800px;
 }
 
-.right_row {
+.tw_right_row {
 	padding-left: 3px;
 	width:30px;
 }
 
-.line_top {
-	text-align: center;
-}
-
-span.etooltip{
-    /* position:relative; /*this is the key*/
-	position: absolute;
-    left: 150px;
-    top: 5px;
-}
-
-span.etooltip:hover {
-	z-index:25;
-}
-
-span.etooltip span {
-	display: none;
-}
-
-span.etooltip:hover span{ /*the span will display just on :hover state*/
-	display: block;
-    position:absolute;
-    top:2em;
-	left:2em;
-	width:20em;
-    border:1px solid #914C29;
-    background-color: #F7ECDB;
-	color:#000;
-    text-align: left;
-	font-weight: normal;
-	padding: .3em;
-}
-
-.explanation_tooltip {
-	font-size: 14px;
-	text-decoration: none;
-}
-
-span.etooltip:hover span.explanation_tooltip {
-	width:35em;
-	left:1.5em;
-	top: 2em;
-}
-
-.history_tooltip_wrapper:hover .tooltip {
+.tw_history_tooltip_wrapper:hover .tw_tooltip {
 	display: block;
 	position: absolute;
 	float: left;
@@ -505,27 +402,27 @@ span.etooltip:hover span.explanation_tooltip {
 	color: #4a2e1c;
 }
 
-.history_tooltip_wrapper:hover .tooltip .header {
+.tw_history_tooltip_wrapper:hover .tw_tooltip .header {
 	font-weight: bold;
 }
 
-.history_tooltip_wrapper:hover .tooltip td {
+.tw_history_tooltip_wrapper:hover .tw_tooltip td {
 	padding-left: 12px;
 	padding-right: 12px;
 	padding-top: 0px !important;
 }
 
-.word_stats {
+.tw_word_stats {
 	font-family: 'Verdana', sans-serif;
 	font-size: 12px;
 }
 
-.word_stats caption {
+.tw_word_stats caption {
 	font-weight: bold;
 	text-align: center;
 }
 
-.word_stats td {
+.tw_word_stats td {
 	padding-left: 4px;
 	padding-right: 4px;
 	border:1px solid gray;
@@ -578,10 +475,7 @@ span.etooltip:hover span.explanation_tooltip {
 	color: red;
 }
 
-.dlg_find_line {
+.tw_dlg_find_line {
 	height:30px;
 }
 
-#post_user {
-	 font-size:10px;
-}

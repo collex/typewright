@@ -10,63 +10,63 @@
 	var imgHeight = <%= @params[:img_size][:height] %>;
 </script>
 
-<div class="editing_title"><a title='<%= @params[:title].gsub("'", "&apos;") %>'>"<%= @params[:title_abbrev] %>"</a></div>
+<div class="tw_editing_title"><a title='<%= @params[:title].gsub("'", "&apos;") %>'>"<%= @params[:title_abbrev] %>"</a></div>
 
-<div class="toolbar">
-	<span class="button2 find_button">&nbsp;</span>
-	<span class="button2 insert_above_button">&nbsp;</span>
-	<span class="button2 insert_below_button">&nbsp;</span>
-	<span class="button2 review_history_button">&nbsp;</span>
+<div class="tw_toolbar">
+	<span class="tw_button2 tw_find_button">&nbsp;</span>
+	<span class="tw_button2 tw_insert_above_button">&nbsp;</span>
+	<span class="tw_button2 tw_insert_below_button">&nbsp;</span>
+	<span class="tw_button2 tw_review_history_button">&nbsp;</span>
 	<%= render :partial => 'pagination', :locals => { :doc_id => @params[:doc_id], :page => @params[:page], :num_pages => @params[:num_pages] } %>
 </div>
-<div class="line_text">
-	<table class="line_editing">
+<div class="tw_edit_text">
+	<table class="tw_editing">
 		<tr>
-			<td class="left_row">
-				<img id="line_thumb" src="<%= @params[:img_thumb] %>" alt="original image" /></td>
-			<td class="middle_row">
-				<div id="line_full">
+			<td class="tw_left_row">
+				<img id="tw_img_thumb" src="<%= @params[:img_thumb] %>" alt="original image" /></td>
+			<td class="tw_middle_row">
+				<div id="tw_img_full">
 					<div style="background-image: url(<%= @params[:img_full].gsub('*', '001') %>);"></div>
 					<div style="background-image: url(<%= @params[:img_full].gsub('*', '002') %>);"></div>
 					<div style="background-image: url(<%= @params[:img_full].gsub('*', '003') %>);"></div>
 				</div>
 			</td>
-			<td class="right_row">
-				<div class="button3 change_line up_arrow_top" data-amount="-1" title="Previous line">&nbsp;</div>
-				<div class="button3 change_line down_arrow_top" data-amount="1" title="Next line">&nbsp;</div>
+			<td class="tw_right_row">
+				<div class="tw_button3 tw_change_line tw_up_arrow_top" data-amount="-1" title="Previous line">&nbsp;</div>
+				<div class="tw_button3 tw_change_line tw_down_arrow_top" data-amount="1" title="Next line">&nbsp;</div>
 			</td>
 		</tr>
 	</table>
 	<table>
-		<tr id="text_0">
-			<td class="history_icon"></td>
-			<td class="change_icon"></td>
-			<td class="line_num">&nbsp;</td>
-			<td class="text">&nbsp;</td>
-			<td><div class="button3 change_line up_arrow_bottom" data-amount="-1" title="Previous line">&nbsp;</div></td>
+		<tr id="tw_text_0">
+			<td class="tw_history_icon"></td>
+			<td class="tw_change_icon"></td>
+			<td class="tw_line_num">&nbsp;</td>
+			<td class="tw_text">&nbsp;</td>
+			<td><div class="tw_button3 tw_change_line tw_up_arrow_bottom" data-amount="-1" title="Previous line">&nbsp;</div></td>
 		</tr>
-		<tr id="text_1">
-			<td class="history_icon"></td>
-			<td class="change_icon"></td>
-			<td class="line_num">&nbsp;</td>
-			<td><span id="editing_line"></span>
-			<span class="button correct" title="Correct">&nbsp;</span><span class="button delete_line" title="Delete line">&nbsp;</span><span class="button undo_button hidden" title="Undo">&nbsp;</span><span class="button redo_button hidden" title="Redo">&nbsp;</span></td>
+		<tr id="tw_text_1">
+			<td class="tw_history_icon"></td>
+			<td class="tw_change_icon"></td>
+			<td class="tw_line_num">&nbsp;</td>
+			<td><span id="tw_editing_line"></span>
+			<span class="tw_button tw_correct" title="Correct">&nbsp;</span><span class="tw_button tw_delete_line" title="Delete line">&nbsp;</span><span class="tw_button tw_undo_button hidden" title="Undo">&nbsp;</span><span class="tw_button tw_redo_button hidden" title="Redo">&nbsp;</span></td>
 		<td></td>
 		</tr>
-		<tr id="text_2">
-			<td class="history_icon"></td>
-			<td class="change_icon"></td>
-			<td class="line_num">&nbsp;</td>
-			<td class="text">&nbsp;</td>
-			<td><div class="button3 change_line down_arrow_bottom" data-amount="1" title="Next line">&nbsp;</div></td>
+		<tr id="tw_text_2">
+			<td class="tw_history_icon"></td>
+			<td class="tw_change_icon"></td>
+			<td class="tw_line_num">&nbsp;</td>
+			<td class="tw_text">&nbsp;</td>
+			<td><div class="tw_button3 tw_change_line tw_down_arrow_bottom" data-amount="1" title="Next line">&nbsp;</div></td>
 		</tr>
 	</table>
-	<%= render :partial => 'line_instructions' %>
+	<%= render :partial => 'edit_instructions' %>
 	<div class="clear_both"></div>
 </div>
-<div id="pointer_thumb" style="position:absolute;border:1px solid red;"></div>
-<div id="pointer_doc" style="position:absolute;border:2px solid red;"></div>
+<div id="tw_pointer_thumb" style="position:absolute;border:1px solid red;"></div>
+<div id="tw_pointer_doc" style="position:absolute;border:2px solid red;"></div>
 <% 20.times {|x|  %>
-<div id="pointer_word_1_<%= x %>" style="position:absolute;border:2px dotted #3333ff;"></div>
+<div id="tw_pointer_word_1_<%= x %>" style="position:absolute;border:2px dotted #3333ff;"></div>
 <% } %>
 <%= render :partial => 'word_stats', :locals => { :word_stats => @params[:word_stats], :doc_word_stats => @params[:doc_word_stats]} %>

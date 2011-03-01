@@ -64,7 +64,7 @@ var line = {
 	getAllHistory: function(num) {
 		var line = lines[num];
 		if (line.text.length > 1) {
-			var str = "<table><td class='header'>Correction:</td><td td class='header'>Editor:</td><td td class='header'>Date:</td>";
+			var str = "<table><td class='tw_header'>Correction:</td><td td class='tw_header'>Editor:</td><td td class='tw_header'>Date:</td>";
 			for (var i = 0; i < line.text.length; i++) {
 				var text;
 				switch (line.actions[i]) {

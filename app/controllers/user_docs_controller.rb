@@ -29,30 +29,30 @@ class UserDocsController < ApplicationController
 
   # GET /user_docs/1
   # GET /user_docs/1.xml
-  def show
-    @user_doc = UserDoc.find(params[:id])
-
-    respond_to do |format|
-      format.html # show.html.erb
-      format.xml  { render :xml => @user_doc }
-    end
-  end
-
-  # GET /user_docs/new
-  # GET /user_docs/new.xml
-  def new
-    @user_doc = UserDoc.new
-
-    respond_to do |format|
-      format.html # new.html.erb
-      format.xml  { render :xml => @user_doc }
-    end
-  end
-
-  # GET /user_docs/1/edit
-  def edit
-    @user_doc = UserDoc.find(params[:id])
-  end
+#  def show
+#    @user_doc = UserDoc.find(params[:id])
+#
+#    respond_to do |format|
+#      format.html # show.html.erb
+#      format.xml  { render :xml => @user_doc }
+#    end
+#  end
+#
+#  # GET /user_docs/new
+#  # GET /user_docs/new.xml
+#  def new
+#    @user_doc = UserDoc.new
+#
+#    respond_to do |format|
+#      format.html # new.html.erb
+#      format.xml  { render :xml => @user_doc }
+#    end
+#  end
+#
+#  # GET /user_docs/1/edit
+#  def edit
+#    @user_doc = UserDoc.find(params[:id])
+#  end
 
   # POST /user_docs
   # POST /user_docs.xml
@@ -72,29 +72,29 @@ class UserDocsController < ApplicationController
 
   # PUT /user_docs/1
   # PUT /user_docs/1.xml
-  def update
-    @user_doc = UserDoc.find(params[:id])
-
-    respond_to do |format|
-      if @user_doc.update_attributes(params[:user_doc])
-        format.html { redirect_to(@user_doc, :notice => 'User doc was successfully updated.') }
-        format.xml  { head :ok }
-      else
-        format.html { render :action => "edit" }
-        format.xml  { render :xml => @user_doc.errors, :status => :unprocessable_entity }
-      end
-    end
-  end
-
-  # DELETE /user_docs/1
-  # DELETE /user_docs/1.xml
-  def destroy
-    @user_doc = UserDoc.find(params[:id])
-    @user_doc.destroy
-
-    respond_to do |format|
-      format.html { redirect_to(user_docs_url) }
-      format.xml  { head :ok }
-    end
-  end
+#  def update
+#    @user_doc = UserDoc.find(params[:id])
+#
+#    respond_to do |format|
+#      if @user_doc.update_attributes(params[:user_doc])
+#        format.html { redirect_to(@user_doc, :notice => 'User doc was successfully updated.') }
+#        format.xml  { head :ok }
+#      else
+#        format.html { render :action => "edit" }
+#        format.xml  { render :xml => @user_doc.errors, :status => :unprocessable_entity }
+#      end
+#    end
+#  end
+#
+#  # DELETE /user_docs/1
+#  # DELETE /user_docs/1.xml
+#  def destroy
+#    @user_doc = UserDoc.find(params[:id])
+#    @user_doc.destroy
+#
+#    respond_to do |format|
+#      format.html { redirect_to(user_docs_url) }
+#      format.xml  { head :ok }
+#    end
+#  end
 end

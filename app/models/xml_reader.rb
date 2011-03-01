@@ -2,10 +2,6 @@
 class XmlReader
 require 'nokogiri'
 
-	def self.base_folder()
-		return XML_PATH
-	end
-
 	def self.format_page(page)
 		page = "#{page}"
 		while page.length < 4
@@ -15,7 +11,7 @@ require 'nokogiri'
 	end
 
 	def self.read_gale(book, page)
-		fname = "#{XmlReader.base_folder()}/#{book}/#{book}.xml"
+		fname = "#{XML_PATH}/#{book}/#{book}.xml"
 		number = "#{book}#{self.format_page(page)}0"
 
 		slash = fname.rindex('/')
@@ -88,7 +84,7 @@ require 'nokogiri'
 	end
 
 	def self.read_metadata(book)
-		fname = "#{XmlReader.base_folder()}/#{book}/#{book}_meta.yml"
+		fname = "#{XML_PATH}/#{book}/#{book}_meta.yml"
 		if File.exists?(fname)
 			meta = YAML.load_file(fname)
 			return meta[:title]
@@ -97,7 +93,7 @@ require 'nokogiri'
 	end
 
 	def self.read_gamera(book, page)
-		fname = "#{XmlReader.base_folder()}/gamera-xml/#{book}/#{book}#{self.format_page(page)}0.xml"
+		fname = "#{XML_PATH}/gamera-xml/#{book}/#{book}#{self.format_page(page)}0.xml"
 		ret = self.read_cache(fname, "gamera")
 		return ret if ret != nil
 

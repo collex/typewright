@@ -104,7 +104,7 @@ class DocumentsController < ApplicationController
 	# PUT /documents/1.xml
 	def update
 		# this is called whenever the user corrects a line.
-		doc_id = params[:doc_id]
+		doc_id = params[:id]
 		page = params[:page]
 		line = params[:line].to_f if params[:line]
 		user_id = params[:user].to_i if params[:user]

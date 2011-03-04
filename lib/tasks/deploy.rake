@@ -6,8 +6,8 @@ task :deploy do
 	run_bundler()
 	puts "Check for needed migrations..."
 	puts `rake db:migrate`
-	puts "Compress CSS and JS..."
-	compress()
+#	puts "Compress CSS and JS..."
+#	compress()
 	puts `sudo /sbin/service httpd restart`
 end
 

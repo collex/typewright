@@ -12,6 +12,13 @@
 
 ActiveRecord::Schema.define(:version => 20110221202638) do
 
+  create_table "document_users", :force => true do |t|
+    t.integer  "document_id"
+    t.integer  "user_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
   create_table "documents", :force => true do |t|
     t.string   "uri"
     t.datetime "created_at"
@@ -25,13 +32,6 @@ ActiveRecord::Schema.define(:version => 20110221202638) do
     t.decimal  "line",        :precision => 10, :scale => 4
     t.string   "status"
     t.text     "words"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
-  create_table "user_docs", :force => true do |t|
-    t.integer  "user_id"
-    t.integer  "document_id"
     t.datetime "created_at"
     t.datetime "updated_at"
   end

@@ -1,14 +1,9 @@
 Typewright::Application.routes.draw do
-  get "/login" => "login#login"
+	resources :lines
+	resources :users
+	resources :document_users
+	resources :documents
 
-  #get "/user_docs/:federation/:user" => 'user_docs#index'
-
-  #get "/documents/index/:federation/:user_id" => "documents#index"
-  resources :documents
-
-#  resources :user_docs
-	
-	root :to => "documents#index"
 
   # The priority is based upon order of creation:
   # first created -> highest priority.

@@ -1,4 +1,8 @@
 class Line < ActiveRecord::Base
+	def self.num_pages_with_changes(doc_id)
+		pages = Line.find_all_by_document_id(doc_id, { :group => 'page' })
+		return pages.length
+	end
 #	def self.words_to_db(words)
 #		return nil if words == nil
 #		w = ""

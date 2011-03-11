@@ -1,17 +1,28 @@
 class DocumentsController < ApplicationController
-	# GET /documents.xml
-	def index
+	def find_doc(params)
 		id = params[:id]
 		if id
 			doc = Document.find_by_id(id)
+			doc = Document.find_by_uri(id) if doc == nil
 		else
 			uri = params[:uri]
 			doc = Document.find_by_uri(uri)
 		end
+		return doc
+	end
+
+	# GET /documents.xml
+	def index
+		doc = find_doc(params)
 		if doc != nil
 			doc = [ doc ]
 		else
 			doc = []
+		end
+
+		if doc.length && params[:stats] == 'true'
+			changes = Line.num_pages_with_changes(doc[0].id)
+			doc = [{ :pages_with_changes => changes }]
 		end
 
 	  respond_to do |format|
@@ -21,34 +32,17 @@ class DocumentsController < ApplicationController
 
 	# GET /documents/1.xml
 #	def show
-#		# This goes to the main page of a particular document.
-#		federation = params[:federation]
-#		orig_id = params[:user_id]
-#		@user = User.get_or_create_user(federation, orig_id)
-#		session[:user] = @user
+#		doc = find_doc(params)
 #
-#		@uri = params[:uri]
-#		doc = Document.find_by_uri(@uri)
-#		if doc == nil
-#			doc = Document.create({ :uri => @uri })
-#		end
-#		params = doc.setup_doc()
-#
-#		@id = params[:doc_id]
-#		@title = params[:title]
-#		@title_abbrev = params[:title_abbrev]
-#		@thumb = params[:img_thumb]
-#		@num_pages = params[:num_pages]
-#		@year = "TODO"
-#		@information = "TODO: I have no idea what is supposed to go here."
-#
-#		ud = DocumentUser.find_by_user_id_and_document_id(@user.id, @id)
-#		if ud == nil
-#			DocumentUser.create({ :user_id => @user.id, :document_id => @id })
+#		if params[:stats] == 'true' && doc != nil
+#			changes = Line.num_pages_with_changes(doc.id)
+#			ret = { :pages_with_changes => changes }
+#		else
+#			ret = doc
 #		end
 #
-#		if @title.length == 0
-#			render :text => "<br /><br /><br /><br />&nbsp;&nbsp;DEBUG NOTICE: This document is not yet prepared for editing."
+#		respond_to do |format|
+#		  format.xml  { render :xml => ret }
 #		end
 #	end
 

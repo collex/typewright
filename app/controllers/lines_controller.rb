@@ -1,13 +1,48 @@
 class LinesController < ApplicationController
 	# GET /lines.xml
 	def index
-	  document_id = params[:document_id]
-	  page = params[:page]
-	  lines = Line.find_all_by_document_id_and_page(document_id, page)
+		lines = []
+		if params[:revisions] == 'true'
+			uri = params[:uri]
+			doc = Document.find_by_uri(uri)
+			if doc
+				id = doc.id
+				lines = Line.find_all_by_document_id(id)
+				lines = lines.sort { |a,b|
+					if a.page == b.page
+						if a.line == b.line
+							a.updated_at <=> b.updated_at
+						else
+							a.line <=> b.line
+						end
+					else
+						a.page <=> b.page
+					end
+				}
+				start = params[:start]
+				size = params[:size]
+				lines = lines[start.to_i,size.to_i]
+			end
+		else
+			document_id = params[:document_id]
+			page = params[:page]
+			line = params[:line]
+			if line
+				lines = Line.find_all_by_document_id_and_page_and_line(document_id, page, line)
+			else
+				lines = Line.find_all_by_document_id_and_page(document_id, page)
+			end
+		end
 
-    respond_to do |format|
-      format.xml  { render :xml => lines }
-    end
+		lines2 = []
+		lines.each { |line|
+			user = User.find_by_id(line.user_id)
+			lines2.push({ :federation => user.federation, :orig_id => user.orig_id, :updated_at => line.updated_at, :page => line.page,
+				 :line => line.line, :status => line.status, :words => line.words, :document_id => line.document_id })
+		}
+		respond_to do |format|
+			format.xml  { render :xml => lines2 }
+		end
   end
 
 	# POST /lines.xml

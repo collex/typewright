@@ -38,8 +38,10 @@ class LinesController < ApplicationController
 		lines.each { |line|
 			user = User.find_by_id(line.user_id)
 			w = line.words
-			if w == nil || w.length == 0
-				w = "0\t0\t0\t0\t1\tLine #{line.status}"
+			if params[:revisions] == 'true'
+				if w == nil || w.length == 0
+					w = "0\t0\t0\t0\t1\tLine #{line.status}"
+				end
 			end
 			lines2.push({ :federation => user.federation, :orig_id => user.orig_id, :updated_at => line.updated_at, :page => line.page,
 				 :line => line.line, :status => line.status, :words =>w, :document_id => line.document_id })

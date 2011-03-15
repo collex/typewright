@@ -22,7 +22,8 @@ class DocumentsController < ApplicationController
 
 		if doc.length && params[:stats] == 'true'
 			changes = Line.num_pages_with_changes(doc[0].id)
-			doc = [{ :pages_with_changes => changes }]
+			total = Line.find_all_by_document_id(doc[0].id)
+			doc = [{ :pages_with_changes => changes, :total_revisions => total.length }]
 		end
 
 	  respond_to do |format|

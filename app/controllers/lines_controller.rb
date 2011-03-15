@@ -43,7 +43,7 @@ class LinesController < ApplicationController
 					w = "0\t0\t0\t0\t1\tLine #{line.status}"
 				end
 			end
-			lines2.push({ :federation => user.federation, :orig_id => user.orig_id, :updated_at => line.updated_at, :page => line.page,
+			lines2.push({ :id => line.id, :federation => user.federation, :orig_id => user.orig_id, :updated_at => line.updated_at, :page => line.page,
 				 :line => line.line, :status => line.status, :words =>w, :document_id => line.document_id })
 		}
 		respond_to do |format|

@@ -1,0 +1,14 @@
+# This contains all the site specific information (outside of database.yml) that should not be checked into version control.
+# It is read in by environment.rb.
+
+#
+# It must contain the following fields:
+#
+
+##########################
+### SYSTEM
+##########################
+
+paths:
+  imagemagick: '/opt/local/bin'
+  xml: '~/typewright_xml'

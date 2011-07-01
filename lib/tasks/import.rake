@@ -1,3 +1,7 @@
+THUMBNAIL_WIDTH = 150
+IMAGE_WIDTH = 800
+SLICE_HEIGHT = 50
+
 desc "Import a document from the ECCO HD (ecco_index=0123456789 folder=/path/to/input/data)"
 task :import do
 	start_time = Time.now
@@ -13,57 +17,74 @@ task :import do
 		puts "			012345678900010.TIF"
 		puts "			etc... (for each page)"
 		puts "		xml"
-		puts "			0123456789.xml"
+		puts "			0123456789.xml (the gale data for the entire doc)"
 		puts ""
 		puts "The output is placed in #{out_xml}/ and Rails.root/public/uploaded/"
+		puts "See #{Rails.root}/config/site.yml for path info."
 	else
 		imagemagick = get_path('imagemagick')
+		convert = "#{imagemagick}/convert"
+		identify = "#{imagemagick}/identify"
+
+		src_folder = "#{folder}/#{ecco_index}"
+		dst_folder = "#{out_xml}/#{ecco_index}"
+		src_img_folder = "#{src_folder}/images"
+		src_xml = "#{src_folder}/xml/#{ecco_index}.xml"
+		dst_xml = "#{dst_folder}/#{ecco_index}.xml"
+		dst_img_folder = "#{Rails.root}/public/uploaded/#{ecco_index}"
 
 		# copy the xml file
-		do_command("mkdir #{out_xml}/#{ecco_index}")
-		do_command("cp #{folder}/#{ecco_index}/xml/#{ecco_index}.xml #{out_xml}/#{ecco_index}/#{ecco_index}.xml")
-		create_metadata("#{out_xml}/#{ecco_index}/#{ecco_index}.xml")
-		read_all_gale("#{out_xml}/#{ecco_index}/#{ecco_index}.xml")
+		do_command("mkdir #{dst_folder}")
+		do_command("cp #{src_xml} #{dst_xml}")
+		create_metadata("#{dst_xml}")
+		read_all_gale("#{dst_xml}")
 
 		# create the images
-		base_img = "#{folder}/#{ecco_index}/images"
-		page = 1
-		in_img = "#{base_img}/#{create_page(ecco_index, page)}.TIF"
-		base_out = "#{Rails.root}/public/uploaded/#{ecco_index}"
-		do_command("mkdir #{base_out}")
-		do_command("mkdir #{base_out}/thumbnails")
-		sizes_file = "#{base_out}/sizes.csv"
+		do_command("mkdir #{dst_img_folder}")
+		do_command("mkdir #{dst_img_folder}/thumbnails")
+		sizes_file = "#{dst_img_folder}/sizes.csv"
 		do_command("rm #{sizes_file}")
-		while File.exists?(in_img)
-			out_img = "#{base_out}/#{create_page(ecco_index, page)}"
-			do_command("mkdir #{out_img}")
-			do_command("#{imagemagick}/convert #{in_img} -resize 800 #{out_img}/#{create_page(ecco_index, page)}.png")
+
+		page = 1
+		page_str = create_page(ecco_index, page)
+		src_img = "#{src_img_folder}/#{page_str}.TIF"
+		dst_img_subfolder = "#{dst_img_folder}/#{page_str}"
+
+		while File.exists?(src_img)
+			do_command("mkdir #{dst_img_subfolder}")
+			# do the slices in two steps: first create a temporary png file reduced to the correct width, then slice that up.
+			tmp_png = "#{dst_img_subfolder}/#{page_str}.png"
+			do_command("#{convert} #{src_img} -resize #{IMAGE_WIDTH} #{tmp_png}")
 			#now create the slices
-			do_command("#{imagemagick}/convert #{out_img}/#{create_page(ecco_index, page)}.png -crop 800x60 #{out_img}/#{create_page(ecco_index, page)}_TMP%03d.png")
+			do_command("#{convert} #{tmp_png} -crop #{IMAGE_WIDTH}x#{SLICE_HEIGHT} #{dst_img_subfolder}/#{page_str}_TMP%03d.png")
+			# unfortunately, the convert program numbers the slices as base-0, so change that to base-1
 			slice = 0
 			resp = ""
 			while resp.length == 0
 				in_num = "%03d" % slice
 				out_num = "%03d" % (slice+1)
-				slice_out = "#{out_img}/#{create_page(ecco_index, page)}_#{out_num}.png"
-				resp = do_command("mv #{out_img}/#{create_page(ecco_index, page)}_TMP#{in_num}.png #{slice_out}")
+				slice_out = "#{dst_img_subfolder}/#{page_str}_#{out_num}.png"
+				resp = do_command("mv #{dst_img_subfolder}/#{page_str}_TMP#{in_num}.png #{slice_out}")
 				slice += 1
 			end
 			# create the thumbnail
-			thumb = "#{base_out}/thumbnails/#{create_page(ecco_index, page)}_thumb.png"
-			do_command("#{imagemagick}/convert #{in_img} -resize 150 #{thumb}")
+			thumb = "#{dst_img_folder}/thumbnails/#{page_str}_thumb.png"
+			do_command("#{convert} #{src_img} -resize #{THUMBNAIL_WIDTH} #{thumb}")
 
 			# remove the original file since that was just created to make the slices from
-			do_command("rm #{out_img}/#{create_page(ecco_index, page)}.png")
+			do_command("rm #{dst_img_subfolder}/#{page_str}.png")
 
-			size_arr = do_command("#{imagemagick}/identify #{in_img}")
+			# create the sizes.csv file that contains the original size of all the images.
+			size_arr = do_command("#{identify} #{src_img}")
 			# size_arr contains something like: 045660030500010.TIF TIFF 1216x2144 etc...
 			size_arr = size_arr.split(' ')
 			size_arr = size_arr[2].split('x')
-			open(sizes_file, 'a') { |f| f.puts "#{create_page(ecco_index, page)}.TIF,#{size_arr[0]},#{size_arr[1]}" }
+			open(sizes_file, 'a') { |f| f.puts "#{page_str}.TIF,#{size_arr[0]},#{size_arr[1]}" }
 
 			page += 1
-			in_img = "#{base_img}/#{create_page(ecco_index, page)}.TIF"
+			page_str = create_page(ecco_index, page)
+			src_img = "#{src_img_folder}/#{page_str}.TIF"
+			dst_img_subfolder = "#{dst_img_folder}/#{page_str}"
 		end
 
 		finish_line(start_time)

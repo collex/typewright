@@ -1,11 +1,20 @@
 source 'http://rubygems.org'
 
-gem 'rails', '3.0.4'
+# only needed temporarily, because rake 0.9 breaks everything.
+gem 'rake', '0.8.7'
+
+# NOTE: when rails is upgraded to version 3.1, then I think it is safe to remove the version number from mysql2
+gem 'rails', '3.0.9'
 
 # Bundle edge Rails instead:
 # gem 'rails', :git => 'git://github.com/rails/rails.git'
 
-gem 'mysql2'
+# gem 'sqlite3-ruby', :require => 'sqlite3'
+# NOTE: when rails is upgraded to version 3.1, then I think it is safe to remove the version number from mysql2
+gem 'mysql2', '0.2.6'
+
+# Bundle edge Rails instead:
+# gem 'rails', :git => 'git://github.com/rails/rails.git'
 
 # Use unicorn as the web server
 # gem 'unicorn'

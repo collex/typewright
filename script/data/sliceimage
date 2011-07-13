@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# This script uses ImageMagick to resize the image to be 800 pixels wide and another copy that is 300 pixels wide for columns and thumbnails
+
+/opt/local/bin/convert $1 -scale 800 -contrast -contrast -density 72 -colors 4 -strip -depth 2 -quality 90 $2/$3
+/opt/local/bin/convert $1 -scale 800 -contrast -contrast -density 72 -colors 4 -strip -depth 2 -quality 90 $2/thumb-$3

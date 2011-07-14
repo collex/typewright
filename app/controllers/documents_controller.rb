@@ -15,19 +15,19 @@ class DocumentsController < ApplicationController
 	def index
 		doc = find_doc(params)
 		if doc != nil
-			doc = [ doc ]
+      result = [ doc.setup_doc() ]
 		else
-			doc = []
+			result = []
 		end
 
-		if doc.length && params[:stats] == 'true'
-			changes = Line.num_pages_with_changes(doc[0].id)
-			total = Line.find_all_by_document_id(doc[0].id)
-			doc = [{ :pages_with_changes => changes, :total_revisions => total.length }]
+		if result.length && params[:stats] == 'true'
+			changes = Line.num_pages_with_changes(doc.id)
+			total = Line.find_all_by_document_id(doc.id)
+			result = [{ :pages_with_changes => changes, :total_revisions => total.length }]
 		end
 
 	  respond_to do |format|
-		format.xml  { render :xml => doc }
+		format.xml  { render :xml => result }
 	  end
 	end
 

@@ -15,18 +15,25 @@
 # ----------------------------------------------------------------------------
 
 class Document < ActiveRecord::Base
-#	def book_id()
-#		return self.uri.split('/').last
-#	end
-#
-#	def img_folder()
-#		return "/uploaded/#{book_id}"
-#	end
-#
-#	def img_thumb(page)
-#		page_name = "#{book_id}#{XmlReader.format_page(page)}0"
-#		return "#{img_folder}/thumbnails/#{page_name}_thumb.png"
-#	end
+
+
+  def to_xml(options = {})
+    puts @attributes
+    super
+  end
+  
+	def book_id()
+		return self.uri.split('/').last
+	end
+
+	def img_folder()
+		return "/uploaded/#{book_id}"
+	end
+
+	def img_thumb(page)
+		page_name = "#{book_id}#{XmlReader.format_page(page)}0"
+		return "#{img_folder}/thumbnails/#{page_name}_thumb.png"
+	end
 #
 #	def img_full(page)
 #		page_name = "#{book_id}#{XmlReader.format_page(page)}0"
@@ -48,20 +55,20 @@ class Document < ActiveRecord::Base
 #		return { :width => 0, :height => 0 }
 #	end
 #
-#	def thumb()
-#		return img_thumb(1)
-#	end
+	def thumb()
+		return img_thumb(1)
+	end
 
-#	def get_num_pages()
-#		size_file = "#{Rails.root}/public/#{img_folder}/sizes.csv"
-#		if File.exists?(size_file)
-#			f = File.open(size_file, "r")
-#			lines = f.readlines
-#			return lines.length
-#		else
-#			return 0
-#		end
-#	end
+	def get_num_pages()
+		size_file = "#{Rails.root}/public/#{img_folder}/sizes.csv"
+		if File.exists?(size_file)
+			f = File.open(size_file, "r")
+			lines = f.readlines
+			return lines.length
+		else
+			return 0
+		end
+	end
 #
 #	##############################################
 #
@@ -99,17 +106,18 @@ class Document < ActiveRecord::Base
 #		return word_stats
 #	end
 #
-#	def setup_doc()
-#		img_thumb = self.thumb()
-#		num_pages = self.get_num_pages()
-#
-#		title = XmlReader.read_metadata(self.book_id())
-#		title_abbrev = title.length > 32 ? title.slice(0..30)+'...' : title
-#
-#		return { :doc_id => self.id, :num_pages => num_pages,
-#			:img_thumb => img_thumb, :title => title, :title_abbrev => title_abbrev
-#		}
-#	end
+	def setup_doc()
+		img_thumb = self.thumb()
+		num_pages = self.get_num_pages()
+
+		title = XmlReader.read_metadata(self.book_id())
+		title_abbrev = title.length > 32 ? title.slice(0..30)+'...' : title
+
+		info = { 'doc_id' => self.id, 'num_pages' => num_pages,
+			'img_thumb' => img_thumb, 'title' => title, 'title_abbrev' => title_abbrev
+		}
+    return info.merge(@attributes)
+  end
 #
 #	def setup_page(page)
 #		page = (page == nil) ? 1 : page.to_i

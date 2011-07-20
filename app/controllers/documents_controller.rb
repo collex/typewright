@@ -14,17 +14,31 @@ class DocumentsController < ApplicationController
 	# GET /documents.xml
 	def index
 		doc = find_doc(params)
-		if doc != nil
-      result = [ doc.setup_doc() ]
-		else
-			result = []
-		end
+    page = params[:page]
+    if doc.nil?
+      # nothing found
+      result = []
 
-		if result.length && params[:stats] == 'true'
-			changes = Line.num_pages_with_changes(doc.id)
-			total = Line.find_all_by_document_id(doc.id)
-			result = [{ :pages_with_changes => changes, :total_revisions => total.length }]
-		end
+    elsif params[:wordstats] == 'true'
+      # looking for word stats for doc or for page
+      if page.nil?
+        result = [ doc.get_doc_word_stats() ]
+      else
+        result = [ doc.get_page_word_stats(page) ]
+      end
+
+    elsif params[:stats] == 'true'
+      # looking for document stats
+      result = [ doc.get_doc_stats(doc.id) ]
+
+    elsif !page.nil?
+      # looking for info on a particular page of the document
+      result = [ doc.get_page_info(page) ]
+      
+    else
+      # looking for info on the document as a whole
+      result = [ doc.get_doc_info() ]
+    end
 
 	  respond_to do |format|
 		format.xml  { render :xml => result }

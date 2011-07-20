@@ -96,13 +96,14 @@ def create_page(ecco_index, page)
 end
 
 def create_metadata(fname)
-	doc = Nokogiri::XML(File.new(fname))
+  fl = File.new(fname, "r:UTF-8")
+	doc = Nokogiri::XML(fl)
 	doc.xpath('//fullTitle').each { |node|
 		title = { :title => node.text }
 		arr = fname.split('.')
 		fname = "#{arr[0]}_meta.yml"
 		puts title[:title]
-		File.open( fname, 'w' ) do |out|
+		File.open( fname, 'w:UTF-8' ) do |out|
 			YAML.dump( title, out )
 		end
 	}

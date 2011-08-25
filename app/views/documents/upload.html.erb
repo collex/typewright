@@ -1,0 +1,15 @@
+<h1>Book Upload</h1>
+<%= form_tag("/documents/#{@document.id}/upload#{@action_params}", :remote => true, :multipart => true ) do %>
+  <% if @done == true %>
+    All pages for Book are uploaded! Upload complete!
+  <% else %>
+    <% if @page_num.nil? %>
+      <%= label_tag(:xml_file, "Book's XML File:") %>
+      <%= file_field_tag(:xml_file, :accept => 'text/xml') %>
+    <% else %>
+      <%= label_tag(:image_file, "Image file for Page #{@page_num}:") %>
+      <%= file_field_tag(:image_file, :accept => 'image/*') %>
+    <% end %>
+  <% end %>
+  <%= submit_tag('Upload') %>
+<% end %>

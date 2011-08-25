@@ -28,7 +28,7 @@ require 'nokogiri'
 
 	def self.read_gale(book, page)
     xml_path = get_path('xml')
-		fname = "#{xml_path}/#{book}/#{book}.xml"
+		fname = "#{xml_path}/#{book}/xml/#{book}.xml"
 		number = "#{book}#{self.format_page(page)}0"
 
 		slash = fname.rindex('/')

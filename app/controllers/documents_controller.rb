@@ -90,7 +90,50 @@ class DocumentsController < ApplicationController
 		end
 	end
 
-	# PUT /documents/1.xml
+  
+  # POST /documents/1/upload
+  def upload
+    id = params[:id]
+    if id.nil?
+      # we weren't given an id, we are creating a new document
+      @document = Document.new()
+      @document.save()
+      id = @document.id
+      @action_params = ''
+    else
+      # we are modifying a document already created, error out if not found
+      @document = Document.find(id)
+      # are we uploading a page or are we uploading xml file?
+      page_num = params[:page]
+      if page_num.nil?
+        # uploading xml_file for entire volume
+        xml_file = params[:xml_file]
+
+        # save and process the file using the Document Model
+#        @document.set_uri_from_xml_file(xml_file)
+#        @document.save_primary_xml(xml_file)
+        @document.import_primary_xml(xml_file)
+        @document.save()
+        
+        @page_num = 1
+      else
+        page_num = page_num.to_i
+        # uploading a page image
+        image_file = params[:image_file]
+
+        # save and process the image file using the Document model
+        @document.save_page_image(image_file)
+        @document.import_page(page_num, image_file)
+        @document.save()
+
+        @page_num = page_num + 1
+      end
+      @action_params = "?page=#{@page_num}"
+    end
+    
+  end
+
+  # PUT /documents/1.xml
 #	def update
 #		# this is called whenever the user corrects a line.
 #		doc_id = params[:id]

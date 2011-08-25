@@ -2,7 +2,9 @@ Typewright::Application.routes.draw do
 	resources :lines
 	resources :users
 	resources :document_users
+  match 'documents/upload' => 'documents#upload', :as => :upload
 	resources :documents
+  match 'documents/:id/upload' => 'documents#upload', :as => :upload
 
 
   # The priority is based upon order of creation:

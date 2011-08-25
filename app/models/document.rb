@@ -16,6 +16,9 @@
 
 class Document < ActiveRecord::Base
 
+  THUMBNAIL_WIDTH = 300
+  SLICE_WIDTH = 800
+  SLICE_HEIGHT = 50
 
   def to_xml(options = {})
     puts @attributes
@@ -27,47 +30,83 @@ class Document < ActiveRecord::Base
 	end
 
 	def img_folder()
-		return "/uploaded/#{book_id}"
+		return File.join('uploaded',self.book_id())
 	end
 
 	def img_thumb(page)
 		page_name = "#{book_id}#{XmlReader.format_page(page)}0"
-		return "#{img_folder}/thumbnails/#{page_name}_thumb.png"
+    img_cache_path = self.img_folder()
+		url_path = File.join(img_cache_path, 'thumbnails')
+    url = File.join(url_path,"#{page_name}_thumb.png")
+    pub_path = File.join(Rails.root, 'public')
+    thumb_file = File.join(pub_path, url)
+    unless FileTest.exist?(thumb_file)
+      # the thumbnail file doesn't exist, create the image files
+      thumb_path = File.join(pub_path, url_path)
+      page_path = File.join(pub_path, img_cache_path)
+      Document.generate_slices(get_page_image_file(page), page_path, page_name, SLICE_WIDTH, SLICE_HEIGHT)
+      Document.generate_thumbnail(get_page_image_file(page), page_path, page_name, THUMBNAIL_WIDTH)
+    end
+    return url
 	end
+
+  def self.generate_slices(master_image, dst_path, file_name, width, height)
+    imagemagick = XmlReader.get_path('imagemagick')
+    convert = "#{imagemagick}/convert"
+    real_dst_path = File.join(dst_path, file_name)
+    dst_file = File.join(real_dst_path, "#{file_name}.png")
+    FileUtils.mkdir_p(real_dst_path)
+    cmd = "#{convert} #{master_image} -scale #{width} -crop #{width}x#{height} -contrast -contrast -density 72 -colors 4 -strip -depth 2 -quality 90 #{dst_file}"
+    Document.do_command(cmd)
+  end
+
+  def self.generate_thumbnail(master_image, dst_path, file_name, width)
+    imagemagick = XmlReader.get_path('imagemagick')
+    convert = "#{imagemagick}/convert"
+    real_dst_path = File.join(dst_path, 'thumbnails')
+    dst_file = File.join(real_dst_path, "#{file_name}_thumb.png")
+    FileUtils.mkdir_p(real_dst_path)
+    cmd = "#{convert} #{master_image} -scale #{width} -contrast -contrast -density 72 -colors 4 -strip -depth 2 -quality 90 #{dst_file}"
+    Document.do_command(cmd)
+  end
 
 	def img_full(page)
 		page_name = "#{book_id}#{XmlReader.format_page(page)}0"
 		return "#{img_folder}/#{page_name}/#{page_name}_*.png"
 	end
 
-	def img_size(page)
-		page_name = "#{book_id}#{XmlReader.format_page(page)}0"
-		size_file = "#{Rails.root}/public/#{img_folder}/sizes.csv"
-		f = File.open(size_file, "r")
-		lines = f.readlines
-		lines.each do|line|
-			arr = line.split('.')
-			if arr[0] == page_name
-  			arr = arr[1].split(',')
-	  		return { :width => arr[1].to_i, :height => arr[2].to_i }
-			end
-		end
-		return { :width => 0, :height => 0 }
+  def get_page_image_file(page, page_doc = nil)
+    page_doc = Nokogiri::XML(File.open(get_page_xml_file(page), 'r')) if page_doc.nil?
+    image_filename = page_doc.xpath('//pageInfo/imageLink')[0].content
+    image_path = File.join(get_image_directory(), image_filename)
+    return image_path
+  end
+
+	def img_size(page, page_doc = nil)
+    image_path = get_page_image_file(page, page_doc)
+    image_filename = image_path.split('/').last
+
+    image_size = Rails.cache.fetch("imgsize.#{image_filename}") {
+      # not cached, ask imagemagic for the size
+      imagemagick = XmlReader.get_path('imagemagick')
+      identify = "#{imagemagick}/identify"
+      cmd = "#{identify} -format \"%w %h\" #{image_path}"
+      Document.do_command(cmd)
+    }
+    width = image_size.split(' ')[0].to_i
+    height = image_size.split(' ')[1].to_i
+
+		return { :width => width, :height => height }
 	end
 
 	def thumb()
 		return img_thumb(1)
 	end
 
-	def get_num_pages()
-		size_file = "#{Rails.root}/public/#{img_folder}/sizes.csv"
-		if File.exists?(size_file)
-			f = File.open(size_file, "r")
-			lines = f.readlines
-			return lines.length
-		else
-			return 0
-		end
+	def get_num_pages(doc = nil)
+    doc = Nokogiri::XML(File.open(get_primary_xml_file(),'r')) if doc.nil?
+    num_pages = doc.xpath('//page').size
+    return num_pages
 	end
 
 
@@ -116,11 +155,14 @@ class Document < ActiveRecord::Base
   end
 
 	def get_doc_info()
-		img_thumb = self.thumb()
-		num_pages = self.get_num_pages()
+    f = File.open(get_primary_xml_file(),'r')
+    doc = Nokogiri::XML(f)
 
-		title = XmlReader.read_metadata(self.book_id())
-		title_abbrev = title.length > 32 ? title.slice(0..30)+'...' : title
+		img_thumb = self.thumb()
+		num_pages = self.get_num_pages(doc)
+
+    title = doc.xpath('//fullTitle')[0].content
+    title_abbrev = title.length > 32 ? title.slice(0..31)+'&hellip;' : title
 
 		info = { 'doc_id' => self.id, 'num_pages' => num_pages,
 			'img_thumb' => img_thumb, 'title' => title, 'title_abbrev' => title_abbrev
@@ -129,21 +171,38 @@ class Document < ActiveRecord::Base
   end
 
 	def get_page_info(page)
+    f = File.open(get_primary_xml_file(),'r')
+    doc = Nokogiri::XML(f)
+
+    pf = File.open(get_page_xml_file(page), 'r')
+    page_doc = Nokogiri::XML(pf)
+
 		page = (page == nil) ? 1 : page.to_i
 
 		img_thumb = self.img_thumb(page)
 		img_full = self.img_full(page)
-		img_size = self.img_size(page)
-		num_pages = self.get_num_pages()
+		img_size = self.img_size(page, page_doc)
+    num_pages = self.get_num_pages(doc)
 
-		src = XmlReader.read_gale(self.book_id(), page)
-		lines = XmlReader.create_lines(XmlReader.gale_create_lines(src))
+    title = doc.xpath('//fullTitle')[0].content
+    title_abbrev = title.length > 32 ? title.slice(0..31)+'&hellip;' : title
+
+
+    page_src = []
+    num_lines = 0
+    page_doc.xpath('//pageContent/p').each { |ps|
+      ps.xpath('wd').each { |wd|
+        pos = wd.attribute('pos')
+        arr = pos.to_s.split(',')
+        page_src.push({ :l => arr[0].to_i, :t => arr[1].to_i, :r => arr[2].to_i, :b => arr[3].to_i, :word => wd.text, :line => num_lines })
+      }
+      num_lines += 1
+    }
+		lines = XmlReader.create_lines(XmlReader.gale_create_lines(page_src))
 
 		lines.each_with_index {|line,i|
 			line[:num] = i+1
 		}
-		title = XmlReader.read_metadata(self.book_id())
-		title_abbrev = title.length > 32 ? title.slice(0..30)+'...' : title
 
 		recs = Line.find_all_by_document_id_and_page(self.id, page)
 		changes = {}
@@ -202,9 +261,136 @@ class Document < ActiveRecord::Base
       }
     }
     doc_word_stats = self.process_word_stats(words)
-
     result = { :doc_word_stats => doc_word_stats }
     return result
   end
+
+  def get_root_directory()
+    return Document.get_book_root_directory(self.book_id())
+  end
+
+  def get_xml_directory()
+    return Document.get_book_xml_directory(self.book_id())
+  end
+
+  def get_image_directory()
+    return Document.get_book_image_directory(self.book_id())
+  end
+
+  def get_primary_xml_file()
+    return Document.get_book_primary_xml_file(self.book_id())
+  end
+
+  def get_page_xml_file(page)
+    return Document.get_book_page_xml_file(self.book_id(), page)
+  end
+
+  def save_page_image(upload)
+    img_path = get_image_directory()
+
+     # create the file path
+    path = File.join(img_path, upload.original_filename)
+    # write the file
+    File.open(path, "wb") { |f| f.write(upload.read) }
+  end
+
+  def import_primary_xml(xml_file)
+    doc = Nokogiri::XML(xml_file)
+
+    # first, figure out the URI
+    uri = nil
+    # look for ECCO documentID
+    doc.xpath('//documentID').each { |doc_id|
+      uri = 'lib://ecco/' + doc_id
+    }
+    if uri.nil?
+      # ECCO id not found, check for ESTC ID
+      doc.xpath('//ESTCID').each { |doc_id|
+        uri = 'lib://estc/' + doc_id
+      }
+    end
+    if uri.nil?
+      # worst-case, make the URI from the xml filename, with assumption
+      # that it is an ECCO id
+      name = xml_file.original_filename
+      uri = 'lib://ECCO/' + name.split('.')[0]
+    end
+    self.uri = uri
+
+    # extract all of the page nodes and store them
+    # in separate files for efficiency
+    count = 0
+    doc.xpath('//page').each { |page_node|
+      count += 1
+      page_doc = Nokogiri::XML('<page/>')
+      page_doc.root = page_node
+      page_id = page_doc.xpath('//pageInfo/pageID')[0].content
+      generated_page_id = ("0000#{count}"[-4, 4]) + '0'
+      if page_id.nil?
+        # Error if <pageID> is missing
+        raise "#{uri} -- ERROR: for page #{count} expected pageInfo > pageID [#{generated_page_id}] but pageInfo > pageID missing from XML"
+      else
+        if page_id != generated_page_id
+          # Error if <pageID> is not what we would have generated for that page number
+          raise "#{uri} -- ERROR: for page #{count} expected pageInfo > pageID [#{generated_page_id}] but got pageInfo > pageID [#{page_id}]"
+        end
+        page_xml_path = get_page_xml_file(count)
+        File.open(page_xml_path, "w") { |f| f.write(page_doc.to_xml) }
+        # replace the existing page nodes with a reference node pointing to the page xml file
+        page_xml_filename = page_xml_path.split('/').last
+        page_node['fileRef'] = page_xml_filename
+        page_node.content = ''
+      end
+    }
+
+    # save the book xml with page refs rather than full page nodes
+    book_xml_path = get_primary_xml_file()
+    File.open(book_xml_path, "w") { |f| f.write(doc.to_xml) }
+  end
+
+  def import_page(page_num, image_file)
+
+  end
+
+  def self.do_command(cmd)
+    puts cmd
+    # this also redirects stderr into resp
+    resp = `#{cmd} 2>&1`
+    puts resp if resp && resp.length > 0 && resp != "\n"
+    return resp
+  end
+
+  def self.get_book_root_directory(book_id)
+    directory = XmlReader.get_path('xml')
+    book_path = File.join(directory, book_id)
+    Dir::mkdir(book_path) unless FileTest.directory?(book_path)
+    return book_path
+  end
+
+  def self.get_book_xml_directory(book_id)
+    path = get_book_root_directory(book_id) + '/xml'
+    Dir::mkdir(path) unless FileTest.directory?(path)
+    return path
+  end
+
+  def self.get_book_image_directory(book_id)
+    path = get_book_root_directory(book_id) + '/img'
+    Dir::mkdir(path) unless FileTest.directory?(path)
+    return path
+  end
+
+  def self.get_book_primary_xml_file(book_id)
+    name = "#{book_id}.xml"
+    path = File.join(get_book_xml_directory(book_id), name)
+    return path
+  end
+
+  def self.get_book_page_xml_file(book_id, page)
+    page_id = ("0000#{page}"[-4, 4]) + '0'
+    name = "#{book_id}_#{page_id}.xml"
+    path = File.join(get_book_xml_directory(book_id), name)
+    return path
+  end
+
 
 end

@@ -72,7 +72,7 @@ class Document < ActiveRecord::Base
 
 	def img_full(page)
 		page_name = "#{book_id}#{XmlReader.format_page(page)}0"
-		return "#{img_folder}/#{page_name}/#{page_name}_*.png"
+		return "#{img_folder}/#{page_name}/#{page_name}-*.png"
 	end
 
   def get_page_image_file(page, page_doc = nil)
@@ -162,7 +162,7 @@ class Document < ActiveRecord::Base
 		num_pages = self.get_num_pages(doc)
 
     title = doc.xpath('//fullTitle')[0].content
-    title_abbrev = title.length > 32 ? title.slice(0..31)+'&hellip;' : title
+    title_abbrev = title.length > 32 ? title.slice(0..30)+'...' : title
 
 		info = { 'doc_id' => self.id, 'num_pages' => num_pages,
 			'img_thumb' => img_thumb, 'title' => title, 'title_abbrev' => title_abbrev
@@ -185,7 +185,7 @@ class Document < ActiveRecord::Base
     num_pages = self.get_num_pages(doc)
 
     title = doc.xpath('//fullTitle')[0].content
-    title_abbrev = title.length > 32 ? title.slice(0..31)+'&hellip;' : title
+    title_abbrev = title.length > 32 ? title.slice(0..30)+'...' : title
 
 
     page_src = []

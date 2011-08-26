@@ -353,10 +353,10 @@ class Document < ActiveRecord::Base
   end
 
   def self.do_command(cmd)
-    puts cmd
+    Rails.logger.info(cmd)
     # this also redirects stderr into resp
     resp = `#{cmd} 2>&1`
-    puts resp if resp && resp.length > 0 && resp != "\n"
+    Rails.logger.error( resp ) if resp && resp.length > 0 && resp != "\n"
     return resp
   end
 

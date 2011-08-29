@@ -147,9 +147,9 @@ class Document < ActiveRecord::Base
   end
 
 
-  def get_doc_stats(doc_id)
-    changes = Line.num_pages_with_changes(doc_id)
-    total = Line.find_all_by_document_id(doc_id)
+  def get_doc_stats(doc_id, src)
+    changes = Line.num_pages_with_changes(doc_id, src)
+    total = Line.find_all_by_document_id(doc_id, src)
     result = { :pages_with_changes => changes, :total_revisions => total.length }
     return result
   end
@@ -170,41 +170,66 @@ class Document < ActiveRecord::Base
     return info.merge(@attributes)
   end
 
-	def get_page_info(page)
+	def get_page_info(page, src = :gale )
     f = File.open(get_primary_xml_file(),'r')
     doc = Nokogiri::XML(f)
 
-    pf = File.open(get_page_xml_file(page), 'r')
-    page_doc = Nokogiri::XML(pf)
-
 		page = (page == nil) ? 1 : page.to_i
 
+    pf = File.open(get_page_xml_file(page, :gale), 'r')   # get gale page xml file for image info
+    page_doc = Nokogiri::XML(pf)
+
+    img_size = self.img_size(page, page_doc)
 		img_thumb = self.img_thumb(page)
 		img_full = self.img_full(page)
-		img_size = self.img_size(page, page_doc)
     num_pages = self.get_num_pages(doc)
 
     title = doc.xpath('//fullTitle')[0].content
     title_abbrev = title.length > 32 ? title.slice(0..30)+'...' : title
 
-
+    # now get the words, line and paragraphs from the page's xml file
     page_src = []
     num_lines = 0
-    page_doc.xpath('//pageContent/p').each { |ps|
-      ps.xpath('wd').each { |wd|
-        pos = wd.attribute('pos')
-        arr = pos.to_s.split(',')
-        page_src.push({ :l => arr[0].to_i, :t => arr[1].to_i, :r => arr[2].to_i, :b => arr[3].to_i, :word => wd.text, :line => num_lines })
+    if src == :gale
+      # read the page data from gale's xml
+      page_doc.xpath('//pageContent/p').each { |ps|
+        ps.xpath('wd').each { |wd|
+          pos = wd.attribute('pos')
+          arr = pos.to_s.split(',')
+          page_src.push({ :l => arr[0].to_i, :t => arr[1].to_i, :r => arr[2].to_i, :b => arr[3].to_i, :word => wd.text, :line => num_lines })
+        }
+        num_lines += 1
       }
-      num_lines += 1
-    }
-		lines = XmlReader.create_lines(XmlReader.gale_create_lines(page_src))
+      page_src = XmlReader.gale_create_lines(page_src)
 
-		lines.each_with_index {|line,i|
+    elsif src = :gamera
+
+      # we need to open the source specific XML
+      pf = File.open(get_page_xml_file(page, src), 'r')
+      page_doc = Nokogiri::XML(pf)
+
+      # read the page data from gamera's xml
+      page_doc.xpath('//page').each { |pg|
+        pg.xpath('line').each { |ln|
+          ln.xpath('wd').each { |wd|
+            pos = wd.attributes['pos']
+            arr = pos.to_s.split(',')
+            page_src.push({ :l => arr[0].to_i, :t => arr[1].to_i, :r => arr[2].to_i, :b => arr[3].to_i, :word => wd.text, :line => num_lines })
+          }
+          num_lines += 1
+        }
+      }
+
+    end
+
+    lines = XmlReader.create_lines(page_src, src)
+    
+    lines.each_with_index {|line,i|
 			line[:num] = i+1
 		}
+    # all the original source data is in place
 
-		recs = Line.find_all_by_document_id_and_page(self.id, page)
+		recs = Line.find_all_by_document_id_and_page_and_src(self.id, page, src)
 		changes = {}
 		recs.each {|rec|
 			key = "#{rec[:line]}"
@@ -222,7 +247,7 @@ class Document < ActiveRecord::Base
 			idx = 0
 			while idx < lines.length && !found
 				if line_num.to_f < lines[idx][:num]
-					lines.insert(idx, XmlReader.line_factory(0, 0, 0, 0, line_num.to_f, [[]], [''], line_num.to_f))
+					lines.insert(idx, XmlReader.line_factory(0, 0, 0, 0, line_num.to_f, [[]], [''], line_num.to_f, src))
 					found = true
 				end
 				idx += 1
@@ -237,9 +262,10 @@ class Document < ActiveRecord::Base
     return result
   end
 
-  def get_page_word_stats(page)
+  def get_page_word_stats(page, src = :gale)
     page = (page == nil) ? 1 : page.to_i
     words = {}
+    #TODO: replace this call
     src = XmlReader.read_gale(self.book_id(), page)
     src.each {|box|
       words[box[:word]] = words[box[:word]] == nil ? 1 : words[box[:word]] + 1
@@ -250,7 +276,7 @@ class Document < ActiveRecord::Base
     return result
   end
 
-  def get_doc_word_stats()
+  def get_doc_word_stats(src = :gale)
     words = {}
     num_pages = self.get_num_pages()
     pgs = num_pages < 100 ? num_pages : 100
@@ -281,8 +307,8 @@ class Document < ActiveRecord::Base
     return Document.get_book_primary_xml_file(self.book_id())
   end
 
-  def get_page_xml_file(page)
-    return Document.get_book_page_xml_file(self.book_id(), page)
+  def get_page_xml_file(page, src = :gale)
+    return Document.get_book_page_xml_file(self.book_id(), page, src)
   end
 
   def save_page_image(upload)
@@ -325,7 +351,7 @@ class Document < ActiveRecord::Base
       page_doc = Nokogiri::XML('<page/>')
       page_doc.root = page_node
       page_id = page_doc.xpath('//pageInfo/pageID')[0].content
-      generated_page_id = ("0000#{count}"[-4, 4]) + '0'
+      generated_page_id = XmlReader.format_page(count) + '0'
       if page_id.nil?
         # Error if <pageID> is missing
         raise "#{uri} -- ERROR: for page #{count} expected pageInfo > pageID [#{generated_page_id}] but pageInfo > pageID missing from XML"
@@ -385,10 +411,14 @@ class Document < ActiveRecord::Base
     return path
   end
 
-  def self.get_book_page_xml_file(book_id, page)
-    page_id = ("0000#{page}"[-4, 4]) + '0'
+  def self.get_book_page_xml_file(book_id, page, src = :gale)
+    page_id = XmlReader.format_page(page) + '0'
     name = "#{book_id}_#{page_id}.xml"
-    path = File.join(get_book_xml_directory(book_id), name)
+    book_xml_path = get_book_xml_directory(book_id)
+    if src == :gamera
+      book_xml_path = File.join(book_xml_path, 'gamera')
+    end
+    path = File.join(book_xml_path, name)
     return path
   end
 

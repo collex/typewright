@@ -15,6 +15,8 @@ class DocumentsController < ApplicationController
 	def index
 		doc = find_doc(params)
     page = params[:page]
+    src = params[:src].to_sym unless params[:src].nil?
+    src = :gale if src.nil?
     if doc.nil?
       # nothing found
       result = []
@@ -22,18 +24,18 @@ class DocumentsController < ApplicationController
     elsif params[:wordstats] == 'true'
       # looking for word stats for doc or for page
       if page.nil?
-        result = [ doc.get_doc_word_stats() ]
+        result = [ doc.get_doc_word_stats(src) ]
       else
-        result = [ doc.get_page_word_stats(page) ]
+        result = [ doc.get_page_word_stats(page, src) ]
       end
 
     elsif params[:stats] == 'true'
       # looking for document stats
-      result = [ doc.get_doc_stats(doc.id) ]
+      result = [ doc.get_doc_stats(doc.id, src) ]
 
     elsif !page.nil?
       # looking for info on a particular page of the document
-      result = [ doc.get_page_info(page) ]
+      result = [ doc.get_page_info(page, src) ]
       
     else
       # looking for info on the document as a whole

@@ -2,12 +2,13 @@ class LinesController < ApplicationController
 	# GET /lines.xml
 	def index
 		lines = []
+    src = params[:src].to_sym unless params[:src].nil?
 		if params[:revisions] == 'true'
 			uri = params[:uri]
 			doc = Document.find_by_uri(uri)
 			if doc
 				id = doc.id
-				lines = Line.find_all_by_document_id(id)
+				lines = Line.find_all_by_document_id_and_src(id, src)
 				lines = lines.sort { |a,b|
 					if a.page == b.page
 						if a.line == b.line
@@ -28,9 +29,9 @@ class LinesController < ApplicationController
 			page = params[:page]
 			line = params[:line]
 			if line
-				lines = Line.find_all_by_document_id_and_page_and_line(document_id, page, line)
+				lines = Line.find_all_by_document_id_and_page_and_line_and_src(document_id, page, line, src)
 			else
-				lines = Line.find_all_by_document_id_and_page(document_id, page)
+				lines = Line.find_all_by_document_id_and_page_and_src(document_id, page, src)
 			end
 		end
 
@@ -44,7 +45,7 @@ class LinesController < ApplicationController
 				end
 			end
 			lines2.push({ :id => line.id, :federation => user.federation, :orig_id => user.orig_id, :updated_at => line.updated_at, :page => line.page,
-				 :line => line.line, :status => line.status, :words =>w, :document_id => line.document_id })
+				 :line => line.line, :src => line.src, :status => line.status, :words =>w, :document_id => line.document_id })
 		}
 		respond_to do |format|
 			format.xml  { render :xml => lines2 }

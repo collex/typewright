@@ -18,14 +18,17 @@
 class XmlReader
 require 'nokogiri'
 
+## USED
 	def self.format_page(page)
-		page = "#{page}"
-		while page.length < 4
-		  page = '0' + page
-		end
-		return page
+    "0000#{page}"[-4, 4]
+		#page = "#{page}"
+		#while page.length < 4
+		#  page = '0' + page
+		#end
+		#return page
 	end
 
+  ## USED
 	def self.read_gale(book, page)
     xml_path = get_path('xml')
 		fname = "#{xml_path}/#{book}/xml/#{book}.xml"
@@ -50,108 +53,110 @@ require 'nokogiri'
 		return nil
 	end
 
-	def self.read_gale_page(image, cache_name)
-		page = image.parent.parent
-		#content = page.elements['pageContent']
-		ret = []
-		lines = 0
-		page.xpath('pageContent/p').each { |ps|
-		#content.elements.each('p') { |ps|
-			ps.xpath('wd').each { |wd|
-			#ps.elements.each('wd') { |wd|
-				pos = wd.attribute('pos')
-				#pos = wd.attributes['pos']
-				arr = pos.to_s.split(',')
+	#def self.read_gale_page(image, cache_name)
+	#	page = image.parent.parent
+	#	#content = page.elements['pageContent']
+	#	ret = []
+	#	lines = 0
+	#	page.xpath('pageContent/p').each { |ps|
+	#	#content.elements.each('p') { |ps|
+	#		ps.xpath('wd').each { |wd|
+	#		#ps.elements.each('wd') { |wd|
+	#			pos = wd.attribute('pos')
+	#			#pos = wd.attributes['pos']
+	#			arr = pos.to_s.split(',')
+  #
+	#			ret.push({ :l => arr[0].to_i, :t => arr[1].to_i, :r => arr[2].to_i, :b => arr[3].to_i, :word => wd.text, :line => lines })
+	#		}
+	#		lines += 1
+	#	}
+	#	self.write_cache(cache_name, "gale", ret)
+	#	return ret
+	#end
 
-				ret.push({ :l => arr[0].to_i, :t => arr[1].to_i, :r => arr[2].to_i, :b => arr[3].to_i, :word => wd.text, :line => lines })
-			}
-			lines += 1
-		}
-		self.write_cache(cache_name, "gale", ret)
-		return ret
+	#def self.read_all_gale(fname)
+	#	doc = Nokogiri::XML(File.new(fname))
+	#	#doc = REXML::Document.new( File.new(fname) )
+  #
+	#	doc.xpath('//imageLink').each { |image|
+	#	#REXML::XPath.each( doc, "//imageLink" ){ |image|
+	#		print '.'
+	#		arr = image.text.split('.')
+	#		number = arr[0]
+	#		slash = fname.rindex('/')
+	#		cache_name = fname[0..slash] + number
+	#		ret = self.read_gale_page(image, cache_name)
+	#		self.write_cache(cache_name, "gale", ret)
+	#	}
+	#end
+  #
+	#def self.create_metadata(fname)
+	#	doc = Nokogiri::XML(File.new(fname))
+	#	doc.xpath('//fullTitle').each { |node|
+	#		title = { :title => node.text }
+	#		arr = fname.split('.')
+	#		fname = "#{arr[0]}_meta.yml"
+	#		puts title[:title]
+	#		File.open( fname, 'w' ) do |out|
+	#			YAML.dump( title, out )
+	#		end
+	#	}
+	#end
+  #
+	#def self.read_metadata(book)
+   # xml_path = get_path('xml')
+	#	fname = "#{xml_path}/#{book}/#{book}_meta.yml"
+	#	if File.exists?(fname)
+	#		meta = YAML.load_file(fname)
+	#		return meta[:title]
+	#	end
+	#	return ''
+	#end
+  #
+  #def self.read_gamera(book, page)
+  #  xml_path = get_path('xml')
+		#fname = "#{xml_path}/gamera-xml/#{book}/#{book}#{self.format_page(page)}0.xml"
+		#ret = self.read_cache(fname, "gamera")
+		#return ret if ret != nil
+  #
+		#begin
+		#	doc = Nokogiri::XML(File.new(fname))
+		#	#doc = REXML::Document.new( File.new(fname) )
+		#rescue
+		#	self.write_cache(fname, "gamera", [])
+		#	return []
+		#end
+  #
+		#doc.xpath('//page').each { |pg|
+		##REXML::XPath.each( doc, "//page" ){ |page|
+		#	ret = []
+		#	lines = 0
+		#	pg.xpath('line').each { |ln|
+		#		ln.xpath('wd').each { |wd|
+		#			pos = wd.attributes['pos']
+		#			arr = pos.to_s.split(',')
+  #
+		#			ret.push({ :l => arr[0].to_i, :t => arr[1].to_i, :r => arr[2].to_i, :b => arr[3].to_i, :word => wd.text, :line => lines })
+		#		}
+		#		lines += 1
+		#	}
+		#	self.write_cache(fname, "gamera", ret)
+		#	return ret
+		#}
+		#return nil
+  #end
+
+  ## USED
+	def self.line_factory(l, t, r, b, line, words, text, num, src)
+		return { :l => l, :t => t, :r => r, :b => b, :words => words, :text => text, :line => line, :num => num, :src => src }
 	end
 
-	def self.read_all_gale(fname)
-		doc = Nokogiri::XML(File.new(fname))
-		#doc = REXML::Document.new( File.new(fname) )
-
-		doc.xpath('//imageLink').each { |image|
-		#REXML::XPath.each( doc, "//imageLink" ){ |image|
-			print '.'
-			arr = image.text.split('.')
-			number = arr[0]
-			slash = fname.rindex('/')
-			cache_name = fname[0..slash] + number
-			ret = self.read_gale_page(image, cache_name)
-			self.write_cache(cache_name, "gale", ret)
-		}
-	end
-
-	def self.create_metadata(fname)
-		doc = Nokogiri::XML(File.new(fname))
-		doc.xpath('//fullTitle').each { |node|
-			title = { :title => node.text }
-			arr = fname.split('.')
-			fname = "#{arr[0]}_meta.yml"
-			puts title[:title]
-			File.open( fname, 'w' ) do |out|
-				YAML.dump( title, out )
-			end
-		}
-	end
-
-	def self.read_metadata(book)
-    xml_path = get_path('xml')
-		fname = "#{xml_path}/#{book}/#{book}_meta.yml"
-		if File.exists?(fname)
-			meta = YAML.load_file(fname)
-			return meta[:title]
-		end
-		return ''
-	end
-
-	def self.read_gamera(book, page)
-    xml_path = get_path('xml')
-		fname = "#{xml_path}/gamera-xml/#{book}/#{book}#{self.format_page(page)}0.xml"
-		ret = self.read_cache(fname, "gamera")
-		return ret if ret != nil
-
-		begin
-			doc = Nokogiri::XML(File.new(fname))
-			#doc = REXML::Document.new( File.new(fname) )
-		rescue
-			self.write_cache(fname, "gamera", [])
-			return []
-		end
-
-		doc.xpath('//page').each { |pg|
-		#REXML::XPath.each( doc, "//page" ){ |page|
-			ret = []
-			lines = 0
-			pg.xpath('line').each { |ln|
-				ln.xpath('wd').each { |wd|
-					pos = wd.attributes['pos']
-					arr = pos.to_s.split(',')
-
-					ret.push({ :l => arr[0].to_i, :t => arr[1].to_i, :r => arr[2].to_i, :b => arr[3].to_i, :word => wd.text, :line => lines })
-				}
-				lines += 1
-			}
-			self.write_cache(fname, "gamera", ret)
-			return ret
-		}
-		return nil
-	end
-
-	def self.line_factory(l, t, r, b, line, words, text, num)
-		return { :l => l, :t => t, :r => r, :b => b, :words => words, :text => text, :line => line, :num => num }
-	end
-
-	def self.create_lines(gamera_arr)
+  ## USED
+	def self.create_lines(gamera_arr, src)
 		ret = []
 		gamera_arr.each_with_index { |wd, i|
 			if !ret[wd[:line]]
-				ret[wd[:line]] = { :l => wd[:l], :t => wd[:t], :r => wd[:r], :b => wd[:b], :words => [[wd]], :text => [wd[:word]], :line => wd[:line] }
+				ret[wd[:line]] = { :l => wd[:l], :t => wd[:t], :r => wd[:r], :b => wd[:b], :words => [[wd]], :text => [wd[:word]], :line => wd[:line], :src => src }
 			else
 				line = ret[wd[:line]]
 				line[:words][0].push(wd)
@@ -165,31 +170,33 @@ require 'nokogiri'
 				line[:r] = wd[:r] if line[:r] < wd[:r]
 				line[:b] = wd[:b] if line[:b] < wd[:b]
 				line[:line] = wd[:line]
+        line[:src] = src
 			end
 		}
 		return ret
 	end
 
-	def self.read_cache(xml_fname, prefix)
-		arr = xml_fname.split('.')
-		fname = "#{arr[0]}_#{prefix}.yml"
-		if File.exists?(fname)
-      puts fname
-			words = YAML.load_file(fname)
-			words.collect! {|word| { :l => word[:x], :t => word[:y], :r => word[:w], :b => word[:h], :word => word[:word] } }
-			return words
-		end
-		return nil
-	end
+	#def self.read_cache(xml_fname, prefix)
+	#	arr = xml_fname.split('.')
+	#	fname = "#{arr[0]}_#{prefix}.yml"
+	#	if File.exists?(fname)
+   #   puts fname
+	#		words = YAML.load_file(fname)
+	#		words.collect! {|word| { :l => word[:x], :t => word[:y], :r => word[:w], :b => word[:h], :word => word[:word] } }
+	#		return words
+	#	end
+	#	return nil
+	#end
+  #
+	#def self.write_cache(xml_fname, prefix, words)
+	#	arr = xml_fname.split('.')
+	#	fname = "#{arr[0]}_#{prefix}.yml"
+	#	File.open( fname, 'w' ) do |out|
+	#		YAML.dump( words, out )
+	#	end
+	#end
 
-	def self.write_cache(xml_fname, prefix, words)
-		arr = xml_fname.split('.')
-		fname = "#{arr[0]}_#{prefix}.yml"
-		File.open( fname, 'w' ) do |out|
-			YAML.dump( words, out )
-		end
-	end
-
+  ## USED
 	def self.gale_create_lines(gale_arr)
 		ret = []
 		# this is an array of the paragraphs. We never want to join words across paragraphs, but we also want
@@ -203,7 +210,7 @@ require 'nokogiri'
 			if last_y > wd[:b] || last_h < wd[:t] || last_x > wd[:l] || last_line != wd[:line]
 				line_num += 1
 			end
-			ret.push({ :l => wd[:l], :t => wd[:t], :r => wd[:r], :b => wd[:b], :word => wd[:word], :line => line_num })
+			ret.push({ :l => wd[:l], :t => wd[:t], :r => wd[:r], :b => wd[:b], :word => wd[:word], :line => line_num, :src => wd[:src] })
 			last_y = wd[:t]
 			last_h = wd[:b]
 			last_x = wd[:l]
@@ -212,6 +219,7 @@ require 'nokogiri'
 		return ret
   end
 
+  ## used
   def self.get_path(which)
     config_file = File.join("config", "site.yml")
     if File.exists?(config_file)

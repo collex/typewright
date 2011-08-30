@@ -18,15 +18,68 @@
 class XmlReader
 require 'nokogiri'
 
-## USED
 	def self.format_page(page)
     "0000#{page}"[-4, 4]
-		#page = "#{page}"
-		#while page.length < 4
-		#  page = '0' + page
-		#end
-		#return page
 	end
+
+  def self.open_xml_file(filename, mode = 'r')
+    doc = Nokogiri::XML(File.open(filename, mode))
+    return doc
+  end
+
+  def self.get_page_image_filename(page_doc)
+    image_filename = page_doc.xpath('//pageInfo/imageLink')[0].content
+    return image_filename
+  end
+
+  def self.get_num_pages(doc)
+    num_pages = doc.xpath('//page').size
+    return num_pages
+  end
+
+  def self.get_full_title(doc)
+    title = doc.xpath('//fullTitle')[0].content
+    return title
+  end
+
+  def self.read_all_lines_from_page(page_doc, src)
+    cmd = "XmlReader.read_all_lines_from_#{src}_page(page_doc)"
+    result = eval(cmd)
+    return result
+  end
+
+  def self.read_all_lines_from_gale_page(page_doc)
+    page_src = []
+    num_lines = 0
+    # read the page data from gale's xml
+    page_doc.xpath('//pageContent/p').each { |ps|
+      ps.xpath('wd').each { |wd|
+        pos = wd.attribute('pos')
+        arr = pos.to_s.split(',')
+        page_src.push({ :l => arr[0].to_i, :t => arr[1].to_i, :r => arr[2].to_i, :b => arr[3].to_i, :word => wd.text, :line => num_lines })
+      }
+      num_lines += 1
+    }
+    page_src = XmlReader.gale_create_lines(page_src)
+    return page_src
+  end
+
+  def self.read_all_lines_from_gamera_page(page_doc)
+    page_src = []
+    num_lines = 0
+    # read the page data from gamera's xml
+    page_doc.xpath('//page').each { |pg|
+      pg.xpath('line').each { |ln|
+        ln.xpath('wd').each { |wd|
+          pos = wd.attributes['pos']
+          arr = pos.to_s.split(',')
+          page_src.push({ :l => arr[0].to_i, :t => arr[1].to_i, :r => arr[2].to_i, :b => arr[3].to_i, :word => wd.text, :line => num_lines })
+        }
+        num_lines += 1
+      }
+    }
+    return page_src
+  end
 
   ## USED
 	def self.read_gale(book, page)
@@ -176,27 +229,6 @@ require 'nokogiri'
 		return ret
 	end
 
-	#def self.read_cache(xml_fname, prefix)
-	#	arr = xml_fname.split('.')
-	#	fname = "#{arr[0]}_#{prefix}.yml"
-	#	if File.exists?(fname)
-   #   puts fname
-	#		words = YAML.load_file(fname)
-	#		words.collect! {|word| { :l => word[:x], :t => word[:y], :r => word[:w], :b => word[:h], :word => word[:word] } }
-	#		return words
-	#	end
-	#	return nil
-	#end
-  #
-	#def self.write_cache(xml_fname, prefix, words)
-	#	arr = xml_fname.split('.')
-	#	fname = "#{arr[0]}_#{prefix}.yml"
-	#	File.open( fname, 'w' ) do |out|
-	#		YAML.dump( words, out )
-	#	end
-	#end
-
-  ## USED
 	def self.gale_create_lines(gale_arr)
 		ret = []
 		# this is an array of the paragraphs. We never want to join words across paragraphs, but we also want
@@ -219,7 +251,6 @@ require 'nokogiri'
 		return ret
   end
 
-  ## used
   def self.get_path(which)
     config_file = File.join("config", "site.yml")
     if File.exists?(config_file)

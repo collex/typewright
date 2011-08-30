@@ -14,11 +14,17 @@
 #     limitations under the License.
 # ----------------------------------------------------------------------------
 
+# Document is responsible for knowing the relationship between various bits of information
+# and where there are stored. Delegates to XmlReader to actually read data from specific
+# XML files
+
 class Document < ActiveRecord::Base
 
   THUMBNAIL_WIDTH = 300
   SLICE_WIDTH = 800
   SLICE_HEIGHT = 50
+
+  SUPPORTED_OCR_SOURCES = %w(gale gamera)
 
   def to_xml(options = {})
     puts @attributes
@@ -76,8 +82,8 @@ class Document < ActiveRecord::Base
 	end
 
   def get_page_image_file(page, page_doc = nil)
-    page_doc = Nokogiri::XML(File.open(get_page_xml_file(page), 'r')) if page_doc.nil?
-    image_filename = page_doc.xpath('//pageInfo/imageLink')[0].content
+    page_doc = XmlReader.open_xml_file(get_page_xml_file(page)) if page_doc.nil?
+    image_filename = XmlReader.get_page_image_filename(page_doc)
     image_path = File.join(get_image_directory(), image_filename)
     return image_path
   end
@@ -104,8 +110,8 @@ class Document < ActiveRecord::Base
 	end
 
 	def get_num_pages(doc = nil)
-    doc = Nokogiri::XML(File.open(get_primary_xml_file(),'r')) if doc.nil?
-    num_pages = doc.xpath('//page').size
+    doc = XmlReader.open_xml_file(get_primary_xml_file()) if doc.nil?
+    num_pages = XmlReader.get_num_pages(doc)
     return num_pages
 	end
 
@@ -155,72 +161,59 @@ class Document < ActiveRecord::Base
   end
 
 	def get_doc_info()
-    f = File.open(get_primary_xml_file(),'r')
-    doc = Nokogiri::XML(f)
+    doc = XmlReader.open_xml_file(get_primary_xml_file())
 
 		img_thumb = self.thumb()
-		num_pages = self.get_num_pages(doc)
+		num_pages = XmlReader.get_num_pages(doc)
 
-    title = doc.xpath('//fullTitle')[0].content
+    title = XmlReader.get_full_title(doc)
     title_abbrev = title.length > 32 ? title.slice(0..30)+'...' : title
 
+    ocr_sources = []
+    SUPPORTED_OCR_SOURCES.each { |ocr_src|
+      if File.exist?(get_page_xml_file(1, ocr_src))
+        ocr_sources << ocr_src
+      end
+    }
+
 		info = { 'doc_id' => self.id, 'num_pages' => num_pages,
-			'img_thumb' => img_thumb, 'title' => title, 'title_abbrev' => title_abbrev
+			'img_thumb' => img_thumb, 'title' => title, 'title_abbrev' => title_abbrev,
+      'ocr_sources' => ocr_sources
 		}
     return info.merge(@attributes)
   end
 
 	def get_page_info(page, src = :gale )
-    f = File.open(get_primary_xml_file(),'r')
-    doc = Nokogiri::XML(f)
+    doc = XmlReader.open_xml_file(get_primary_xml_file())
 
 		page = (page == nil) ? 1 : page.to_i
 
-    pf = File.open(get_page_xml_file(page, :gale), 'r')   # get gale page xml file for image info
-    page_doc = Nokogiri::XML(pf)
+    page_doc = XmlReader.open_xml_file(get_page_xml_file(page, :gale))
 
     img_size = self.img_size(page, page_doc)
 		img_thumb = self.img_thumb(page)
 		img_full = self.img_full(page)
     num_pages = self.get_num_pages(doc)
 
-    title = doc.xpath('//fullTitle')[0].content
+    title = XmlReader.get_full_title(doc)
     title_abbrev = title.length > 32 ? title.slice(0..30)+'...' : title
 
-    # now get the words, line and paragraphs from the page's xml file
-    page_src = []
-    num_lines = 0
-    if src == :gale
-      # read the page data from gale's xml
-      page_doc.xpath('//pageContent/p').each { |ps|
-        ps.xpath('wd').each { |wd|
-          pos = wd.attribute('pos')
-          arr = pos.to_s.split(',')
-          page_src.push({ :l => arr[0].to_i, :t => arr[1].to_i, :r => arr[2].to_i, :b => arr[3].to_i, :word => wd.text, :line => num_lines })
-        }
-        num_lines += 1
-      }
-      page_src = XmlReader.gale_create_lines(page_src)
+    # figure out which OCR sources are available for this page
+    ocr_sources = []
+    SUPPORTED_OCR_SOURCES.each { |ocr_src|
+      if File.exist?(get_page_xml_file(page, ocr_src))
+        ocr_sources << ocr_src
+      end
+    }
 
-    elsif src = :gamera
-
-      # we need to open the source specific XML
-      pf = File.open(get_page_xml_file(page, src), 'r')
-      page_doc = Nokogiri::XML(pf)
-
-      # read the page data from gamera's xml
-      page_doc.xpath('//page').each { |pg|
-        pg.xpath('line').each { |ln|
-          ln.xpath('wd').each { |wd|
-            pos = wd.attributes['pos']
-            arr = pos.to_s.split(',')
-            page_src.push({ :l => arr[0].to_i, :t => arr[1].to_i, :r => arr[2].to_i, :b => arr[3].to_i, :word => wd.text, :line => num_lines })
-          }
-          num_lines += 1
-        }
-      }
-
+    # open the source specific page xml document
+    unless src == :gale
+      page_doc = XmlReader.open_xml_file(get_page_xml_file(page, src))
     end
+
+    # now get the words, line and paragraphs from the page's xml file
+    page_src = XmlReader.read_all_lines_from_page(page_doc, src)
+
 
     lines = XmlReader.create_lines(page_src, src)
     
@@ -257,7 +250,7 @@ class Document < ActiveRecord::Base
 
 		result = { :doc_id => self.id, :page => page, :num_pages => num_pages, :img_full => img_full,
 			:img_thumb => img_thumb, :lines => lines, :title => title, :title_abbrev => title_abbrev,
-			:img_size => img_size
+			:img_size => img_size, :ocr_sources => ocr_sources
 		}
     return result
   end
@@ -360,7 +353,7 @@ class Document < ActiveRecord::Base
           # Error if <pageID> is not what we would have generated for that page number
           raise "#{uri} -- ERROR: for page #{count} expected pageInfo > pageID [#{generated_page_id}] but got pageInfo > pageID [#{page_id}]"
         end
-        page_xml_path = get_page_xml_file(count)
+        page_xml_path = get_page_xml_file(count, :gale)
         File.open(page_xml_path, "w") { |f| f.write(page_doc.to_xml) }
         # replace the existing page nodes with a reference node pointing to the page xml file
         page_xml_filename = page_xml_path.split('/').last
@@ -415,9 +408,7 @@ class Document < ActiveRecord::Base
     page_id = XmlReader.format_page(page) + '0'
     name = "#{book_id}_#{page_id}.xml"
     book_xml_path = get_book_xml_directory(book_id)
-    if src == :gamera
-      book_xml_path = File.join(book_xml_path, 'gamera')
-    end
+    book_xml_path = File.join(book_xml_path, "#{src}")
     path = File.join(book_xml_path, name)
     return path
   end

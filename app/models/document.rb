@@ -320,12 +320,12 @@ class Document < ActiveRecord::Base
     uri = nil
     # look for ECCO documentID
     doc.xpath('//documentID').each { |doc_id|
-      uri = 'lib://ecco/' + doc_id
+      uri = 'lib://ECCO/' + doc_id
     }
     if uri.nil?
       # ECCO id not found, check for ESTC ID
       doc.xpath('//ESTCID').each { |doc_id|
-        uri = 'lib://estc/' + doc_id
+        uri = 'lib://ESTC/' + doc_id
       }
     end
     if uri.nil?
@@ -388,8 +388,11 @@ class Document < ActiveRecord::Base
 
   def self.get_book_root_directory(book_id)
     directory = XmlReader.get_path('xml')
+    (0..4).each { | i |
+      directory = File.join(directory, book_id[i])
+    }
     book_path = File.join(directory, book_id)
-    Dir::mkdir(book_path) unless FileTest.directory?(book_path)
+    FileUtils.mkdir_p(book_path) unless FileTest.directory?(book_path)
     return book_path
   end
 

@@ -264,7 +264,6 @@ class Document < ActiveRecord::Base
       words[box[:word]] = words[box[:word]] == nil ? 1 : words[box[:word]] + 1
     }
     word_stats = self.process_word_stats(words)
-
     result = { :word_stats => word_stats }
     return result
   end
@@ -274,6 +273,7 @@ class Document < ActiveRecord::Base
     num_pages = self.get_num_pages()
     pgs = num_pages < 100 ? num_pages : 100
     pgs.times { |pg|
+    #TODO: replace this call
       src = XmlReader.read_gale(self.book_id(), pg+1)
       src.each {|box|
         words[box[:word]] = words[box[:word]] == nil ? 1 : words[box[:word]] + 1
@@ -371,6 +371,13 @@ class Document < ActiveRecord::Base
 
   end
 
+  def import_page_ocr(page_num, xml_file, src = nil)
+    xml_doc = XmlReader.open_xml_file(xml_file)
+    src = XmlReader.detect_ocr_source(xml_doc)
+    page_xml_path = get_page_xml_file(page_num, src)
+    File.open(page_xml_path, "w") { |f| f.write(xml_doc.to_xml) }
+  end
+
   def self.do_command(cmd)
     Rails.logger.info(cmd)
     # this also redirects stderr into resp
@@ -409,6 +416,7 @@ class Document < ActiveRecord::Base
     name = "#{book_id}_#{page_id}.xml"
     book_xml_path = get_book_xml_directory(book_id)
     book_xml_path = File.join(book_xml_path, "#{src}")
+    Dir::mkdir(book_xml_path) unless FileTest.directory?(book_xml_path)
     path = File.join(book_xml_path, name)
     return path
   end

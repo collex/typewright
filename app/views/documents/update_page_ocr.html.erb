@@ -1,0 +1,21 @@
+<h1>Page OCR Upload</h1>
+<% if @id.nil? %>
+    <%= form_tag("/documents/update_page_ocr?page=#{@page_num}", :remote => true, :multipart => true ) do %>
+        <%= label_tag(:id, "Document ID #:") %>
+        <%= text_field_tag(:id) %>
+        <br/>
+        <%= label_tag(:xml_file, "XML file with OCR data for Page #{@page_num}:") %>
+        <%= file_field_tag(:xml_file, :accept => 'text/xml') %>
+        <%= submit_tag('Upload') %>
+    <% end %>
+<% else %>
+    <%= form_tag("/documents/#{@id}/update_page_ocr?page=#{@page_num}", :remote => true, :multipart => true ) do %>
+      <% if @done == true %>
+        All pages for Book are uploaded! Upload complete!
+      <% else %>
+          <%= label_tag(:xml_file, "XML file with OCR data for Page #{@page_num}:") %>
+          <%= file_field_tag(:xml_file, :accept => 'text/xml') %>
+      <% end %>
+      <%= submit_tag('Upload') %>
+    <% end %>
+<% end %>

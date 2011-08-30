@@ -23,7 +23,8 @@ require 'nokogiri'
 	end
 
   def self.open_xml_file(filename, mode = 'r')
-    doc = Nokogiri::XML(File.open(filename, mode))
+    f = File.open(filename, mode)
+    doc = Nokogiri::XML(f)
     return doc
   end
 
@@ -79,6 +80,20 @@ require 'nokogiri'
       }
     }
     return page_src
+  end
+
+  def self.detect_ocr_source(xml_doc)
+    has_page_info = !xml_doc.xpath('//page/pageInfo').empty?
+    has_book_info = !xml_doc.xpath('//book/bookInfo').empty?
+    has_page_line = !xml_doc.xpath('//page/line').empty?
+    if has_book_info && has_page_info
+      return :gale # gale master xml with pages included
+    elsif has_page_line && !has_page_info
+      return :gamera # gamera page
+    elsif has_page_info && !has_page_line
+      return :gale # gale page
+    end
+    return :unknown
   end
 
   ## USED

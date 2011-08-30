@@ -81,8 +81,6 @@ class DocumentsController < ApplicationController
         xml_file = params[:xml_file]
 
         # save and process the file using the Document Model
-#        @document.set_uri_from_xml_file(xml_file)
-#        @document.save_primary_xml(xml_file)
         @document.import_primary_xml(xml_file)
         @document.save()
         
@@ -102,6 +100,25 @@ class DocumentsController < ApplicationController
       @action_params = "?page=#{@page_num}"
     end
     
+  end
+
+  # POST /documents/1/update_page_ocr
+  def update_page_ocr
+    id = params[:id]
+    id = nil if id.to_i == 0
+    if id.nil?
+      # we weren't given an id, we are creating a new document
+      @page_num = 1
+      @id = nil
+    else
+      page_num = params[:page].to_i
+      xml_file = params[:xml_file]
+      src = params[:src]  # (optional src param)
+      @document = Document.find(id)
+      @document.import_page_ocr(page_num, xml_file.tempfile, src)
+      @id = @document.id
+      @page_num = page_num + 1
+    end
   end
 
 end

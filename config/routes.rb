@@ -3,8 +3,10 @@ Typewright::Application.routes.draw do
 	resources :users
 	resources :document_users
   match 'documents/upload' => 'documents#upload', :as => :upload
+  match 'documents/update_page_ocr' => 'documents#update_page_ocr', :as => :update_page_ocr
 	resources :documents
   match 'documents/:id/upload' => 'documents#upload', :as => :upload
+  match 'documents/:id/update_page_ocr' => 'documents#update_page_ocr', :as => :update_page_ocr
 
 
   # The priority is based upon order of creation:

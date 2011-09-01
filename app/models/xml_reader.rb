@@ -43,6 +43,11 @@ require 'nokogiri'
     return title
   end
 
+  def self.get_ecco_id(doc)
+    ecco_id = doc.xpath('//book/bookInfo/documentID')[0].content
+    return ecco_id
+  end
+
   def self.read_all_lines_from_page(page_doc, src)
     cmd = "XmlReader.read_all_lines_from_#{src}_page(page_doc)"
     result = eval(cmd)

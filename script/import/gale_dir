@@ -1,0 +1,68 @@
+#!/usr/bin/env ruby
+
+def do_usage()
+  puts "Usage: gale_dir [-f] server directory"
+  puts "Import all books in the given directory into specified TypeWright server."
+  puts "If a book already exists, skip it and issue error."
+  puts " -f  Force import and issue warning if book already exists."
+end
+
+# start by reading our input parameters
+
+VALID_OPTION_FLAGS = %w( f )
+VALID_OPTIONS = %w( )
+
+if ARGV.size < 2
+  do_usage()
+  exit(1)
+end
+
+server = ''
+directory = ''
+option_flags = []
+options = {}
+
+ARGV.each do |arg|
+  if arg[0..0] == '-'  # if I don't do [0..0] I get an int rather than a string
+    if arg =~ /=/
+      arg_name = arg[1..99].split("=")[0]
+      if VALID_OPTIONS.index(arg_name) == nil
+        puts "WARNING: Ignoring unknown parameter: #{arg_name} (#{arg})"
+      else
+        options[arg_name] = arg[arg_name.size+2..999]
+      end
+    else
+      arg_name = arg[1..99]
+      if VALID_OPTION_FLAGS.index(arg_name) == nil
+        puts "WARNING: Ignoring unknown parameter: #{arg}"
+      else
+        option_flags << arg_name
+      end
+    end
+  elsif server.empty?
+    server = arg
+  elsif directory.empty?
+    directory = arg
+  else
+    puts "WARNING: Ignoring unknown parameter: #{arg}"
+  end
+end
+
+error_on_duplicate = option_flags.index('f').nil?
+
+original_dir = Dir.pwd
+
+Dir.chdir(directory)
+file_list = []
+Dir.glob("*") { |file|
+  file_list << file
+}
+Dir.chdir(original_dir)
+file_list.each { |book|
+  xml_file = File.join(book, "xml", "#{book}.xml")
+  cmd = "script/import/gale_xml #{error_on_duplicate ? '':'-f'} #{server} #{File.join(directory,xml_file)}"
+  result = `#{cmd}`
+  puts result
+}
+
+exit 0

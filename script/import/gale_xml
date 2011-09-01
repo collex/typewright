@@ -1,0 +1,123 @@
+#!/usr/bin/env ruby
+
+require "#{Dir.pwd}/app/models/xml_reader.rb"
+
+# upload xml file for a new book, given the directory
+
+def do_usage()
+  puts "Usage: gale_xml [-f] server xmlfile"
+  puts "Import book into specified TypeWright server from given xmlfile."
+  puts "If book already exists, issue error."
+  puts " -f  Force import and issue warning if book already exists."
+end
+
+def do_curl_command(cmd)
+#  puts "curl #{cmd} 2>&1"
+  resp = `curl #{cmd} 2>&1`
+#  puts resp
+  return resp
+end
+
+def parse_upload_response(response)
+  result = {}
+  doc_id_str = response[/<id>\d+<\/id>/]
+  result[:doc_id] = doc_id_str[4..-6].to_i
+  exists_str = response[/<exists>\D+<\/exists>/]
+  result[:exists] = (exists_str[8..11] == 'true')
+  auth_token_str = response[/<auth_token>\S*<\/auth_token>/]
+  result[:auth_token] = auth_token_str[12..-14]
+  uri_str = response[/<uri>\S*<\/uri>/]
+  result[:uri] = uri_str[5..-7]
+  return result
+end
+
+# start by reading our input parameters
+
+VALID_OPTION_FLAGS = %w( f )
+VALID_OPTIONS = %w( )
+
+if ARGV.size < 2
+  do_usage()
+  exit(1)
+end
+
+server = ''
+xml_file = ''
+option_flags = []
+options = {}
+
+ARGV.each do |arg|
+  if arg[0..0] == '-'  # if I don't do [0..0] I get an int rather than a string
+    if arg =~ /=/
+      arg_name = arg[1..99].split("=")[0]
+      if VALID_OPTIONS.index(arg_name) == nil
+        puts "WARNING: Ignoring unknown parameter: #{arg_name} (#{arg})"
+      else
+        options[arg_name] = arg[arg_name.size+2..999]
+      end
+    else
+      arg_name = arg[1..99]
+      if VALID_OPTION_FLAGS.index(arg_name) == nil
+        puts "WARNING: Ignoring unknown parameter: #{arg}"
+      else
+        option_flags << arg_name
+      end
+    end
+  elsif server.empty?
+    server = arg
+  elsif xml_file.empty?
+    xml_file = arg
+  else
+    puts "WARNING: Ignoring unknown parameter: #{arg}"
+  end
+end
+
+error_on_duplicate = option_flags.index('f').nil?
+
+xml_doc = XmlReader.open_xml_file(xml_file)
+if xml_doc.nil?
+  puts "ERROR: couldn't open XML file [#{xml_doc}]"
+  exit(1)
+end
+
+book_id = XmlReader.get_ecco_id(xml_doc)
+
+# now that we have all the parameters, start the upload
+curl_cmd = "#{server}/documents/upload.xml?uri=lib://ECCO/#{book_id}"
+raw_response = do_curl_command(curl_cmd)
+response = parse_upload_response(raw_response)
+#puts response
+doc_id = response[:doc_id]
+auth_token = response[:auth_token]
+puts "#{doc_id} - lib://ECCO/#{book_id} - \"#{XmlReader.get_full_title(xml_doc)}\""
+# check to see if it already exists
+if response[:exists]
+  if error_on_duplicate
+    puts "ERROR: Document lib://ECCO/#{book_id} already exists with internal id [#{doc_id}]. Add -f to force import."
+    exit(1)
+  else
+    puts "WARNING: Document lib://ECCO/#{book_id} already exists with internal id [#{doc_id}], replacing it."
+  end
+end
+
+# upload the xml file
+curl_cmd = "-F \"xml_file=@#{xml_file};type=text/xml\" -F \"authenticity_token=#{auth_token}\" -X POST #{server}/documents/#{doc_id}/upload.xml"
+raw_response = do_curl_command(curl_cmd)
+response = parse_upload_response(raw_response)
+#puts response
+puts "#{xml_file} #{File.new(xml_file).size} (DONE)"
+
+# now upload all the individual images for each page
+images_path = File.join(File.realpath(File.join(File.dirname(xml_file), '..')), 'images')
+Dir.chdir(images_path)
+count = 0
+Dir.glob("*.TIF") { |img_file|
+  count += 1
+  auth_token = response[:auth_token]
+  curl_cmd = "-F \"image_file=@#{img_file};type=image/tiff\" -F \"authenticity_token=#{auth_token}\" -X POST #{server}/documents/#{doc_id}/upload.xml?page=#{count}"
+  raw_response = do_curl_command(curl_cmd)
+  response = parse_upload_response(raw_response)
+  puts "#{img_file} #{File.new(img_file).size} (DONE)"
+}
+
+exit 0

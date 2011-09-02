@@ -39,12 +39,14 @@ require 'nokogiri'
   end
 
   def self.get_full_title(doc)
-    title = doc.xpath('//fullTitle')[0].content
+    title_path = doc.xpath('//fullTitle')[0]
+    title = title_path.content unless title_path.nil?
     return title
   end
 
   def self.get_ecco_id(doc)
-    ecco_id = doc.xpath('//book/bookInfo/documentID')[0].content
+    ecco_path = doc.xpath('//book/bookInfo/documentID')[0]
+    ecco_id = ecco_path.content unless ecco_path.nil?
     return ecco_id
   end
 

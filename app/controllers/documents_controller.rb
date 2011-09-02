@@ -66,10 +66,12 @@ class DocumentsController < ApplicationController
   def upload
     id = params[:id]
     if id.nil?
+      @document = find_doc(params)
       # we weren't given an id, we are creating a new document
-      @document = Document.new()
-      @document.save()
-      id = @document.id
+      if @document.nil? && params[:nocreate].nil?
+          @document = Document.new()
+          @document.save()
+      end
       @action_params = ''
     else
       # we are modifying a document already created, error out if not found

@@ -1,6 +1,6 @@
 <document>
     <uri><%= params[:uri] %></uri>
-    <id><%= @document.id %></id>
-    <exists><%= !@document.uri.nil? %></exists>
+    <id><%= @document.nil? ? 0 : @document.id %></id>
+    <exists><%= @document.nil? ? false : !@document.uri.nil? %></exists>
     <auth_token><%= form_authenticity_token %></auth_token>
 </document>

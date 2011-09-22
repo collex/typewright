@@ -153,10 +153,13 @@ class Document < ActiveRecord::Base
   end
 
 
-  def get_doc_stats(doc_id, src)
+  def get_doc_stats(doc_id, include_word_stats, src)
     changes = Line.num_pages_with_changes(doc_id, src)
     total = Line.find_all_by_document_id(doc_id, src)
-    result = { :pages_with_changes => changes, :total_revisions => total.length }
+    if include_word_stats
+      doc_word_stats = get_doc_word_stats(src)
+    end
+    result = { :pages_with_changes => changes, :total_revisions => total.length, :doc_word_stats => doc_word_stats }
     return result
   end
 
@@ -183,7 +186,7 @@ class Document < ActiveRecord::Base
     return info.merge(@attributes)
   end
 
-	def get_page_info(page, src = :gale )
+	def get_page_info(page, include_word_stats, src = :gale )
     doc = XmlReader.open_xml_file(get_primary_xml_file())
 
 		page = (page == nil) ? 1 : page.to_i
@@ -214,12 +217,23 @@ class Document < ActiveRecord::Base
     # now get the words, line and paragraphs from the page's xml file
     page_src = XmlReader.read_all_lines_from_page(page_doc, src)
 
-
     lines = XmlReader.create_lines(page_src, src)
     
     lines.each_with_index {|line,i|
 			line[:num] = i+1
 		}
+
+    # get the word statistics
+    if include_word_stats
+      words = {}
+      page_src.each {|box|
+        words[box[:word]] = words[box[:word]] == nil ? 1 : words[box[:word]] + 1
+      }
+      page_word_stats = self.process_word_stats(words)
+    else
+      page_word_stats = nil
+    end
+
     # all the original source data is in place
 
 		recs = Line.find_all_by_document_id_and_page_and_src(self.id, page, src)
@@ -250,21 +264,8 @@ class Document < ActiveRecord::Base
 
 		result = { :doc_id => self.id, :page => page, :num_pages => num_pages, :img_full => img_full,
 			:img_thumb => img_thumb, :lines => lines, :title => title, :title_abbrev => title_abbrev,
-			:img_size => img_size, :ocr_sources => ocr_sources
+			:img_size => img_size, :ocr_sources => ocr_sources, :word_stats => page_word_stats
 		}
-    return result
-  end
-
-  def get_page_word_stats(page, src = :gale)
-    page = (page == nil) ? 1 : page.to_i
-    words = {}
-    #TODO: replace this call
-    src = XmlReader.read_gale(self.book_id(), page)
-    src.each {|box|
-      words[box[:word]] = words[box[:word]] == nil ? 1 : words[box[:word]] + 1
-    }
-    word_stats = self.process_word_stats(words)
-    result = { :word_stats => word_stats }
     return result
   end
 
@@ -272,16 +273,15 @@ class Document < ActiveRecord::Base
     words = {}
     num_pages = self.get_num_pages()
     pgs = num_pages < 100 ? num_pages : 100
-    pgs.times { |pg|
-    #TODO: replace this call
-      src = XmlReader.read_gale(self.book_id(), pg+1)
-      src.each {|box|
+    pgs.times { |page|
+      page_doc = XmlReader.open_xml_file(get_page_xml_file(page+1, src))
+      page_src = XmlReader.read_all_lines_from_page(page_doc, src)
+      page_src.each {|box|
         words[box[:word]] = words[box[:word]] == nil ? 1 : words[box[:word]] + 1
       }
     }
     doc_word_stats = self.process_word_stats(words)
-    result = { :doc_word_stats => doc_word_stats }
-    return result
+    return doc_word_stats
   end
 
   def get_root_directory()

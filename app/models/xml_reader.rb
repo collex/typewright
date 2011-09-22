@@ -103,30 +103,29 @@ require 'nokogiri'
     return :unknown
   end
 
-  ## USED
-	def self.read_gale(book, page)
-    xml_path = get_path('xml')
-		fname = "#{xml_path}/#{book}/xml/#{book}.xml"
-		number = "#{book}#{self.format_page(page)}0"
-
-		slash = fname.rindex('/')
-		cache_name = fname[0..slash] + number
-		ret = self.read_cache(cache_name, "gale")
-		return ret if ret != nil
-
-		doc = Nokogiri::XML(File.new(fname))
-		#doc = REXML::Document.new( File.new(fname) )
-
-		doc.xpath('//imageLink').each { |image|
-		#REXML::XPath.each( doc, "//imageLink" ){ |image|
-			arr = image.text.split('.')
-			if number == arr[0]
-				ret = self.read_gale_page(image, cache_name)
-				return ret
-			end
-		}
-		return nil
-	end
+ 	#def self.read_gale(book, page)
+  # xml_path = get_path('xml')
+	#	fname = "#{xml_path}/#{book}/xml/#{book}.xml"
+	#	number = "#{book}#{self.format_page(page)}0"
+  #
+	#	slash = fname.rindex('/')
+	#	cache_name = fname[0..slash] + number
+	#  ret = self.read_cache(cache_name, "gale")
+	#	return ret if ret != nil
+  #
+	#	doc = Nokogiri::XML(File.new(fname))
+	#	#doc = REXML::Document.new( File.new(fname) )
+  #
+	#	doc.xpath('//imageLink').each { |image|
+	#	#REXML::XPath.each( doc, "//imageLink" ){ |image|
+	#		arr = image.text.split('.')
+	#		if number == arr[0]
+	#			ret = self.read_gale_page(image, cache_name)
+	#			return ret
+	#		end
+	#	}
+	#	return nil
+	#end
 
 	#def self.read_gale_page(image, cache_name)
 	#	page = image.parent.parent

@@ -17,25 +17,18 @@ class DocumentsController < ApplicationController
     page = params[:page]
     src = params[:src].to_sym unless params[:src].nil?
     src = :gale if src.nil?
+    include_word_stats = params[:wordstats].nil? ? false : true
     if doc.nil?
       # nothing found
       result = []
 
-    elsif params[:wordstats] == 'true'
-      # looking for word stats for doc or for page
-      if page.nil?
-        result = [ doc.get_doc_word_stats(src) ]
-      else
-        result = [ doc.get_page_word_stats(page, src) ]
-      end
-
     elsif params[:stats] == 'true'
       # looking for document stats
-      result = [ doc.get_doc_stats(doc.id, src) ]
+      result = [ doc.get_doc_stats(doc.id, include_word_stats, src) ]
 
     elsif !page.nil?
       # looking for info on a particular page of the document
-      result = [ doc.get_page_info(page, src) ]
+      result = [ doc.get_page_info(page, include_word_stats, src) ]
       
     else
       # looking for info on the document as a whole

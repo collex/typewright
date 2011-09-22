@@ -230,8 +230,10 @@ class Document < ActiveRecord::Base
         words[box[:word]] = words[box[:word]] == nil ? 1 : words[box[:word]] + 1
       }
       page_word_stats = self.process_word_stats(words)
+      doc_word_stats = get_doc_word_stats(src)
     else
       page_word_stats = nil
+      doc_word_stats = nil
     end
 
     # all the original source data is in place
@@ -264,23 +266,27 @@ class Document < ActiveRecord::Base
 
 		result = { :doc_id => self.id, :page => page, :num_pages => num_pages, :img_full => img_full,
 			:img_thumb => img_thumb, :lines => lines, :title => title, :title_abbrev => title_abbrev,
-			:img_size => img_size, :ocr_sources => ocr_sources, :word_stats => page_word_stats
+			:img_size => img_size, :ocr_sources => ocr_sources,
+      :word_stats => page_word_stats, :doc_word_stats => doc_word_stats
 		}
     return result
   end
 
   def get_doc_word_stats(src = :gale)
-    words = {}
-    num_pages = self.get_num_pages()
-    pgs = num_pages < 100 ? num_pages : 100
-    pgs.times { |page|
-      page_doc = XmlReader.open_xml_file(get_page_xml_file(page+1, src))
-      page_src = XmlReader.read_all_lines_from_page(page_doc, src)
-      page_src.each {|box|
-        words[box[:word]] = words[box[:word]] == nil ? 1 : words[box[:word]] + 1
+    doc_word_stats = Rails.cache.fetch("doc-stats-#{src}-#{self.book_id()}") {
+      words = {}
+      num_pages = self.get_num_pages()
+      pgs = num_pages < 100 ? num_pages : 100
+      pgs.times { |page|
+        page_doc = XmlReader.open_xml_file(get_page_xml_file(page+1, src))
+        page_src = XmlReader.read_all_lines_from_page(page_doc, src)
+        page_src.each {|box|
+          words[box[:word]] = words[box[:word]] == nil ? 1 : words[box[:word]] + 1
+        }
       }
+      doc_word_stats = self.process_word_stats(words)
+      doc_word_stats
     }
-    doc_word_stats = self.process_word_stats(words)
     return doc_word_stats
   end
 

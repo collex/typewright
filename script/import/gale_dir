@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 def do_usage()
-  puts "Usage: gale_dir [-f] server directory"
+  puts "Usage: gale_dir [flags] server directory"
   puts "Import all books in the given directory into specified TypeWright server."
   puts "If a book already exists, skip it and issue error."
   puts " -f  Force import and issue warning if book already exists."

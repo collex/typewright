@@ -6,10 +6,8 @@ require "#{Dir.pwd}/app/models/xml_reader.rb"
 
 def do_usage()
   puts "Usage: gamera_dir [flags] server directory"
-  puts "Import gamera ocr for a book into specified TypeWright server. Expects xml file for each page."
-  puts "If book already exists, issue error."
-  puts " -f  Force import and issue warning if book already exists."
-  puts " -s  Skip book import without error if book already exists."
+  puts "Import gamera OCR for book into specified TypeWright server from given directory."
+  puts "If book does not already exist, issue error."
   puts " -v  Verbose output"
   puts " -t  Test only -- don't actually upload files"
 end
@@ -40,7 +38,7 @@ end
 
 # start by reading our input parameters
 
-VALID_OPTION_FLAGS = %w( f s v t )
+VALID_OPTION_FLAGS = %w( v t )
 VALID_OPTIONS = %w( )
 
 if ARGV.size < 2
@@ -49,7 +47,7 @@ if ARGV.size < 2
 end
 
 server = ''
-xml_file = ''
+directory = ''
 option_flags = []
 options = {}
 
@@ -72,68 +70,53 @@ ARGV.each do |arg|
     end
   elsif server.empty?
     server = arg
-  elsif xml_file.empty?
-    xml_file = arg
+  elsif directory.empty?
+    directory = arg
   else
     puts "WARNING: Ignoring unknown parameter: #{arg}"
   end
 end
 
-error_on_duplicate = option_flags.index('f').nil?
-skip_existing = !option_flags.index('s').nil?
 verbose_output = !option_flags.index('v').nil?
 test_only = !option_flags.index('t').nil?
 
-xml_doc = XmlReader.open_xml_file(xml_file)
-if xml_doc.nil?
-  puts "ERROR: couldn't open XML file [#{xml_doc}]"
+
+# start by figuring out the ECCO ID
+xml_pages_path = directory
+
+Dir.chdir(xml_pages_path)
+
+xml_files = Dir.glob("*.xml")
+xml_file = xml_files[0]
+if xml_file.nil?
+  puts "ERROR: couldn't find any XML files in [#{xml_pages_path}]"
   exit(1)
 end
+book_id = xml_file[0..9]
 
-book_id = XmlReader.get_ecco_id(xml_doc)
-book_id = File.basename(xml_file) if book_id.nil?
-
-# now that we have all the parameters, start the upload
-curl_cmd = "#{server}/documents/upload.xml?uri=lib://ECCO/#{book_id}"
-curl_cmd += "\&nocreate=1" if test_only
+# now that we have all the parameters, see if the book already exists and get it's internal id
+curl_cmd = "#{server}/documents/upload.xml?uri=lib://ECCO/#{book_id}\&nocreate=1"
 raw_response = do_curl_command(curl_cmd, verbose_output, false)
 response = parse_upload_response(raw_response)
 puts response if verbose_output
 doc_id = response[:doc_id]
 auth_token = response[:auth_token]
-puts "#{doc_id} - lib://ECCO/#{book_id} - \"#{XmlReader.get_full_title(xml_doc)}\""
+puts "#{doc_id} - lib://ECCO/#{book_id} - #{xml_files.size} pages"
 # check to see if it already exists
-if response[:exists]
-  if skip_existing
-    puts "#{xml_file} Exists [#{doc_id}] -skipped- (DONE)"
-    exit(0)
-  elsif error_on_duplicate
-    puts "ERROR: Document lib://ECCO/#{book_id} already exists with internal id [#{doc_id}]. Add -f to force import or -s to skip."
+unless response[:exists]
+    puts "ERROR: Document lib://ECCO/#{book_id} does not exist! "
     exit(1)
-  else
-    puts "WARNING: Document lib://ECCO/#{book_id} already exists with internal id [#{doc_id}], replacing it."
-  end
 end
 
-# upload the xml file
-curl_cmd = "-F \"xml_file=@#{xml_file};type=text/xml\" -F \"authenticity_token=#{auth_token}\" -X POST #{server}/documents/#{doc_id}/upload.xml"
-raw_response = do_curl_command(curl_cmd, verbose_output, test_only)
-response = parse_upload_response(raw_response) unless test_only
-puts response if verbose_output
-puts "#{xml_file} #{File.new(xml_file).size} (DONE)"
-
-# now upload all the individual images for each page
-images_path = File.join(File.realpath(File.join(File.dirname(xml_file), '..')), 'images')
-Dir.chdir(images_path)
 count = 0
-Dir.glob("*.TIF") { |img_file|
+xml_files.each { |xml_file|
   count += 1
   auth_token = response[:auth_token]
-  curl_cmd = "-F \"image_file=@#{img_file};type=image/tiff\" -F \"authenticity_token=#{auth_token}\" -X POST #{server}/documents/#{doc_id}/upload.xml?page=#{count}"
+  curl_cmd = "-F \"xml_file=@#{xml_file};type=text/xml\" -F \"authenticity_token=#{auth_token}\" -X POST #{server}/documents/#{doc_id}/update_page_ocr.xml?page=#{count}&src=gamera"
   raw_response = do_curl_command(curl_cmd, verbose_output, test_only)
   response = parse_upload_response(raw_response) unless test_only
   puts response if verbose_output
-  puts "#{img_file} #{File.new(img_file).size} (DONE)"
+  puts "#{xml_file} #{File.new(xml_file).size} (DONE)"
 }
 
 exit 0

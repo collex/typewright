@@ -2,6 +2,7 @@ Typewright::Application.routes.draw do
 	resources :lines
 	resources :users
 	resources :document_users
+  match 'documents/exists' => 'documents#exists', :as => :exists
   match 'documents/upload' => 'documents#upload', :as => :upload
   match 'documents/update_page_ocr' => 'documents#update_page_ocr', :as => :update_page_ocr
 	resources :documents

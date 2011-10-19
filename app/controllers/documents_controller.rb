@@ -54,7 +54,12 @@ class DocumentsController < ApplicationController
 		end
 	end
 
-  
+
+  # GET /documents/exists.xml?uri=lib://{source_id}/{book_id}
+  def exists
+    @document = find_doc(params)
+  end
+
   # POST /documents/1/upload
   def upload
     id = params[:id]

@@ -1,0 +1,5 @@
+<document>
+    <uri><%= params[:uri] %></uri>
+    <id><%= @document.nil? ? 0 : @document.id %></id>
+    <exists><%= @document.nil? ? false : !@document.uri.nil? %></exists>
+</document>

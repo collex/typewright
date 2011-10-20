@@ -1,0 +1,28 @@
+<html>
+<head></head>
+<body>
+<%= form_for(@page_report) do |f| %>
+  <% if @page_report.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@page_report.errors.count, "error") %> prohibited this page_report from being saved:</h2>
+
+      <ul>
+      <% @page_report.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <input type="hidden" name="page_report[document_id]" value="<%= @page_report.document_id %>">
+  <input type="hidden" name="page_report[page]" value="<%= @page_report.page %>">
+  <div class="field">
+    Please describe the issue here:<br />
+    <%= f.text_area :reportText, :cols=>50, :rows=>10 %>
+  </div>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>
+</body>
+</html>

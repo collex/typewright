@@ -40,6 +40,15 @@ class DocumentsController < ApplicationController
 	  end
 	end
 
+	# GET /documents/{id}/report?page={page}
+	def report
+		@doc = find_doc(params)
+    @page = params[:page]
+    @src = params[:src].to_sym unless params[:src].nil?
+    @src = :gale if @src.nil?
+    @page_report = PageReport.new(:document_id => @doc.id, :page => @page)
+	end
+  
 
 	# POST /documents.xml
 	def create

@@ -1,4 +1,6 @@
 Typewright::Application.routes.draw do
+  resources :page_reports
+
 	resources :lines
 	resources :users
 	resources :document_users
@@ -6,6 +8,7 @@ Typewright::Application.routes.draw do
   match 'documents/upload' => 'documents#upload', :as => :upload
   match 'documents/update_page_ocr' => 'documents#update_page_ocr', :as => :update_page_ocr
 	resources :documents
+  match 'documents/:id/report' => 'documents#report', :as => :report
   match 'documents/:id/upload' => 'documents#upload', :as => :upload
   match 'documents/:id/update_page_ocr' => 'documents#update_page_ocr', :as => :update_page_ocr
 

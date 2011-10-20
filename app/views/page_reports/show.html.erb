@@ -1,0 +1,11 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <b>Document:</b>
+  <%= @page_report.document.nil? ? '- UNKNOWN -' : @page_report.document.uri %></br>
+  <b>Page:</b>
+  <%= @page_report.page %></br>
+  <b>Report Text:</b>
+  <%= @page_report.reportText %>
+</p>
+

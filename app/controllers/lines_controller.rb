@@ -55,6 +55,9 @@ class LinesController < ApplicationController
 	# POST /lines.xml
 	def create
 		@line = Line.new(params[:line])
+    src = params[:src]
+    src = :gale if src.nil?
+    @line.src = src
 
 		respond_to do |format|
 			if @line.save

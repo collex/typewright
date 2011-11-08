@@ -384,6 +384,79 @@ class Document < ActiveRecord::Base
     File.open(page_xml_path, "w") { |f| f.write(xml_doc.to_xml) }
   end
 
+  def get_corrected_text()
+    doc = XmlReader.open_xml_file(get_primary_xml_file())
+    title = XmlReader.get_full_title(doc)
+    num_pages = XmlReader.get_num_pages(doc)
+    output = title + "\n\n"
+    num_pages.times { | page |
+      page_text = self.get_corrected_page_text(page + 1)
+      output += "Page #{page + 1}\n\n"
+      output += page_text unless page_text.nil?
+      output += "(empty page)" if page_text.nil? || page_text.empty?
+      output += "\n\n"
+    }
+    return output
+  end
+
+  def get_corrected_gale_xml()
+    doc = XmlReader.open_xml_file(get_primary_xml_file())
+    page_num = 0
+    doc.xpath('//page').each { |page_node|
+      page_num += 1
+      page_xml = get_corrected_page_gale_xml(page_num)
+      page_node.replace(page_xml)
+    }
+    return doc.to_xml
+  end
+
+  def get_corrected_tei_a()
+
+  end
+
+  def get_corrected_page_text(page_num, src = :gale)
+    page_info = get_page_info(page_num, false, src)
+    page_text = ''
+    page_info[:lines].each { | line |
+      the_text = line[:text]
+      page_text += the_text[the_text.length - 1] + "\n"
+    }
+    return page_text
+  end
+
+  def get_corrected_page_gale_xml(page_num, src = :gale)
+    page_xml_path = get_page_xml_file(page_num, src)
+    page_doc = XmlReader.open_xml_file(page_xml_path)
+    page_node = page_doc.xpath('//page')
+    page_content_node = page_node.xpath('//pageContent').first()
+    page_paragraph_nodes = page_node.xpath('//pageContent/p')
+    page_paragraph_nodes.each { |paragraph_node|
+      paragraph_node.unlink
+    }
+    page_content_node.content = nil
+
+    page_info = get_page_info(page_num, false, src)
+    page_text = ''
+    page_info[:lines].each { | line |
+      p_node = Nokogiri::XML::Node.new('p', page_doc)
+      page_content_node << p_node
+      line[:words].last.each { | word |
+        wd_node = Nokogiri::XML::Node.new('wd', page_doc)
+        wd_node.content = word[:word]
+        pos_str = "#{word[:l]},#{word[:t]},#{word[:r]},#{word[:b]}"
+        wd_node['pos'] = pos_str
+        p_node << wd_node
+      }
+    }
+
+    return page_node
+  end
+
+  # return a string representing the page in TEI-A
+  def get_corrected_page_tei_a(page_num, src = :gale)
+
+  end
+
   def self.do_command(cmd)
     Rails.logger.info(cmd)
     # this also redirects stderr into resp

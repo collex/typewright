@@ -130,4 +130,22 @@ class DocumentsController < ApplicationController
     end
   end
 
+  # GET /documents/export_corrected_text?uri=lib://{source_id}/{book_id}
+  def export_corrected_text()
+    @document = find_doc(params)
+    render :text => @document.get_corrected_text()
+  end
+
+  # GET /documents/export_corrected_gale_xml?uri=lib://{source_id}/{book_id}
+  def export_corrected_gale_xml()
+    @document = find_doc(params)
+    render :text => @document.get_corrected_gale_xml()
+  end
+
+  # GET /documents/export_corrected_tei_a?uri=lib://{source_id}/{book_id}
+  def export_corrected_tei_a()
+    @document = find_doc(params)
+    render :text => @document.get_corrected_tei_a()
+  end
+
 end

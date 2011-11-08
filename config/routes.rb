@@ -7,6 +7,9 @@ Typewright::Application.routes.draw do
   match 'documents/exists' => 'documents#exists', :as => :exists
   match 'documents/upload' => 'documents#upload', :as => :upload
   match 'documents/update_page_ocr' => 'documents#update_page_ocr', :as => :update_page_ocr
+  match 'documents/export_corrected_text' => 'documents#export_corrected_text', :as => :export_corrected_text
+  match 'documents/export_corrected_gale_xml' => 'documents#export_corrected_gale_xml', :as => :export_corrected_gale_xml
+  match 'documents/export_corrected_tei_a' => 'documents#export_corrected_tei_a', :as => :export_corrected_tei_a
 	resources :documents
   match 'documents/:id/report' => 'documents#report', :as => :report
   match 'documents/:id/upload' => 'documents#upload', :as => :upload

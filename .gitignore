@@ -1,4 +1,9 @@
-.bundle
-db/*.sqlite3
-log/*.log
-tmp/
+/.bundle
+/log/*
+/tmp/*
+/public/system/*
+/coverage/
+/.idea/
+/config/database.yml
+/config/site.yml
+/Gemfile.lock

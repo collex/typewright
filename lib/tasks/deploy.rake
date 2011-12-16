@@ -2,7 +2,7 @@
 desc "Deploy on production"
 task :deploy do
 	puts "Get latest files from repository..."
-	puts `svn up`
+	puts `git pull`
 	run_bundler()
 	puts "Check for needed migrations..."
 	puts `rake db:migrate`

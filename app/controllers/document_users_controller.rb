@@ -27,6 +27,15 @@ class DocumentUsersController < ApplicationController
 		end
 	end
 
+  # GET /document_users/1.xml
+  def show
+    @document = DocumentUser.find(params[:id])
+
+    respond_to do |format|
+      format.xml  { render :xml => @document }
+    end
+  end
+
 	# DELETE /document_users/1.xml
 	def destroy
 		rec = DocumentUser.find(params[:id])

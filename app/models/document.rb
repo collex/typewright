@@ -156,10 +156,14 @@ class Document < ActiveRecord::Base
   def get_doc_stats(doc_id, include_word_stats, src)
     changes = Line.num_pages_with_changes(doc_id, src)
     total = Line.find_all_by_document_id(doc_id, src)
+	total_lines_revised = {}
+	total.each { |rec|
+		total_lines_revised["#{rec['page']},#{rec['line']}"] = true
+	}
     if include_word_stats
       doc_word_stats = get_doc_word_stats(src)
     end
-    result = { :pages_with_changes => changes, :total_revisions => total.length, :doc_word_stats => doc_word_stats }
+    result = { :pages_with_changes => changes, :total_revisions => total.length, :doc_word_stats => doc_word_stats, :lines_with_changes => total_lines_revised.length }
     return result
   end
 

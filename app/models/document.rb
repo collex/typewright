@@ -155,7 +155,7 @@ class Document < ActiveRecord::Base
 
   def get_doc_stats(doc_id, include_word_stats, src)
     changes = Line.num_pages_with_changes(doc_id, src)
-    total = Line.find_all_by_document_id(doc_id, src)
+    total = Line.find_all_by_document_id_and_src(doc_id, src)
 	total_lines_revised = {}
 	total.each { |rec|
 		total_lines_revised["#{rec['page']},#{rec['line']}"] = true

@@ -5,8 +5,8 @@ require "#{Dir.pwd}/app/models/xml_reader.rb"
 # upload xml file for a new book, given the directory
 
 def do_usage()
-  puts "Usage: gamera_dir [flags] server directory"
-  puts "Import gamera ocr for a book into specified TypeWright server. Expects xml file for each page."
+  puts "Usage: gale_xml [flags] server /path/to/xml_file.xml"
+  puts "Import gale ocr for a book into specified TypeWright server. Expects single xml file for all pages."
   puts "If book already exists, issue error."
   puts " -f  Force import and issue warning if book already exists."
   puts " -s  Skip book import without error if book already exists."

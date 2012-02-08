@@ -2,6 +2,52 @@ THUMBNAIL_WIDTH = 150
 IMAGE_WIDTH = 800
 SLICE_HEIGHT = 50
 
+namespace :upload do
+
+	desc "Upload typewright files to the server (id=0123456789,0123456789,...)"
+	task :document do
+		# This assumes that the ECCO disks are mounted and there is a symbolic link to them something like this:
+		#ln -s /Volumes/18th\ C\ Collections\ Online\ 1of2/ECCO_1of2/ /Users/USERNAME/ecco1
+		#ln -s /Volumes/18th\ C\ Collections\ Online\ 2of2/ECCO_2of2/ /Users/USERNAME/ecco2
+
+		# It will search for a document in all the possible places for it, and stop when it finds it.
+
+		script = "./script/import/gale_xml -f -v typewright.sl.performantsoftware.com"
+
+		ids = ENV['id']
+		if ids == nil
+			puts "Usage: call with id=0123456789,0123456789,..."
+		else
+			ids = ids.split(',')
+			ids.each {|id|
+				if id.length != 10
+					puts "Bad id: #{id}"
+				end
+				base_path = "#{Rails.root}".split('/')
+				base_path = "/#{base_path[1]}/#{base_path[2]}/"
+				folders = [ 'ecco1/HistAndGeo', 'ecco1/MedSciTech', 'ecco1/SSAndFineArt', 'ecco2/GenRef',
+					'ecco2/Law','ecco2/LitAndLang_1','ecco2/LitAndLang_2','ecco2/RelAndPhil' ]
+
+				found = false
+				folders.each { |folder|
+					if found == false
+						full_path = base_path + folder + '/' + id + "/xml/" + id + ".xml"
+						if File.exists?(full_path)
+							puts "uploading: #{full_path}..."
+							found = true
+							`#{script} #{full_path} >> #{Rails.root}/tmp/manual_upload.log`
+						end
+					end
+				}
+				if found == false
+					puts "NOT FOUND: #{id}"
+				end
+			}
+		end
+	end
+end
+
+
 desc "Import a document from the ECCO HD (ecco_index=0123456789 folder=/path/to/input/data)"
 task :import do
 	start_time = Time.now

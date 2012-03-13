@@ -36,7 +36,12 @@ class Document < ActiveRecord::Base
 	end
 
 	def img_folder()
-		return File.join('uploaded',self.book_id())
+		directory = 'uploaded'
+		(0..4).each { |i|
+			directory = File.join(directory, book_id[i])
+		}
+		img_cache_path = File.join(directory, book_id)
+		return img_cache_path
 	end
 
 	def img_thumb(page)

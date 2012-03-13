@@ -4,21 +4,25 @@ SLICE_HEIGHT = 50
 
 namespace :upload do
 
-	desc "Upload typewright files to the server (id=0123456789,0123456789,...)"
-	task :document do
+	desc "Upload typewright files to the server (id=0123456789-0123456789-...)"
+	task :document, :id do |t, args|
 		# This assumes that the ECCO disks are mounted and there is a symbolic link to them something like this:
 		#ln -s /Volumes/18th\ C\ Collections\ Online\ 1of2/ECCO_1of2/ /Users/USERNAME/ecco1
 		#ln -s /Volumes/18th\ C\ Collections\ Online\ 2of2/ECCO_2of2/ /Users/USERNAME/ecco2
+		#ln -s /Volumes/18th\ C\ Collections\ Online\ 2of2/RelAndPhil/ /Users/USERNAME/ecco2b
 
 		# It will search for a document in all the possible places for it, and stop when it finds it.
 
 		script = "./script/import/gale_xml -f -v typewright.sl.performantsoftware.com"
 
-		ids = ENV['id']
+		ids = args[:id] #ENV['id']
 		if ids == nil
 			puts "Usage: call with id=0123456789,0123456789,..."
 		else
-			ids = ids.split(',')
+			# don't know why the argument start with garbage
+			ids = ids.split('[')
+			ids = ids.last()
+			ids = ids.split('-')
 			ids.each {|id|
 				if id.length != 10
 					puts "Bad id: #{id}"
@@ -26,7 +30,7 @@ namespace :upload do
 				base_path = "#{Rails.root}".split('/')
 				base_path = "/#{base_path[1]}/#{base_path[2]}/"
 				folders = [ 'ecco1/HistAndGeo', 'ecco1/MedSciTech', 'ecco1/SSAndFineArt', 'ecco2/GenRef',
-					'ecco2/Law','ecco2/LitAndLang_1','ecco2/LitAndLang_2','ecco2/RelAndPhil' ]
+					'ecco2/Law','ecco2/LitAndLang_1','ecco2/LitAndLang_2','ecco2/RelAndPhil','ecco2b' ]
 
 				found = false
 				folders.each { |folder|
@@ -47,6 +51,63 @@ namespace :upload do
 	end
 end
 
+require 'json'
+
+desc "read ecco ids (file=/path/to/file)"
+task :ecco_uri, :path do |t, args|
+	path = args[:path]
+	json = File.open(path, 'r') { |f| f.read }
+	hash = JSON.parse(json)
+	File.open(path+'out', 'w') { |f|
+		hash['response']['docs'].each {|doc|
+			f.puts doc['uri']
+		}
+	}
+end
+
+desc "try to open each document in the file passed. (This is the uri, one per line) (file=/path/to/file). Run this from the typewright server."
+task :touch_all_typewright, :path do |t, args|
+	path = args[:path]
+	docs = File.open(path, 'r') { |f| f.read }
+	docs = docs.split("\n")
+
+	File.open(path+".ok.txt", 'w') { |ok|
+		File.open(path+".error.txt", 'w') { |err|
+			docs.each_with_index {|doc,count|
+				File.open(path+".progress.txt", 'a') {|f| f.puts(count) }
+				cmd = "curl \"localhost/documents.xml?id=#{doc}&src=gale\""
+				puts cmd
+				resp = `#{cmd}`
+				start = resp[0..4]
+				if start == "<html"
+					err.puts("=============== #{doc} =================")
+					err.puts(resp)
+				elsif start == "<?xml"
+					ok.puts("=============== #{doc} =================")
+					ok.puts(resp)
+				else
+					puts "!!!! #{start}"
+				end
+				puts "."
+#				if resp.include?("Action Controller: Exception caught")
+#					msg = ""
+#					arr = resp.split("<pre>")
+#					if arr.length >= 2
+#						arr = arr[1].split("</pre>")
+#						if arr.length >= 2
+#							msg = arr[0]
+#						end
+#					end
+#					err.puts("#{doc}: #{msg}")
+#					puts "#{doc}: #{msg}"
+#				else
+#					ok.puts("#{doc}")
+#					puts "#{doc}: OK"
+#				end
+			}
+		}
+	}
+end
 
 desc "Import a document from the ECCO HD (ecco_index=0123456789 folder=/path/to/input/data)"
 task :import do

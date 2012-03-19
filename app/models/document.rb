@@ -324,6 +324,7 @@ class Document < ActiveRecord::Base
 
      # create the file path
     path = File.join(img_path, upload.original_filename)
+	path = path.gsub(".tif", ".TIF")
     # write the file
     File.open(path, "wb") { |f| f.write(upload.read) }
   end

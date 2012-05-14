@@ -4,17 +4,17 @@ Typewright::Application.routes.draw do
 	resources :lines
 	resources :users
 	resources :document_users
-  match 'documents/exists' => 'documents#exists', :as => :exists
-  match 'documents/upload' => 'documents#upload', :as => :upload
-  match 'documents/update_page_ocr' => 'documents#update_page_ocr', :as => :update_page_ocr
-  match 'documents/export_corrected_text' => 'documents#export_corrected_text', :as => :export_corrected_text
-  match 'documents/export_corrected_gale_xml' => 'documents#export_corrected_gale_xml', :as => :export_corrected_gale_xml
-  match 'documents/export_corrected_tei_a' => 'documents#export_corrected_tei_a', :as => :export_corrected_tei_a
+  get 'documents/exists' => 'documents#exists', :as => :exists
+  post 'documents/upload' => 'documents#upload', :as => :upload
+  post 'documents/update_page_ocr' => 'documents#update_page_ocr', :as => :update_page_ocr
+  get 'documents/export_corrected_text' => 'documents#export_corrected_text', :as => :export_corrected_text
+  get 'documents/export_corrected_gale_xml' => 'documents#export_corrected_gale_xml', :as => :export_corrected_gale_xml
+  get 'documents/export_corrected_tei_a' => 'documents#export_corrected_tei_a', :as => :export_corrected_tei_a
 	resources :documents
-  match 'documents/:id/report' => 'documents#report', :as => :report
-  match 'documents/:id/upload' => 'documents#upload', :as => :upload
-  match 'documents/:id/update_page_ocr' => 'documents#update_page_ocr', :as => :update_page_ocr
-
+  get 'documents/:id/report' => 'documents#report', :as => :report
+  post 'documents/:id/upload' => 'documents#upload', :as => :upload
+  post 'documents/:id/update_page_ocr' => 'documents#update_page_ocr', :as => :update_page_ocr
+  get "/test_exception_notifier" => "users#test_exception_notifier"
 
   # The priority is based upon order of creation:
   # first created -> highest priority.

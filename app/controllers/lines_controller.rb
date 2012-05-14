@@ -2,7 +2,7 @@ class LinesController < ApplicationController
 	# GET /lines.xml
 	def index
 		lines = []
-    src = params[:src].to_sym unless params[:src].nil?
+		src = params[:src].blank? ? :gale : params[:src].to_sym
 		if params[:revisions] == 'true'
 			uri = params[:uri]
 			doc = Document.find_by_uri(uri)
@@ -46,7 +46,7 @@ class LinesController < ApplicationController
 			end
 			lines2.push({ :id => line.id, :federation => user.federation, :orig_id => user.orig_id, :updated_at => line.updated_at, :page => line.page,
 				 :line => line.line, :src => line.src, :status => line.status, :words =>w, :document_id => line.document_id })
-		}
+		} if lines.present?
 		respond_to do |format|
 			format.xml  { render :xml => lines2 }
 		end

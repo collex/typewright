@@ -19,6 +19,7 @@
 # XML files
 
 class Document < ActiveRecord::Base
+	attr_accessible :uri
 
   THUMBNAIL_WIDTH = 300
   SLICE_WIDTH = 800

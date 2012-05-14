@@ -16,7 +16,7 @@
 # ----------------------------------------------------------------------------
 
 class XmlReader
-require 'nokogiri'
+#	require 'nokogiri'
 
 	def self.format_page(page)
     "0000#{page}"[-4, 4]

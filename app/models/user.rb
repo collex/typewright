@@ -1,4 +1,6 @@
 class User < ActiveRecord::Base
+	attr_accessible :id, :federation, :orig_id
+
 #	def self.get_user(federation, orig_id)
 #		user = User.find_by_federation_and_orig_id(federation, orig_id)
 #		return user

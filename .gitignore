@@ -7,3 +7,4 @@
 /config/database.yml
 /config/site.yml
 /Gemfile.lock
+/public/uploaded/*

@@ -6,6 +6,36 @@
 #
 
 ##########################
+### EMAIL
+##########################
+
+# For getting automatic emails when an error occurs
+# exception_recipients: List of all emails that should receive the notification
+# sender_address: Who the notification email will be from
+# email_prefix: What each email should be prefixed with
+exception_notifier:
+  exception_recipients: "admin@example.com"
+  sender_address: '"Application Error" <admin@example.com>'
+  email_prefix: "[Typewright] "
+
+# For setting up email - this example uses gmail
+smtp_settings:
+  address: "smtp.gmail.com"
+  port: 587
+  user_name: 'admin@example.com'
+  password: 'super-secret'
+  authentication: :plain
+  return_path: http://example.com
+
+##########################
+### Skin
+##########################
+
+skin:
+  title_prefix: 'DEV: '
+  edge: false
+
+##########################
 ### SYSTEM
 ##########################
 

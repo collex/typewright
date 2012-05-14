@@ -126,7 +126,13 @@ puts "#{xml_file} #{File.new(xml_file).size} (DONE)"
 images_path = File.join(File.realpath(File.join(File.dirname(xml_file), '..')), 'images')
 Dir.chdir(images_path)
 count = 0
-Dir.glob("*.TIF") { |img_file|
+images = []
+Dir.glob("*") { |img_file|
+  images.push(img_file) if img_file.include?('TIF') || img_file.include?('tif')
+}
+images.sort!
+
+images.each { |img_file|
   count += 1
   auth_token = response[:auth_token]
   curl_cmd = "-F \"image_file=@#{img_file};type=image/tiff\" -F \"authenticity_token=#{auth_token}\" -X POST #{server}/documents/#{doc_id}/upload.xml?page=#{count}"

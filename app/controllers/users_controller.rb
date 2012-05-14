@@ -22,4 +22,8 @@ class UsersController < ApplicationController
 			end
 		end
 	end
+
+	def test_exception_notifier
+		raise "This is only a test of the automatic notification system."
+	end
 end

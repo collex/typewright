@@ -19,9 +19,6 @@ namespace :upload do
 		if ids == nil
 			puts "Usage: call with id=0123456789,0123456789,..."
 		else
-			# don't know why the argument start with garbage
-			ids = ids.split('[')
-			ids = ids.last()
 			ids = ids.split('-')
 			ids.each {|id|
 				if id.length != 10
@@ -49,6 +46,35 @@ namespace :upload do
 			}
 		end
 	end
+
+	desc "find original document on the usb drives"
+	task :find, :ids do |t, args|
+		ids = args[:ids].split('-')
+		ids.each { |id|
+			if id.length != 10
+				puts "Bad id: #{id}"
+			end
+			base_path = "#{Rails.root}".split('/')
+			base_path = "/#{base_path[1]}/#{base_path[2]}/"
+			folders = [ 'ecco1/HistAndGeo', 'ecco1/MedSciTech', 'ecco1/SSAndFineArt', 'ecco2/GenRef',
+				'ecco2/Law','ecco2/LitAndLang_1','ecco2/LitAndLang_2','ecco2/RelAndPhil','ecco2b' ]
+
+			found = false
+			folders.each { |folder|
+				if found == false
+					full_path = base_path + folder + '/' + id + "/xml/" + id + ".xml"
+					if File.exists?(full_path)
+						puts "FOUND: #{full_path}..."
+						found = true
+					end
+				end
+			}
+			if found == false
+				puts "NOT FOUND: #{id}"
+			end
+		}
+	end
+
 end
 
 require 'json'

@@ -1,5 +1,14 @@
 class User < ActiveRecord::Base
 	attr_accessible :id, :federation, :orig_id
+	@@user_cache = {}
+
+	def self.get(id)
+		# This provides a cache for the users, since this is called for each line.
+		hit = @@user_cache[id]
+		return hit if hit.present?
+		@@user_cache[id] = User.find_by_id(id)
+		return @@user_cache[id]
+	end
 
 #	def self.get_user(federation, orig_id)
 #		user = User.find_by_federation_and_orig_id(federation, orig_id)

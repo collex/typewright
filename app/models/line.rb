@@ -48,7 +48,7 @@ class Line < ActiveRecord::Base
 				line[:dates] = [ '' ]
 				line[:actions] = [ '' ]
 				changes[line_num].each { |lin|
-					user = ::User.find_by_id(lin.user_id)
+					user = ::User.get(lin.user_id)
           author = { :federation  => user.federation, :orig_id => user.orig_id }
 					words = self.db_to_words(lin[:words])
 					line[:authors].push(author)

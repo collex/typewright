@@ -429,17 +429,19 @@ class Document < ActiveRecord::Base
     page_info = get_page_info(page_num, false, src)
     page_text = ''
     page_info[:lines].each { | line |
-      the_text = line[:text]
-      page_text += the_text[the_text.length - 1] + "\n"
+      the_text = line[:text] # the_text is an array listing all the changes. We want the last one, if it wasn't deleted.
+      page_text += the_text.last + "\n" if the_text.last.present?
     }
     return page_text
   end
 
   def get_corrected_page_gale_xml(page_num, src = :gale)
+	  # This uses everything except the actual lines from the original XML file.
     page_xml_path = get_page_xml_file(page_num, src)
     page_doc = XmlReader.open_xml_file(page_xml_path)
     page_node = page_doc.xpath('//page')
     page_content_node = page_node.xpath('//pageContent').first()
+	# Remove the original paragraphs because we are going to regenerate them
     page_paragraph_nodes = page_node.xpath('//pageContent/p')
     page_paragraph_nodes.each { |paragraph_node|
       paragraph_node.unlink
@@ -447,20 +449,32 @@ class Document < ActiveRecord::Base
     page_content_node.content = nil
 
     page_info = get_page_info(page_num, false, src)
-    page_text = ''
     page_info[:lines].each { | line |
-      p_node = Nokogiri::XML::Node.new('p', page_doc)
-      page_content_node << p_node
-      line[:words].last.each { | word |
-        wd_node = Nokogiri::XML::Node.new('wd', page_doc)
-        wd_node.content = word[:word]
-        pos_str = "#{word[:l]},#{word[:t]},#{word[:r]},#{word[:b]}"
-        wd_node['pos'] = pos_str
-        p_node << wd_node
-      }
-    }
+		if line[:actions].blank? || line[:actions].last == 'correct'
+			# the line wasn't changed, so copy the original to the output.
+			# The original is the first item in the array.
+			output_item = line[:words].first
+		elsif line[:actions].last == 'change'
+			# the line was corrected, so take the last correction and output that
+			output_item = line[:words].last
+		else
+			# If neither of the above cases happens, then the line was deleted, so completely ignore it
+			output_item = nil
+		end
+		if output_item.present?
+			p_node = Nokogiri::XML::Node.new('p', page_doc)
+			page_content_node << p_node
+			output_item.each { |word|
+				wd_node = Nokogiri::XML::Node.new('wd', page_doc)
+				wd_node.content = word[:word]
+				pos_str = "#{word[:l]},#{word[:t]},#{word[:r]},#{word[:b]}"
+				wd_node['pos'] = pos_str
+				p_node << wd_node
+			}
+		end
+	}
 
-    return page_node
+	return page_node
   end
 
   # return a string representing the page in TEI-A

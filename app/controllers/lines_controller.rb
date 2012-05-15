@@ -37,7 +37,7 @@ class LinesController < ApplicationController
 
 		lines2 = []
 		lines.each { |line|
-			user = User.find_by_id(line.user_id)
+			user = User.get(line.user_id)
 			w = line.words
 			if params[:revisions] == 'true'
 				if w == nil || w.length == 0

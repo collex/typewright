@@ -22,9 +22,11 @@ exception_notifier:
 smtp_settings:
   address: "smtp.gmail.com"
   port: 587
+  domain: 'example.com'
   user_name: 'admin@example.com'
   password: 'super-secret'
   authentication: :plain
+  enable_starttls_auto: true
   return_path: http://example.com
 
 ##########################

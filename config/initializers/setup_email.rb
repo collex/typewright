@@ -1,6 +1,7 @@
 # config/initializers/setup_mail.rb
 
 ActionMailer::Base.smtp_settings = {
+	:delivery_method => :smtp,
 	:address => SITE_SPECIFIC['smtp_settings']['address'],
 	:port => SITE_SPECIFIC['smtp_settings']['port'],
 	:domain => SITE_SPECIFIC['smtp_settings']['domain'],

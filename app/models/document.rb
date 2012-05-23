@@ -450,17 +450,18 @@ class Document < ActiveRecord::Base
 
     page_info = get_page_info(page_num, false, src)
     page_info[:lines].each { | line |
-		if line[:actions].blank? || line[:actions].last == 'correct'
-			# the line wasn't changed, so copy the original to the output.
-			# The original is the first item in the array.
-			output_item = line[:words].first
-		elsif line[:actions].last == 'change'
-			# the line was corrected, so take the last correction and output that
-			output_item = line[:words].last
-		else
-			# If neither of the above cases happens, then the line was deleted, so completely ignore it
-			output_item = nil
+		# get the last entry that is not "correct", since they don't affect the output (They are just confirmation that the line was looked at.) We'll just loop through to find it.
+		output_item = line[:words].first
+		if line[:actions].present?
+			line[:actions].each_with_index { |action, i|
+				if action == 'change'
+					output_item = line[:words][i]
+				elsif action == 'delete'
+					output_item = nil
+				end
+			}
 		end
+
 		if output_item.present?
 			p_node = Nokogiri::XML::Node.new('p', page_doc)
 			page_content_node << p_node

@@ -94,8 +94,8 @@ book_id = XmlReader.get_ecco_id(xml_doc)
 book_id = File.basename(xml_file) if book_id.nil?
 
 # now that we have all the parameters, start the upload
-curl_cmd = "#{server}/documents/upload.xml?uri=lib://ECCO/#{book_id}"
-curl_cmd += "\&nocreate=1" if test_only
+curl_cmd = "-F \"uri=lib://ECCO/#{book_id}\" -X POST #{server}/documents/upload.xml"
+curl_cmd = "-F \"nocreate=1]\" " + curl_cmd if test_only
 raw_response = do_curl_command(curl_cmd, verbose_output, false)
 response = parse_upload_response(raw_response)
 puts response if verbose_output

@@ -33,8 +33,24 @@ class Document < ActiveRecord::Base
   end
   
 	def book_id()
-		return self.uri.split('/').last
-	end
+      return self.uri.split('/').last
+  end
+
+  def book_uri_path()
+    return self.uri.split(/(lib:)|\//i).reject{ |e| e.empty? }
+  end
+
+  def uri_root()
+    if self.is_ecco?
+      return ""
+    else
+      return self.uri.split(/lib:|\//i).reject{ |e| e.empty? }.first
+    end
+  end
+
+  def is_ecco?
+    return !self.uri.match(/\/\/ecco\//i).nil?
+  end
 
 	def img_folder()
 		directory = 'uploaded'
@@ -45,7 +61,7 @@ class Document < ActiveRecord::Base
 		return img_cache_path
 	end
 
-	def img_thumb(page)
+	def img_thumb(page, src = :gale)
 		page_name = "#{book_id}#{XmlReader.format_page(page)}0"
     img_cache_path = self.img_folder()
 		url_path = File.join(img_cache_path, 'thumbnails')
@@ -56,8 +72,8 @@ class Document < ActiveRecord::Base
       # the thumbnail file doesn't exist, create the image files
       thumb_path = File.join(pub_path, url_path)
       page_path = File.join(pub_path, img_cache_path)
-      Document.generate_slices(get_page_image_file(page), page_path, page_name, SLICE_WIDTH, SLICE_HEIGHT)
-      Document.generate_thumbnail(get_page_image_file(page), page_path, page_name, THUMBNAIL_WIDTH)
+      Document.generate_slices(get_page_image_file(page, nil, src, self.uri_root()), page_path, page_name, SLICE_WIDTH, SLICE_HEIGHT)
+      Document.generate_thumbnail(get_page_image_file(page, nil, src, self.uri_root()), page_path, page_name, THUMBNAIL_WIDTH)
     end
     return url
 	end
@@ -87,8 +103,8 @@ class Document < ActiveRecord::Base
 		return "#{img_folder}/#{page_name}/#{page_name}-*.png"
 	end
 
-  def get_page_image_file(page, page_doc = nil)
-    page_doc = XmlReader.open_xml_file(get_page_xml_file(page)) if page_doc.nil?
+  def get_page_image_file(page, page_doc = nil, src = :gale, uri_root = "")
+    page_doc = XmlReader.open_xml_file(get_page_xml_file(page, src, uri_root)) if page_doc.nil?
     image_filename = XmlReader.get_page_image_filename(page_doc)
     image_path = File.join(get_image_directory(), image_filename)
     return image_path
@@ -184,7 +200,7 @@ class Document < ActiveRecord::Base
 
     ocr_sources = []
     SUPPORTED_OCR_SOURCES.each { |ocr_src|
-      if File.exist?(get_page_xml_file(1, ocr_src))
+      if File.exist?(get_page_xml_file(1, ocr_src, self.uri_root()))
         ocr_sources << ocr_src
       end
     }
@@ -201,7 +217,7 @@ class Document < ActiveRecord::Base
 
 		page = (page == nil) ? 1 : page.to_i
 
-    page_doc = XmlReader.open_xml_file(get_page_xml_file(page, :gale))
+    page_doc = XmlReader.open_xml_file(get_page_xml_file(page, :gale, self.uri_root()))
 
     img_size = self.img_size(page, page_doc)
 		img_thumb = self.img_thumb(page)
@@ -214,14 +230,14 @@ class Document < ActiveRecord::Base
     # figure out which OCR sources are available for this page
     ocr_sources = []
     SUPPORTED_OCR_SOURCES.each { |ocr_src|
-      if File.exist?(get_page_xml_file(page, ocr_src))
+      if File.exist?(get_page_xml_file(page, ocr_src, self.uri_root()))
         ocr_sources << ocr_src
       end
     }
 
     # open the source specific page xml document
     unless src == :gale
-      page_doc = XmlReader.open_xml_file(get_page_xml_file(page, src))
+      page_doc = XmlReader.open_xml_file(get_page_xml_file(page, src, self.uri_root()))
     end
 
     # now get the words, line and paragraphs from the page's xml file
@@ -288,7 +304,7 @@ class Document < ActiveRecord::Base
       num_pages = self.get_num_pages()
       pgs = num_pages < 100 ? num_pages : 100
       pgs.times { |page|
-        page_doc = XmlReader.open_xml_file(get_page_xml_file(page+1, src))
+        page_doc = XmlReader.open_xml_file(get_page_xml_file(page+1, src, self.uri_root()))
         page_src = XmlReader.read_all_lines_from_page(page_doc, src)
         page_src.each {|box|
           words[box[:word]] = words[box[:word]] == nil ? 1 : words[box[:word]] + 1
@@ -301,23 +317,23 @@ class Document < ActiveRecord::Base
   end
 
   def get_root_directory()
-    return Document.get_book_root_directory(self.book_id())
+    return Document.get_book_root_directory(self.book_id(), self.uri_root())
   end
 
   def get_xml_directory()
-    return Document.get_book_xml_directory(self.book_id())
+      return Document.get_book_xml_directory(self.book_id(), self.uri_root())
   end
 
   def get_image_directory()
-    return Document.get_book_image_directory(self.book_id())
+    return Document.get_book_image_directory(self.book_id(), self.uri_root())
   end
 
   def get_primary_xml_file()
-    return Document.get_book_primary_xml_file(self.book_id())
+    return Document.get_book_primary_xml_file(self.book_id(), self.uri_root())
   end
 
-  def get_page_xml_file(page, src = :gale)
-    return Document.get_book_page_xml_file(self.book_id(), page, src)
+  def get_page_xml_file(page, src = :gale, uri_root = "")
+    return Document.get_book_page_xml_file(self.book_id(), page, src, uri_root)
   end
 
   def save_page_image(upload)
@@ -351,7 +367,10 @@ class Document < ActiveRecord::Base
       name = xml_file.original_filename
       uri = 'lib://ECCO/' + name.split('.')[0]
     end
-    self.uri = uri
+    if self.uri.nil?
+      self.uri = uri  # left over from ECCO-only days
+    end
+
 
     # extract all of the page nodes and store them
     # in separate files for efficiency
@@ -370,7 +389,7 @@ class Document < ActiveRecord::Base
           # Error if <pageID> is not what we would have generated for that page number
           raise "#{uri} -- ERROR: for page #{count} expected pageInfo > pageID [#{generated_page_id}] but got pageInfo > pageID [#{page_id}]"
         end
-        page_xml_path = get_page_xml_file(count, :gale)
+        page_xml_path = get_page_xml_file(count, :gale, self.uri_root())
         File.open(page_xml_path, "w") { |f| f.write(page_doc.to_xml) }
         # replace the existing page nodes with a reference node pointing to the page xml file
         page_xml_filename = page_xml_path.split('/').last
@@ -388,10 +407,10 @@ class Document < ActiveRecord::Base
 
   end
 
-  def import_page_ocr(page_num, xml_file, src = nil)
+  def import_page_ocr(page_num, xml_file, src = nil, uri_root = "")
     xml_doc = XmlReader.open_xml_file(xml_file)
     src = XmlReader.detect_ocr_source(xml_doc)
-    page_xml_path = get_page_xml_file(page_num, src)
+    page_xml_path = get_page_xml_file(page_num, src, uri_root)
     File.open(page_xml_path, "w") { |f| f.write(xml_doc.to_xml) }
   end
 
@@ -435,9 +454,9 @@ class Document < ActiveRecord::Base
     return page_text
   end
 
-  def get_corrected_page_gale_xml(page_num, src = :gale)
+  def get_corrected_page_gale_xml(page_num, src = :gale, uri_root = "")
 	  # This uses everything except the actual lines from the original XML file.
-    page_xml_path = get_page_xml_file(page_num, src)
+    page_xml_path = get_page_xml_file(page_num, src, uri_root)
     page_doc = XmlReader.open_xml_file(page_xml_path)
     page_node = page_doc.xpath('//page')
     page_content_node = page_node.xpath('//pageContent').first()
@@ -491,38 +510,45 @@ class Document < ActiveRecord::Base
     return resp
   end
 
-  def self.get_book_root_directory(book_id)
+
+
+  def self.get_book_root_directory(book_id, uri_root = "")
     directory = XmlReader.get_path('xml')
+    directory = File.join(directory, uri_root)
     (0..4).each { | i |
       directory = File.join(directory, book_id[i])
     }
     book_path = File.join(directory, book_id)
+
     FileUtils.mkdir_p(book_path) unless FileTest.directory?(book_path)
     return book_path
   end
 
-  def self.get_book_xml_directory(book_id)
-    path = get_book_root_directory(book_id) + '/xml'
+  def self.get_book_xml_directory(book_id, uri_root = "")
+    path = get_book_root_directory(book_id, uri_root) + '/xml'
     Dir::mkdir(path) unless FileTest.directory?(path)
     return path
   end
 
-  def self.get_book_image_directory(book_id)
-    path = get_book_root_directory(book_id) + '/img'
+  def self.get_book_image_directory(book_id, uri_root = "")
+    path = get_book_root_directory(book_id, uri_root) + '/img'
     Dir::mkdir(path) unless FileTest.directory?(path)
     return path
   end
 
-  def self.get_book_primary_xml_file(book_id)
+  def self.get_book_primary_xml_file(book_id, uri_root = "")
     name = "#{book_id}.xml"
-    path = File.join(get_book_xml_directory(book_id), name)
+
+    path = File.join(get_book_xml_directory(book_id, uri_root), name)
     return path
   end
 
-  def self.get_book_page_xml_file(book_id, page, src = :gale)
+  def self.get_book_page_xml_file(book_id, page, src = :gale, uri_root = "")
     page_id = XmlReader.format_page(page) + '0'
+
     name = "#{book_id}_#{page_id}.xml"
-    book_xml_path = get_book_xml_directory(book_id)
+
+    book_xml_path = get_book_xml_directory(book_id, uri_root)
     book_xml_path = File.join(book_xml_path, "#{src}")
     Dir::mkdir(book_xml_path) unless FileTest.directory?(book_xml_path)
     path = File.join(book_xml_path, name)

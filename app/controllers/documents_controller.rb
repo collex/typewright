@@ -77,6 +77,9 @@ class DocumentsController < ApplicationController
       # we weren't given an id, we are creating a new document
       if @document.nil? && params[:nocreate].nil?
           @document = Document.new()
+          if !params[:uri].nil?
+            @document.uri = params[:uri]
+          end
           @document.save()
       end
       @action_params = ''

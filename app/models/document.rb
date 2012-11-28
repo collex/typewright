@@ -54,6 +54,7 @@ class Document < ActiveRecord::Base
 
 	def img_folder()
 		directory = 'uploaded'
+    directory = File.join(directory, self.uri_root())
 		(0..4).each { |i|
 			directory = File.join(directory, book_id[i])
 		}

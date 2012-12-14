@@ -9,6 +9,8 @@ Typewright::Application.routes.draw do
   post 'documents/update_page_ocr' => 'documents#update_page_ocr', :as => :update_page_ocr
   get 'documents/export_corrected_text' => 'documents#export_corrected_text', :as => :export_corrected_text
   get 'documents/export_corrected_gale_xml' => 'documents#export_corrected_gale_xml', :as => :export_corrected_gale_xml
+  get 'documents/export_original_gale_xml' => 'documents#export_original_gale_xml', :as => :export_original_gale_xml
+  get 'documents/export_original_gale_text' => 'documents#export_original_gale_text', :as => :export_original_gale_text
   get 'documents/export_corrected_tei_a' => 'documents#export_corrected_tei_a', :as => :export_corrected_tei_a
 	resources :documents
   get 'documents/:id/report' => 'documents#report', :as => :report

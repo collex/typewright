@@ -325,6 +325,10 @@ class Document < ActiveRecord::Base
       return Document.get_book_xml_directory(self.book_id(), self.uri_root())
   end
 
+  def get_gale_xml_directory()
+    return File.join(get_xml_directory(), 'gale')
+  end
+
   def get_image_directory()
     return Document.get_book_image_directory(self.book_id(), self.uri_root())
   end
@@ -439,6 +443,44 @@ class Document < ActiveRecord::Base
       page_node.replace(page_xml)
     }
     return doc.to_xml
+  end
+
+  def get_original_gale_xml()
+    doc = XmlReader.open_xml_file(get_primary_xml_file())
+    gale_dir = get_gale_xml_directory()
+
+    doc.xpath('//page').each { |page_node|
+      page_file = File.join(gale_dir, page_node['fileRef'])
+      page_doc = XmlReader.open_xml_file(page_file)
+      page_doc_els = page_doc.xpath('//page')
+      if page_doc_els.length > 0
+        page_node.replace(page_doc_els[0])
+      end
+    #  page_xml = get_corrected_page_gale_xml(page_num)
+    #  page_node.replace(page_xml)
+    }
+    return doc.to_xml
+  end
+
+  def get_original_gale_text()
+    doc = XmlReader.open_xml_file(get_primary_xml_file())
+
+    title = XmlReader.get_full_title(doc)
+    output = title + "\n\n"
+
+    gale_dir = get_gale_xml_directory()
+
+    doc.xpath('//page').each { |page_node|
+      page_file = File.join(gale_dir, page_node['fileRef'])
+      page_doc = XmlReader.open_xml_file(page_file)
+      page_doc.xpath('//p').each { |p_node|
+        tmp = 0
+        output += p_node.content
+        #output += "\n"
+      }
+      output += "\n\n"
+    }
+    return output
   end
 
   def get_corrected_tei_a()

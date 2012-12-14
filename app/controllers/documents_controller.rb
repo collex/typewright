@@ -151,4 +151,16 @@ class DocumentsController < ApplicationController
     render :text => @document.get_corrected_tei_a()
   end
 
+  # GET /documents/export_original_gate_xml?uri=lib://{source_id}/{book_id}
+  def export_original_gale_xml()
+    @document = find_doc(params)
+    render :text => @document.get_original_gale_xml()
+  end
+
+  # GET /documents/export_original_gate_text?uri=lib://{source_id}/{book_id}
+  def export_original_gale_text()
+    @document = find_doc(params)
+    render :text => @document.get_original_gale_text()
+  end
+
 end

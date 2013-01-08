@@ -15,7 +15,10 @@
   <% end %>
 
   <input type="hidden" name="page_report[document_id]" value="<%= @page_report.document_id %>">
-  <input type="hidden" name="page_report[page]" value="<%= @page_report.page %>">
+    <input type="hidden" name="page_report[page]" value="<%= @page_report.page %>">
+    <input type="hidden" name="page_report[user_id]" value="<%= @page_report.user_id %>">
+    <input type="hidden" name="page_report[fullname]" value="<%= @page_report.fullname %>">
+    <input type="hidden" name="page_report[email]" value="<%= @page_report.email %>">
   <div class="field">
     Please describe the issue here:<br />
     <%= f.text_area :reportText, :cols=>50, :rows=>10 %>

@@ -1,27 +1,26 @@
-<h1>Listing page_reports</h1>
+<h1>All Page Reports</h1>
 
-<table>
+<%= will_paginate @page_reports %>
+
+<table class="report">
   <tr>
-    <th>ID</th>
-    <th>Page Num</th>
-    <th>Reporttext</th>
-    <th></th>
-    <th></th>
+    <th>Reported</th>
+    <th>Document ID</th>
+    <th>Page</th>
+    <th>Comment</th>
+      <th>User</th>
     <th></th>
   </tr>
 
 <% @page_reports.each do |page_report| %>
   <tr>
+    <td><%= page_report.created_at.strftime('%b %-d, %Y') %></td>
     <td><%= (page_report.nil? || page_report.document.nil?) ? '' : "(#{page_report.document_id}) #{page_report.document.uri}"%></td>
-    <td>&nbsp;&nbsp;<%= page_report.page %></td>
-    <td><%= page_report.reportText %></td>
-    <td><%= link_to 'Show', page_report %></td>
-    <td><%= link_to 'Edit', edit_page_report_path(page_report) %></td>
-    <td><%= link_to 'Destroy', page_report, :confirm => 'Are you sure?', :method => :delete %></td>
+    <td><%= page_report.page %></td>
+    <td class="comment-col"><%= page_report.reportText %></td>
+    <td><%= format_user(page_report.fullname, page_report.email) %></td>
+    <td><%= link_to 'Edit', edit_page_report_path(page_report) %> &middot;
+    <%= link_to 'Destroy', page_report, :confirm => 'Are you sure?', :method => :delete %></td>
   </tr>
 <% end %>
 </table>
-
-<br />
-
-<%= link_to 'New Page report', new_page_report_path %>

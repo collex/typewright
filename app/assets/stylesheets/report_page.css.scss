@@ -1,0 +1,37 @@
+table.report {
+	.comment-col {
+		max-width: 500px;
+	}
+
+	tr:nth-child(odd) {
+		background-color: #f1f1f1;
+	}
+	tr:nth-child(even) {
+		background-color: #dddddd;
+	}
+	td, th {
+		padding: 2px;
+	}
+}
+
+div.pagination {
+	margin: 16px 0;
+
+	.disabled {
+		font-style: italic;
+		color: #444444;
+	}
+	a {
+		background-color: #f1f1f1;
+		color: #444444;
+		border: 1px solid #444;
+		border-radius: 3px;
+		padding: 1px 3px;
+		text-decoration: none;
+	}
+	a:hover {
+		background-color: #dddddd;
+		color: #444444;
+	}
+
+}

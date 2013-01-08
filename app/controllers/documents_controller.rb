@@ -46,7 +46,7 @@ class DocumentsController < ApplicationController
     @page = params[:page]
     @src = params[:src].to_sym unless params[:src].nil?
     @src = :gale if @src.nil?
-    @page_report = PageReport.new(:document_id => @doc.id, :page => @page)
+    @page_report = PageReport.new(:document_id => @doc.id, :page => @page, user_id: params[:user_id], fullname: params[:fullname], email: params[:email])
 	end
   
 

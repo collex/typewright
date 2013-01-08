@@ -2,7 +2,7 @@ class PageReportsController < ApplicationController
   # GET /page_reports
   # GET /page_reports.xml
   def index
-    @page_reports = PageReport.all
+    @page_reports = PageReport.order("created_at DESC").paginate(:page => params[:page]).all
 
     respond_to do |format|
       format.html # index.html.erb

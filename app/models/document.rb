@@ -288,6 +288,9 @@ class Document < ActiveRecord::Base
 				end
 				idx += 1
 			end
+			if !found # the item wasn't less than any of the current lines, so it must be at the end
+				lines.insert(idx, XmlReader.line_factory(0, 0, 0, 0, line_num.to_f, [[]], [''], line_num.to_f, src))
+			end
 		}
 		Line.merge_changes(lines, changes)
 

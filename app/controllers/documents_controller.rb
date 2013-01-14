@@ -35,6 +35,15 @@ class DocumentsController < ApplicationController
       result = [ doc.get_doc_info() ]
     end
 
+		# Can no longer send symbols through the web service
+		result.each { |res|
+			if res[:lines].present?
+				res[:lines].each { |line|
+					line[:src] = line[:src].to_s if line[:src].present?
+				}
+			end
+		}
+
 	  respond_to do |format|
 		format.xml  { render :xml => result }
 	  end

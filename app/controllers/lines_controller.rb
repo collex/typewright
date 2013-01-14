@@ -57,7 +57,8 @@ class LinesController < ApplicationController
 		@line = Line.new(params[:line])
     src = params[:src]
     src = :gale if src.nil?
-    @line.src = src
+		# Can no longer send symbols through the web service
+    @line.src = src.to_s
 
 		respond_to do |format|
 			if @line.save

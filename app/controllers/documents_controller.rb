@@ -145,31 +145,51 @@ class DocumentsController < ApplicationController
   # GET /documents/export_corrected_text?uri=lib://{source_id}/{book_id}
   def export_corrected_text()
     @document = find_doc(params)
-    render :text => @document.get_corrected_text()
+    if @document.present?
+	    render :text => @document.get_corrected_text()
+  else
+	  render text: "Document not found", status: :not_found
+  end
   end
 
   # GET /documents/export_corrected_gale_xml?uri=lib://{source_id}/{book_id}
   def export_corrected_gale_xml()
     @document = find_doc(params)
-    render :text => @document.get_corrected_gale_xml()
+    if @document.present?
+	    render :text => @document.get_corrected_gale_xml()
+  else
+	  render text: "Document not found", status: :not_found
+  end
   end
 
   # GET /documents/export_corrected_tei_a?uri=lib://{source_id}/{book_id}
   def export_corrected_tei_a()
     @document = find_doc(params)
-    render :text => @document.get_corrected_tei_a()
+    if @document.present?
+	    render :text => @document.get_corrected_tei_a()
+  else
+	  render text: "Document not found", status: :not_found
+  end
   end
 
   # GET /documents/export_original_gate_xml?uri=lib://{source_id}/{book_id}
   def export_original_gale_xml()
     @document = find_doc(params)
-    render :text => @document.get_original_gale_xml()
+    if @document.present?
+	    render :text => @document.get_original_gale_xml()
+    else
+	    render text: "Document not found", status: :not_found
+    end
   end
 
   # GET /documents/export_original_gate_text?uri=lib://{source_id}/{book_id}
   def export_original_gale_text()
     @document = find_doc(params)
-    render :text => @document.get_original_gale_text()
+    if @document.present?
+	    render :text => @document.get_original_gale_text()
+    else
+	    render text: "Document not found", status: :not_found
+	end
   end
 
 end

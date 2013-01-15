@@ -40,7 +40,7 @@ end
 
 # start by reading our input parameters
 
-VALID_OPTION_FLAGS = %w( f s v t )
+VALID_OPTION_FLAGS = %w( f s v t c )
 VALID_OPTIONS = %w( )
 
 if ARGV.size < 2
@@ -52,6 +52,7 @@ server = ''
 xml_file = ''
 option_flags = []
 options = {}
+ret_value = []
 
 ARGV.each do |arg|
   if arg[0..0] == '-'  # if I don't do [0..0] I get an int rather than a string
@@ -83,6 +84,7 @@ error_on_duplicate = option_flags.index('f').nil?
 skip_existing = !option_flags.index('s').nil?
 verbose_output = !option_flags.index('v').nil?
 test_only = !option_flags.index('t').nil?
+output_curl_only = !option_flags.index('c').nil?
 
 xml_doc = XmlReader.open_xml_file(xml_file)
 if xml_doc.nil?
@@ -101,30 +103,38 @@ response = parse_upload_response(raw_response)
 puts response if verbose_output
 doc_id = response[:doc_id]
 auth_token = response[:auth_token]
-puts "#{doc_id} - lib://ECCO/#{book_id} - \"#{XmlReader.get_full_title(xml_doc)}\""
+puts "#{doc_id} - lib://ECCO/#{book_id} - \"#{XmlReader.get_full_title(xml_doc)}\"" if !output_curl_only
 # check to see if it already exists
 if response[:exists]
   if skip_existing
-    puts "#{xml_file} Exists [#{doc_id}] -skipped- (DONE)"
+    puts "#{xml_file} Exists [#{doc_id}] -skipped- (DONE)" if !output_curl_only
     exit(0)
   elsif error_on_duplicate
-    puts "ERROR: Document lib://ECCO/#{book_id} already exists with internal id [#{doc_id}]. Add -f to force import or -s to skip."
+    puts "ERROR: Document lib://ECCO/#{book_id} already exists with internal id [#{doc_id}]. Add -f to force import or -s to skip." if !output_curl_only
     exit(1)
   else
-    puts "WARNING: Document lib://ECCO/#{book_id} already exists with internal id [#{doc_id}], replacing it."
+    puts "WARNING: Document lib://ECCO/#{book_id} already exists with internal id [#{doc_id}], replacing it." if !output_curl_only
   end
 end
 
 # upload the xml file
 curl_cmd = "-F \"xml_file=@#{xml_file};type=text/xml\" -F \"authenticity_token=#{auth_token}\" -X POST #{server}/documents/#{doc_id}/upload.xml"
-raw_response = do_curl_command(curl_cmd, verbose_output, test_only)
-response = parse_upload_response(raw_response) unless test_only
+if output_curl_only
+	ret_value.push("curl #{curl_cmd} 2>&1")
+else
+	raw_response = do_curl_command(curl_cmd, verbose_output, test_only)
+end
+response = parse_upload_response(raw_response) unless test_only || output_curl_only
 puts response if verbose_output
-puts "#{xml_file} #{File.new(xml_file).size} (DONE)"
+puts "#{xml_file} #{File.new(xml_file).size} (DONE)" if !output_curl_only
 
 # now upload all the individual images for each page
 images_path = File.join(File.realpath(File.join(File.dirname(xml_file), '..')), 'images')
 Dir.chdir(images_path)
+if output_curl_only
+	ret_value.push("cd #{File.join(File.join(File.dirname(xml_file), '..'), 'images')}")
+end
+
 count = 0
 images = []
 Dir.glob("*") { |img_file|
@@ -136,10 +146,17 @@ images.each { |img_file|
   count += 1
   auth_token = response[:auth_token]
   curl_cmd = "-F \"image_file=@#{img_file};type=image/tiff\" -F \"authenticity_token=#{auth_token}\" -X POST #{server}/documents/#{doc_id}/upload.xml?page=#{count}"
-  raw_response = do_curl_command(curl_cmd, verbose_output, test_only)
-  response = parse_upload_response(raw_response) unless test_only
+  if output_curl_only
+	  ret_value.push("curl #{curl_cmd} 2>&1")
+  else
+	  raw_response = do_curl_command(curl_cmd, verbose_output, test_only)
+	end
+  response = parse_upload_response(raw_response) unless test_only || output_curl_only
   puts response if verbose_output
-  puts "#{img_file} #{File.new(img_file).size} (DONE)"
+  puts "#{img_file} #{File.new(img_file).size} (DONE)" if !output_curl_only
 }
 
+if output_curl_only
+	puts ret_value.map { |line| "#{line}\n"}
+end
 exit 0

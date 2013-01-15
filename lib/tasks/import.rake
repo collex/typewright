@@ -3,17 +3,14 @@ IMAGE_WIDTH = 800
 SLICE_HEIGHT = 50
 
 namespace :upload do
+	# This assumes that the ECCO disks are mounted and there is a symbolic link to them something like this:
+	#ln -s /Volumes/18th\ C\ Collections\ Online\ 1of2/ECCO_1of2/ /Users/USERNAME/ecco1
+	#ln -s /Volumes/18th\ C\ Collections\ Online\ 2of2/ECCO_2of2/ /Users/USERNAME/ecco2
+	#ln -s /Volumes/18th\ C\ Collections\ Online\ 2of2/RelAndPhil/ /Users/USERNAME/ecco2b
 
 	desc "Upload typewright files to the server (id=0123456789-0123456789-...)"
 	task :document, :id do |t, args|
-		# This assumes that the ECCO disks are mounted and there is a symbolic link to them something like this:
-		#ln -s /Volumes/18th\ C\ Collections\ Online\ 1of2/ECCO_1of2/ /Users/USERNAME/ecco1
-		#ln -s /Volumes/18th\ C\ Collections\ Online\ 2of2/ECCO_2of2/ /Users/USERNAME/ecco2
-		#ln -s /Volumes/18th\ C\ Collections\ Online\ 2of2/RelAndPhil/ /Users/USERNAME/ecco2b
-
 		# It will search for a document in all the possible places for it, and stop when it finds it.
-
-		script = "./script/import/gale_xml -f -v typewright.sl.performantsoftware.com"
 
 		ids = args[:id] #ENV['id']
 		if ids == nil
@@ -21,55 +18,80 @@ namespace :upload do
 		else
 			ids = ids.split('-')
 			ids.each {|id|
-				if id.length != 10
-					puts "Bad id: #{id}"
-				end
-				base_path = "#{Rails.root}".split('/')
-				base_path = "/#{base_path[1]}/#{base_path[2]}/"
-				folders = [ 'ecco1/HistAndGeo', 'ecco1/MedSciTech', 'ecco1/SSAndFineArt', 'ecco2/GenRef',
-					'ecco2/Law','ecco2/LitAndLang_1','ecco2/LitAndLang_2','ecco2/RelAndPhil','ecco2b' ]
-
-				found = false
-				folders.each { |folder|
-					if found == false
-						full_path = base_path + folder + '/' + id + "/xml/" + id + ".xml"
-						if File.exists?(full_path)
-							puts "uploading: #{full_path}..."
-							found = true
-							`#{script} #{full_path} >> #{Rails.root}/tmp/manual_upload.log`
-						end
-					end
-				}
-				if found == false
+				full_path = find_file(id)
+				if full_path.present?
+					upload_gale(full_path)
+				else
 					puts "NOT FOUND: #{id}"
 				end
 			}
 		end
 	end
 
+	desc "Upload typewright files to the server from a set of files (file=path$path) [one 10-digit number per line]"
+	task :from_file, :file do |t, args|
+		# It will search for a document in all the possible places for it, and stop when it finds it.
+
+		fnames = args[:file]
+		fnames = fnames.split("$")
+		puts fnames.map { |str| ">>> #{str} <<<"}
+		fnames.each { |fname|
+			ids = File.open(fname, 'r') { |f| f.read }
+			ids = ids.split("\n")
+			if ids == nil
+				puts "Usage: call with a filename. The file contains one 10-digit number per line"
+			else
+				ids.each { |id|
+					full_path = find_file(id)
+					if full_path.present?
+						upload_gale(full_path)
+					else
+						puts "NOT FOUND: #{id}"
+					end
+				}
+			end
+		}
+	end
+
+	desc "Create scripts to run on Brazos for all documents specified in the set of files (file=path$path) [one 10-digit number per line]"
+	task :create_scripts, :file do |t, args|
+		# It will search for a document in all the possible places for it, and stop when it finds it.
+		substitutions = ["/fdata/idhmc/18connect/ECCO_1of2/", "/fdata/idhmc/18connect/ECCO_2of2/"]
+
+		fnames = args[:file]
+		fnames = fnames.split("$")
+		puts fnames.map { |str| ">>> #{str} <<<"}
+		fnames.each { |fname|
+			num = fname.gsub(/[^0-9]/,'')
+			sh_name = "tmp/brazos_script#{num}.sh"
+			File.open(sh_name, 'w') {|f| f.write("#!/bin/sh\n") }
+
+			ids = File.open(fname, 'r') { |f| f.read }
+			ids = ids.split("\n")
+			if ids == nil
+				puts "Usage: call with a filename. The file contains one 10-digit number per line"
+			else
+				ids.each { |id|
+					full_path = find_file(id)
+					if full_path.present?
+						script = create_remote_script(full_path, substitutions)
+						File.open(sh_name, 'a') {|f| f.write(script+"\n") }
+					else
+						puts "NOT FOUND: #{id}"
+					end
+				}
+			end
+		}
+	end
+
 	desc "find original document on the usb drives"
 	task :find, :ids do |t, args|
 		ids = args[:ids].split('-')
 		ids.each { |id|
-			if id.length != 10
-				puts "Bad id: #{id}"
-			end
-			base_path = "#{Rails.root}".split('/')
-			base_path = "/#{base_path[1]}/#{base_path[2]}/"
-			folders = [ 'ecco1/HistAndGeo', 'ecco1/MedSciTech', 'ecco1/SSAndFineArt', 'ecco2/GenRef',
-				'ecco2/Law','ecco2/LitAndLang_1','ecco2/LitAndLang_2','ecco2/RelAndPhil','ecco2b' ]
-
-			found = false
-			folders.each { |folder|
-				if found == false
-					full_path = base_path + folder + '/' + id + "/xml/" + id + ".xml"
-					if File.exists?(full_path)
-						puts "FOUND: #{full_path}..."
-						found = true
-					end
-				end
-			}
-			if found == false
+			full_path = find_file(id)
+			if full_path.present?
+				puts "FOUND: #{full_path}..."
+			else
 				puts "NOT FOUND: #{id}"
 			end
 		}
@@ -222,6 +244,45 @@ task :import do
 
 		finish_line(start_time)
 	end
+end
+
+def upload_gale(full_path)
+	script = "./script/import/gale_xml -v -f typewright.sl.performantsoftware.com"
+
+	puts "uploading: #{full_path}..."
+	`#{script} #{full_path} >> #{Rails.root}/log/manual_upload.log`
+end
+
+def base_path()
+	path = "#{Rails.root}".split('/')
+	path = "/#{path[1]}/#{path[2]}/"
+	return path
+end
+
+def create_remote_script(full_path, substitutions)
+	script = "./script/import/gale_xml -f -c typewright.sl.performantsoftware.com"
+	ret = `#{script} #{full_path}`
+	#script = "./gale_xml -v -f typewright.sl.performantsoftware.com"
+	#ret = "#{script} #{full_path} >> log/manual_upload.log"
+	ret = ret.gsub("#{base_path}ecco1/", substitutions[0])
+	ret = ret.gsub("#{base_path}ecco2/", substitutions[1])
+	return ret
+end
+
+def find_file(id)
+	if id.length != 10
+		puts "Bad id: #{id}"
+	end
+	folders = ['ecco1/HistAndGeo', 'ecco1/MedSciTech', 'ecco1/SSAndFineArt', 'ecco2/GenRef',
+		'ecco2/Law', 'ecco2/LitAndLang_1', 'ecco2/LitAndLang_2', 'ecco2/RelAndPhil', 'ecco2b']
+
+	folders.each { |folder|
+		full_path = base_path + folder + '/' + id + "/xml/" + id + ".xml"
+		if File.exists?(full_path)
+			return full_path
+		end
+	}
+	return nil
 end
 
 def create_page(ecco_index, page)

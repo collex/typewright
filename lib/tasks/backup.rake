@@ -7,7 +7,7 @@ namespace :backup do
 		username = settings['production']['username']
 		password = settings['production']['password']
 
-		`mysqldump -T ~/sql_backup -u #{username} -p#{password} #{database} --skip-dump-date`
+		`mysqldump -T ~/typewright_sql_backup -u #{username} -p#{password} #{database} --skip-dump-date`
 		`git add .`
 		`git commit -m"Backup #{Time.now.strftime('%b %-d, %Y')}"`
 		`git push`

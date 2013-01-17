@@ -409,6 +409,8 @@ class Document < ActiveRecord::Base
     # save the book xml with page refs rather than full page nodes
     book_xml_path = get_primary_xml_file()
     File.open(book_xml_path, "w") { |f| f.write(doc.to_xml) }
+
+	  return count
   end
 
   def import_page(page_num, image_file)
@@ -602,4 +604,34 @@ class Document < ActiveRecord::Base
   end
 
 
+	def self.install(uri, xml_file, path_to_images)
+		# example params: ('lib://ECCO/0011223300', '/raw/path/GenRef/XML/0011223300.xml', '/raw/path/GenRef/Images/0011223300')
+		document = Document.find_by_uri(uri)
+		document = Document.create!({ uri: uri }) if document.blank?
+
+		# uploading xml_file for entire volume
+		page_count = document.import_primary_xml(File.new(xml_file))
+
+		id = document.book_id()
+		img_path = document.get_image_directory()
+		page_count.times { |page_num|
+			# Copy each page into the typewright area
+			fname = "#{id}#{XmlReader.format_page(page_num+1)}0.TIF"
+			image_file = "#{path_to_images}#{fname}"
+			if !File.exists?(image_file)
+				# try with a lowercase extension. Some tif files where named like that.
+				image_file = image_file.gsub(".TIF", '.tif')
+			end
+
+			if !File.exists?(image_file)
+				puts "Missing Image file #{image_file}"
+			else
+				dest_path = File.join(img_path, fname)
+				dest_path = dest_path.gsub(".tif", ".TIF")
+				FileUtils.cp(image_file, dest_path)
+
+				document.import_page(page_num+1, image_file)
+			end
+		}
+	end
 end

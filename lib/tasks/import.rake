@@ -7,6 +7,7 @@ namespace :upload do
 	#ln -s /Volumes/18th\ C\ Collections\ Online\ 1of2/ECCO_1of2/ /Users/USERNAME/ecco1
 	#ln -s /Volumes/18th\ C\ Collections\ Online\ 2of2/ECCO_2of2/ /Users/USERNAME/ecco2
 	#ln -s /Volumes/18th\ C\ Collections\ Online\ 2of2/RelAndPhil/ /Users/USERNAME/ecco2b
+	#ln -s /Volumes/ECHOII/ /Users/USERNAME/ecco3
 
 	desc "Upload typewright files to the server (id=0123456789-0123456789-...)"
 	task :document, :id do |t, args|
@@ -26,6 +27,39 @@ namespace :upload do
 				end
 			}
 		end
+	end
+
+	desc "Install ECCO documents that are on the same server as typewright (file=path$path) [one 10-digit number per line]"
+	task :install, [:file] => :environment do |t, args|
+		# It will search for a document in all the possible places for it, and stop when it finds it.
+
+		fnames = args[:file]
+		fnames = fnames.split("$")
+		puts fnames.map { |str| ">>> #{str} <<<"}
+		fnames.each { |fname|
+			ids = File.open(fname, 'r') { |f| f.read }
+			ids = ids.split("\n")
+			if ids == nil
+				puts "Usage: call with a filename. The file contains one 10-digit number per line"
+			else
+				ids.each { |id|
+					uri = "lib://ECCO/#{id}"
+					full_path = find_file(id)
+					if full_path.present?
+						folder = up_one_folder(full_path) + "/images/"
+						Document.install(uri, full_path, folder)
+					else
+						full_path = find_file2(id)
+						if full_path.present?
+							folder = up_one_folder(full_path) + "/Images/#{id}/"
+							Document.install(uri, full_path, folder)
+						else
+							puts "NOT FOUND: #{id}"
+						end
+					end
+				}
+			end
+		}
 	end
 
 	desc "Upload typewright files to the server from a set of files (file=path$path) [one 10-digit number per line]"
@@ -84,6 +118,78 @@ namespace :upload do
 		}
 	end
 
+	desc "Create scripts (for ECCOII) to run on Brazos for all documents specified in the set of files (file=path$path) [one 10-digit number per line]"
+	task :create_scripts2, :file do |t, args|
+		# It will search for a document in all the possible places for it, and stop when it finds it.
+		substitutions = ["/fdata/idhmc/18connect/ECCOII/"]
+
+		fnames = args[:file]
+		fnames = fnames.split("$")
+		puts fnames.map { |str| ">>> #{str} <<<"}
+		fnames.each { |fname|
+			num = fname.gsub(/[^0-9]/,'')
+			sh_name = "tmp/brazos_script#{num}.sh"
+			File.open(sh_name, 'w') {|f| f.write("#!/bin/sh\n") }
+
+			ids = File.open(fname, 'r') { |f| f.read }
+			ids = ids.split("\n")
+			if ids == nil
+				puts "Usage: call with a filename. The file contains one 10-digit number per line"
+			else
+				ids.each { |id|
+					full_path = find_file2(id)
+					if full_path.present?
+						script = create_remote_script(full_path, substitutions, "-2")
+						File.open(sh_name, 'a') {|f| f.write(script+"\n") }
+					else
+						puts "NOT FOUND: #{id}"
+					end
+				}
+			end
+		}
+	end
+
+	desc "Create rsync script (for ECCOII) to run on Brazos to get all images to typewright server (file=path$path) [one 10-digit number per line]"
+	task :create_rsync2, :file do |t, args|
+		# It will search for a document in all the possible places for it, and stop when it finds it.
+
+		fnames = args[:file]
+		fnames = fnames.split("$")
+		puts fnames.map { |str| ">>> #{str} <<<"}
+		fnames.each { |fname|
+			num = fname.gsub(/[^0-9]/,'')
+			sh_name = "tmp/brazos_rsync#{num}.sh"
+			File.open(sh_name, 'w') {|f| f.write("#!/bin/sh\n") }
+			File.open(sh_name, 'a') {|f| f.write("BASEPATH=/fdata/idhmc/18connect/ECCOII\n") }
+			File.open(sh_name, 'a') {|f| f.write("DEST=typewright@typewright.sl.performantsoftware.com:/raid/raw_ecco/ECCOII/\n") }
+
+			ids = File.open(fname, 'r') { |f| f.read }
+			ids = ids.split("\n")
+			if ids == nil
+				puts "Usage: call with a filename. The file contains one 10-digit number per line"
+			else
+				ids.each { |id|
+					full_path = find_file2(id)
+					if full_path.present?
+						arr = full_path.split('/')
+						arr.pop # the file name
+						arr.pop # the XML folder
+						dest_path = arr.join('/')
+						arr.push "Images/#{id}"
+						path = arr.join('/')
+						my_base = "#{Rails.root}".split('/')
+						my_base = "#{my_base[0]}/#{my_base[1]}/#{my_base[2]}/ecco3"
+						path = path.gsub(my_base, "$BASEPATH")
+						dest_path = dest_path.gsub(my_base, "")
+						File.open(sh_name, 'a') {|f| f.write("rsync -rtvz #{path} $DEST#{dest_path}\n") }
+					else
+						puts "NOT FOUND: #{id}"
+					end
+				}
+			end
+		}
+	end
+
 	desc "find original document on the usb drives"
 	task :find, :ids do |t, args|
 		ids = args[:ids].split('-')
@@ -110,6 +216,24 @@ task :ecco_uri, :path do |t, args|
 		hash['response']['docs'].each {|doc|
 			f.puts doc['uri']
 		}
+	}
+end
+
+desc "Sanity check each document in the database. Run this from the typewright server."
+task :sanity_check => :environment do
+	# This accesses the xml file, and checks to see that all image files exist. That happens because all the
+	# image slices are generated in the get_doc_info call if they weren't already created.
+
+	docs = Document.all
+	docs.each_with_index { |doc, index|
+		# Simulate getting the main page
+		begin
+			doc.get_doc_info()
+		rescue Exception => e
+			puts e.to_s
+		end
+		print '.' if index % 100 == 0
+		puts "" if index % 8000 == 0
 	}
 end
 
@@ -259,13 +383,22 @@ def base_path()
 	return path
 end
 
-def create_remote_script(full_path, substitutions)
-	script = "./script/import/gale_xml -f -c typewright.sl.performantsoftware.com"
+def up_one_folder(full_path)
+	arr = full_path.split('/')
+	arr.pop # the file name
+	arr.pop # the XML folder
+	dest_path = arr.join('/')
+	return dest_path
+end
+
+def create_remote_script(full_path, substitutions, flags='')
+	script = "./script/import/gale_xml -f -c #{flags} typewright.sl.performantsoftware.com"
 	ret = `#{script} #{full_path}`
 	#script = "./gale_xml -v -f typewright.sl.performantsoftware.com"
 	#ret = "#{script} #{full_path} >> log/manual_upload.log"
+	ret = ret.gsub("#{base_path}ecco3/", substitutions[0])
 	ret = ret.gsub("#{base_path}ecco1/", substitutions[0])
-	ret = ret.gsub("#{base_path}ecco2/", substitutions[1])
+	ret = ret.gsub("#{base_path}ecco2/", substitutions[1]) if substitutions.length > 1
 	return ret
 end
 
@@ -278,6 +411,23 @@ def find_file(id)
 
 	folders.each { |folder|
 		full_path = base_path + folder + '/' + id + "/xml/" + id + ".xml"
+		if File.exists?(full_path)
+			return full_path
+		end
+	}
+	return nil
+end
+
+def find_file2(id)
+	if id.length != 10
+		puts "Bad id: #{id}"
+	end
+	folders = [  'ecco3/GenRef', 'ecco3/HistAndGeo', 'ecco3/Law', 'ecco3/LitAndLang', 'ecco3/MedSciTech', 'ecco3/RelAndPhil', 'ecco3/SSFineArts',
+		'ecco3/June2010Update/GenRef', 'ecco3/June2010Update/HistAndGeo', 'ecco3/June2010Update/Law', 'ecco3/June2010Update/LitAndLang',
+		'ecco3/June2010Update/MedSciTech', 'ecco3/June2010Update/RelAndPhil', 'ecco3/June2010Update/SSFineArts' ]
+
+	folders.each { |folder|
+		full_path = base_path + folder + '/XML/' + id + ".xml"
 		if File.exists?(full_path)
 			return full_path
 		end

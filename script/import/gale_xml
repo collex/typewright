@@ -12,6 +12,8 @@ def do_usage()
   puts " -s  Skip book import without error if book already exists."
   puts " -v  Verbose output"
   puts " -t  Test only -- don't actually upload files"
+	puts " -c Output the curl commands that would have been executed."
+	puts " -2 Assume the file structure of the ECCOII disk."
 end
 
 
@@ -40,7 +42,7 @@ end
 
 # start by reading our input parameters
 
-VALID_OPTION_FLAGS = %w( f s v t c )
+VALID_OPTION_FLAGS = %w( f s v t c 2 )
 VALID_OPTIONS = %w( )
 
 if ARGV.size < 2
@@ -85,6 +87,7 @@ skip_existing = !option_flags.index('s').nil?
 verbose_output = !option_flags.index('v').nil?
 test_only = !option_flags.index('t').nil?
 output_curl_only = !option_flags.index('c').nil?
+ecco2 = !option_flags.index('2').nil?
 
 xml_doc = XmlReader.open_xml_file(xml_file)
 if xml_doc.nil?
@@ -129,10 +132,18 @@ puts response if verbose_output
 puts "#{xml_file} #{File.new(xml_file).size} (DONE)" if !output_curl_only
 
 # now upload all the individual images for each page
-images_path = File.join(File.realpath(File.join(File.dirname(xml_file), '..')), 'images')
+if ecco2
+	images_path = File.join(File.realpath(File.join(File.dirname(xml_file), '..')), "Images/#{book_id}")
+else
+	images_path = File.join(File.realpath(File.join(File.dirname(xml_file), '..')), 'images')
+end
 Dir.chdir(images_path)
 if output_curl_only
-	ret_value.push("cd #{File.join(File.join(File.dirname(xml_file), '..'), 'images')}")
+	if ecco2
+		ret_value.push("cd #{File.join(File.join(File.dirname(xml_file), '..'), "Images/#{book_id}")}")
+	else
+		ret_value.push("cd #{File.join(File.join(File.dirname(xml_file), '..'), 'images')}")
+	end
 end
 
 count = 0

@@ -8,8 +8,8 @@ namespace :backup do
 		password = settings['production']['password']
 
 		`mysqldump -T ~/typewright_sql_backup -u #{username} -p#{password} #{database} --skip-dump-date`
-		`git add .`
-		`git commit -m"Backup #{Time.now.strftime('%b %-d, %Y')}"`
-		`git push`
+		`cd ~/typewright_sql_backup && git add .`
+		`cd ~/typewright_sql_backup && git commit -m"Backup #{Time.now.strftime('%b %-d, %Y')}"`
+		`cd ~/typewright_sql_backup && git push`
 	end
 end

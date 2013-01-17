@@ -7,7 +7,7 @@ set :rvm_ruby_string, 'ruby-1.9.3-p194'
 
 require 'bundler/capistrano'
 #require "delayed/recipes"
-#require "whenever/capistrano"
+require "whenever/capistrano"
 
 set :repository, "git://github.com/collex/typewright.git"
 set :scm, "git"
@@ -21,7 +21,7 @@ set :normalize_asset_timestamps, false
 
 set :rails_env, "production"
 
-#set :whenever_command, "bundle exec whenever"
+set :whenever_command, "bundle exec whenever"
 
 desc "Run tasks in production environment."
 task :production do
@@ -59,7 +59,7 @@ end
 #	end
 #end
 
-after :staging, 'deploy'
+after :production, 'deploy'
 after :deploy, "deploy:migrate"
 
 #after "deploy:stop",    "delayed_job:stop"

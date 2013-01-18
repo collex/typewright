@@ -42,17 +42,22 @@ namespace :upload do
 			if ids == nil
 				puts "Usage: call with a filename. The file contains one 10-digit number per line"
 			else
-				ids.each { |id|
+				puts "Attempting to import #{ids.length} documents"
+				ids.each_with_index { |id, index|
 					uri = "lib://ECCO/#{id}"
 					full_path = find_file(id)
 					if full_path.present?
 						folder = up_one_folder(full_path) + "/images/"
 						Document.install(uri, full_path, folder)
+						print '.' if index % 10 == 0
+						print "\n[#{index}]" if index % 1000
 					else
 						full_path = find_file2(id)
 						if full_path.present?
 							folder = up_one_folder(full_path) + "/Images/#{id}/"
 							Document.install(uri, full_path, folder)
+							print '.' if index % 10 == 0
+							print "\n[#{index}]" if index % 1000
 						else
 							puts "NOT FOUND: #{id}"
 						end

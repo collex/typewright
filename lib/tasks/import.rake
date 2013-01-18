@@ -49,15 +49,15 @@ namespace :upload do
 					if full_path.present?
 						folder = up_one_folder(full_path) + "/images/"
 						Document.install(uri, full_path, folder)
-						print '.' if index % 10 == 0
-						print "\n[#{index}]" if index % 1000
+						print "\n[#{index}]" if index % 100 == 0
+						print '.'
 					else
 						full_path = find_file2(id)
 						if full_path.present?
 							folder = up_one_folder(full_path) + "/Images/#{id}/"
 							Document.install(uri, full_path, folder)
-							print '.' if index % 10 == 0
-							print "\n[#{index}]" if index % 1000
+							print "\n[#{index}]" if index % 100 == 0
+							print '.'
 						else
 							puts "NOT FOUND: #{id}"
 						end

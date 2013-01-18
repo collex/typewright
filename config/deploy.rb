@@ -45,7 +45,7 @@ namespace :config do
 	task :symlinks do
 		run "ln -nfs #{shared_path}/config/database.yml #{release_path}/config/database.yml"
 		run "ln -nfs #{shared_path}/config/site.yml #{release_path}/config/site.yml"
-		run "ln -fs /raid/converted_images #{release_path}/uploaded"
+		run "ln -fs /raid/converted_images #{release_path}/public/uploaded"
 	end
 end
 

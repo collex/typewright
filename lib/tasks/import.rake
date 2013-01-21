@@ -48,7 +48,11 @@ namespace :upload do
 					full_path = find_file(id)
 					if full_path.present?
 						folder = up_one_folder(full_path) + "/images/"
+						begin
 						Document.install(uri, full_path, folder)
+						rescue Exception => e
+							puts e.to_s
+						end
 						print "\n[#{index}]" if index % 100 == 0
 						print '.'
 					else

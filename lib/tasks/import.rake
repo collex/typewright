@@ -51,7 +51,7 @@ namespace :upload do
 						begin
 						Document.install(uri, full_path, folder)
 						rescue Exception => e
-							puts e.to_s
+							puts "#{e.to_s} [#{full_path}]"
 						end
 						print "\n[#{index}]" if index % 100 == 0
 						print '.'

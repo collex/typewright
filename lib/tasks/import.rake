@@ -224,11 +224,29 @@ namespace :upload do
 
 		docs = Document.all
 		docs.each_with_index { |doc, index|
-			# Simulate getting the main page
-			begin
-				doc.get_doc_info()
-			rescue Exception => e
-				puts "#{doc.uri}: #{e.to_s}"
+			if doc.uri.blank?
+				referenced = false
+				rec = DocumentUser.find_by_document_id(doc.id)
+				referenced = true if rec.present?
+				rec = Lines.find_by_document_id(doc.id)
+				referenced = true if rec.present?
+				rec = PageReport.find_by_document_id(doc.id)
+				referenced = true if rec.present?
+				if referenced
+					puts "Blank doc #{doc.id} is referenced"
+				else
+					puts "Blank doc #{doc.id} can be safely deleted"
+				end
+			else
+				# Simulate getting the main page
+				begin
+					info = doc.get_doc_info()
+					info['num_pages'].times { |x|
+						doc.get_page_info(x+1, false)
+					}
+				rescue Exception => e
+					puts "#{doc.uri}: #{e.to_s}"
+				end
 			end
 			print '.' if index % 100 == 99
 			puts "" if index % 8000 == 7999

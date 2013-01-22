@@ -217,6 +217,24 @@ namespace :upload do
 		}
 	end
 
+	desc "Sanity check each document in the database. Run this from the typewright server."
+	task :sanity_check => :environment do
+		# This accesses the xml file, and checks to see that all image files exist. That happens because all the
+		# image slices are generated in the get_doc_info call if they weren't already created.
+
+		docs = Document.all
+		docs.each_with_index { |doc, index|
+			# Simulate getting the main page
+			begin
+				doc.get_doc_info()
+			rescue Exception => e
+				puts "#{doc.uri}: #{e.to_s}"
+			end
+			print '.' if index % 100 == 99
+			puts "" if index % 8000 == 7999
+		}
+	end
+
 end
 
 require 'json'
@@ -230,24 +248,6 @@ task :ecco_uri, :path do |t, args|
 		hash['response']['docs'].each {|doc|
 			f.puts doc['uri']
 		}
-	}
-end
-
-desc "Sanity check each document in the database. Run this from the typewright server."
-task :sanity_check => :environment do
-	# This accesses the xml file, and checks to see that all image files exist. That happens because all the
-	# image slices are generated in the get_doc_info call if they weren't already created.
-
-	docs = Document.all
-	docs.each_with_index { |doc, index|
-		# Simulate getting the main page
-		begin
-			doc.get_doc_info()
-		rescue Exception => e
-			puts e.to_s
-		end
-		print '.' if index % 100 == 0
-		puts "" if index % 8000 == 0
 	}
 end
 

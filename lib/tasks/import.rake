@@ -248,8 +248,8 @@ namespace :upload do
 					puts "#{doc.uri}: #{e.to_s}"
 				end
 			end
-			print '.' if index % 100 == 99
-			puts "" if index % 8000 == 7999
+			print "\n[#{index}]" if index % 100 == 0
+			print '.'
 		}
 	end
 

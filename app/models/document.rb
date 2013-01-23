@@ -183,7 +183,7 @@ class Document < ActiveRecord::Base
     last_revision = {}
 	total.each { |rec|
 		total_lines_revised["#{rec['page']},#{rec['line']}"] = true
-		id = "USER#{rec.user_id}"
+		id = rec.user_id.to_s
 		if last_revision[id].blank?
 			last_revision[id] = { 'page' => rec['page'], 'line' => rec['line'] }
 		else

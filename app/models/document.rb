@@ -183,11 +183,12 @@ class Document < ActiveRecord::Base
     last_revision = {}
 	total.each { |rec|
 		total_lines_revised["#{rec['page']},#{rec['line']}"] = true
-		if last_revision[rec.user_id].blank?
-			last_revision[rec.user_id] = { 'page' => rec['page'], 'line' => rec['line'] }
+		id = "USER#{id}"
+		if last_revision[id].blank?
+			last_revision[id] = { 'page' => rec['page'], 'line' => rec['line'] }
 		else
-			is_newer = last_revision[rec.user_id]['page'].to_i < rec['page'].to_i || (last_revision[rec.user_id]['page'].to_i == rec['page'].to_i && last_revision[rec.user_id]['line'].to_i < rec['line'].to_i)
-			last_revision[rec.user_id] = { 'page' => rec['page'], 'line' => rec['line'] } if is_newer
+			is_newer = last_revision[id]['page'].to_i < rec['page'].to_i || (last_revision[id]['page'].to_i == rec['page'].to_i && last_revision[id]['line'].to_i < rec['line'].to_i)
+			last_revision[id] = { 'page' => rec['page'], 'line' => rec['line'] } if is_newer
 		end
 	}
     if include_word_stats

@@ -23,6 +23,34 @@ set :rails_env, "production"
 
 set :whenever_command, "bundle exec whenever"
 
+desc "Print out a menu of all the options that a user probably wants."
+task :menu do
+	tasks = {
+		'1' => { name: "cap production" }
+	}
+
+	tasks.each { |key, value|
+		puts "#{key}. #{value[:name]}"
+	}
+
+	print "Choose deployment type: "
+	begin
+		system("stty raw -echo")
+		option = STDIN.getc
+	ensure
+		system("stty -raw echo")
+	end
+	puts ""
+
+	value = tasks[option]
+	if !value.nil?
+		puts "Deploying..."
+		after :menu, 'production'
+	else
+		puts "Not deploying. Please enter a value from 1 - 1."
+	end
+end
+
 desc "Run tasks in production environment."
 task :production do
 	set :application, "typewright.sl.performantsoftware.com"

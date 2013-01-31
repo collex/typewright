@@ -44,3 +44,10 @@ skin:
 paths:
   imagemagick: '/opt/local/bin'
   xml: '~/typewright_xml'
+
+##########################
+### AUTHENTICATION
+##########################
+
+authentication:
+  private_token: 'super-secret'

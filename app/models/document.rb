@@ -19,7 +19,7 @@
 # XML files
 
 class Document < ActiveRecord::Base
-	attr_accessible :uri
+	attr_accessible :uri, :total_pages
 
   THUMBNAIL_WIDTH = 300
   SLICE_WIDTH = 800

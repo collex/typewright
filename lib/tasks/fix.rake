@@ -3,8 +3,8 @@ namespace :fix do
 	task :add_total_pages => :environment do
 		documents = Document.all
 		documents.each { |doc|
-			info = doc.get_doc_info()
-			doc.update_attributes!({ total_pages: info['num_pages' ]})
+			num_pages = doc.get_num_pages()
+			doc.update_attributes!({ total_pages: num_pages })
 		}
 	end
 

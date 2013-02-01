@@ -133,6 +133,7 @@ class Document < ActiveRecord::Base
 	end
 
 	def get_num_pages(doc = nil)
+		return self.total_pages if self.total_pages.present?
     doc = XmlReader.open_xml_file(get_primary_xml_file()) if doc.nil?
     num_pages = XmlReader.get_num_pages(doc)
     return num_pages

@@ -142,6 +142,24 @@ class DocumentsController < ApplicationController
     end
   end
 
+	def corrections
+		if PRIVATE_TOKEN != params[:private_token]
+			render text: {"message" => "401 Unauthorized"}.to_json(), status: :unauthorized
+		else
+			view = params[:view]
+			page = params[:page]
+			page_size = params[:page_size]
+			page ||= 1
+			page_size ||= 10
+			if view == 'users'
+				resp = Corrections.users(page, page_size, params[:sort], params[:filter])
+			else
+				resp = Corrections.docs(page, page_size, params[:sort], params[:filter])
+			end
+			render text: resp.to_json()
+		end
+	end
+
   # GET /documents/export_corrected_text?uri=lib://{source_id}/{book_id}
   def export_corrected_text()
     @document = find_doc(params)

@@ -23,6 +23,18 @@ class UsersController < ApplicationController
 		end
 	end
 
+	def corrections
+		if PRIVATE_TOKEN != params[:private_token]
+			render text: {"message" => "401 Unauthorized"}.to_json(), status: :unauthorized
+		else
+			orig_id = params[:id]
+			federation = params[:federation]
+			user = User.find_by_federation_and_orig_id(federation, orig_id)
+			resp = Corrections.user(user.id)
+			render text: resp.to_json()
+		end
+	end
+
 	def test_exception_notifier
 		raise "This is only a test of the automatic notification system."
 	end

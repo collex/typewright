@@ -2,7 +2,11 @@ Typewright::Application.routes.draw do
   resources :page_reports
 
 	resources :lines
-	resources :users
+	resources :users do
+		member do
+			get 'corrections'
+		end
+	end
 	resources :document_users
   get 'documents/exists' => 'documents#exists', :as => :exists
   post 'documents/upload' => 'documents#upload', :as => :upload
@@ -12,7 +16,11 @@ Typewright::Application.routes.draw do
   get 'documents/export_original_gale_xml' => 'documents#export_original_gale_xml', :as => :export_original_gale_xml
   get 'documents/export_original_gale_text' => 'documents#export_original_gale_text', :as => :export_original_gale_text
   get 'documents/export_corrected_tei_a' => 'documents#export_corrected_tei_a', :as => :export_corrected_tei_a
-	resources :documents
+  resources :documents do
+	  collection do
+		  get 'corrections'
+	  end
+  end
   get 'documents/:id/report' => 'documents#report', :as => :report
   post 'documents/:id/upload' => 'documents#upload', :as => :upload
   post 'documents/:id/update_page_ocr' => 'documents#update_page_ocr', :as => :update_page_ocr

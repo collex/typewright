@@ -160,6 +160,32 @@ class DocumentsController < ApplicationController
 		end
 	end
 
+	def retrieve
+		if PRIVATE_TOKEN != params[:private_token]
+			render text: { "message" => "401 Unauthorized" }.to_json(), status: :unauthorized
+		else
+			uri = params[:uri]
+			type = params[:type]
+			doc = Document.find_by_uri(uri)
+			if doc.present?
+				case type
+					when 'gale'
+						render :text => doc.get_corrected_gale_xml()
+					when 'text'
+						render :text => doc.get_corrected_text()
+					when 'tei-a'
+						render :text => doc.get_corrected_tei_a()
+					when 'original-gale'
+						render :text => doc.get_original_gale_xml()
+					when 'original-text'
+						render :text => doc.get_original_gale_text()
+				end
+			else
+				render text: { "message" => "Document #{uri} not found" }.to_json(), status: :not_found
+			end
+		end
+	end
+
   # GET /documents/export_corrected_text?uri=lib://{source_id}/{book_id}
   def export_corrected_text()
     @document = find_doc(params)

@@ -19,6 +19,7 @@ Typewright::Application.routes.draw do
   resources :documents do
 	  collection do
 		  get 'corrections'
+		  get 'retrieve'
 	  end
   end
   get 'documents/:id/report' => 'documents#report', :as => :report

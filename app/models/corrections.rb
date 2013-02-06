@@ -18,6 +18,7 @@ class Corrections
 	def self.docs(page, page_size, sort_by, filter)
 		page = page.to_i # guard against injection attacks by making sure only an int is passed.
 		page_size = page_size.to_i
+		page = (page-1)*page_size
 		# get all documents that have a correction
 		sort_by = 'uri'
 		sort_by = 'most_recent' if sort_by == 'recent'
@@ -56,7 +57,8 @@ class Corrections
 	def self.users(page, page_size, sort_by, filter)
 		page = page.to_i # guard against injection attacks by making sure only an int is passed.
 		page_size = page_size.to_i
-		                 # get all documents that have a correction
+		page = (page-1)*page_size
+		# get all documents that have a correction
 		sort_by = 'uri'
 		sort_by = 'most_recent' if sort_by == 'recent'
 		sort_by = 'percent_completed' if sort_by == 'percent'

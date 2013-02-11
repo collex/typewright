@@ -1,5 +1,6 @@
 class Line < ActiveRecord::Base
-	attr_accessible :user_id, :document_id, :page, :line, :status, :words, :src
+	attr_accessible :user_id, :document_id, :page, :line, :status, :words, :src, :box
+	serialize :box, Hash
 
 	def self.num_pages_with_changes(doc_id, src)
 		pages = Line.find_all_by_document_id_and_src(doc_id, src, { :group => 'page' })
@@ -59,6 +60,12 @@ class Line < ActiveRecord::Base
 						line[:text].push(line[:text].last)
 					else
 						line[:text].push(self.words_to_text(words))
+					end
+					if lin[:box].present?
+						line[:l] = lin[:box]['l']
+						line[:t] = lin[:box]['t']
+						line[:r] = lin[:box]['r']
+						line[:b] = lin[:box]['b']
 					end
 				}
 				changes.delete(line_num)

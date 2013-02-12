@@ -24,11 +24,12 @@ class Corrections
 		sort_by = 'most_recent' if sort_by == 'recent'
 		sort_by = 'percent_completed' if sort_by == 'percent'
 		filter_phrase = filter.blank? ? "" : ""
-		resp = Line.find_by_sql("select DISTINCT document_id from `lines` #{filter_phrase} ORDER BY document_id ASC LIMIT #{page} , #{page_size};")
+		#resp = Line.find_by_sql("select DISTINCT document_id from `lines` #{filter_phrase} ORDER BY document_id ASC LIMIT #{page} , #{page_size};")
+		resp = Line.find_by_sql("select DISTINCT d.id,uri from documents d, `lines` l where d.id = l.document_id #{filter_phrase} ORDER BY uri ASC LIMIT #{page} , #{page_size};")
 		total = Line.find_by_sql("select COUNT(DISTINCT document_id) from `lines`;")
 		total = total[0]['COUNT(DISTINCT document_id)']
 		resp = resp.map { |doc_id|
-			doc_id = doc_id.document_id
+			doc_id = doc_id.id
 			#URI	Title	Correctors (Lines Corrected)	Most Recent Correction	Percent Corrected
 			doc = Document.find_by_id(doc_id)
 			# Get all users that corrected at least one line

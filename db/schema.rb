@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130211191644) do
+ActiveRecord::Schema.define(:version => 20130213001215) do
 
   create_table "document_users", :force => true do |t|
     t.integer  "document_id"
@@ -28,6 +28,7 @@ ActiveRecord::Schema.define(:version => 20130211191644) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer  "total_pages"
+    t.text     "title"
   end
 
   add_index "documents", ["uri"], :name => "index_documents_on_uri"

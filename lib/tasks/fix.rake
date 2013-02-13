@@ -17,6 +17,25 @@ namespace :fix do
 		}
 	end
 
+	desc "Go through each document in the database and put the title in."
+	task :add_title => :environment do
+		docs = Document.all
+		docs.each_with_index { |doc, index|
+			begin
+				info = doc.get_doc_info()
+			rescue Exception => e
+				puts "#{doc.uri}: #{e.to_s}"
+				info = nil
+			end
+			if info.present?
+				doc.title = info[:title]
+				doc.save!
+			end
+			print "\n[#{index}]" if index % 100 == 0
+			print '.'
+		}
+	end
+
 	desc "Find usages of null documents in the database"
 	task :analyze_null_documents => :environment do
 		documents = Document.find_all_by_uri(nil)

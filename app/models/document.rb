@@ -498,8 +498,15 @@ class Document < ActiveRecord::Base
     return output
   end
 
-  def get_corrected_tei_a()
-
+  def get_corrected_tei_a(include_words)
+	  doc = XmlReader.open_xml_file(get_primary_xml_file())
+	  page_num = 0
+	  doc.xpath('//page').each { |page_node|
+		  page_num += 1
+		  page_xml = get_corrected_page_tei_a(page_num, include_words)
+		  page_node.replace(page_xml)
+	  }
+	  return doc.to_xml
   end
 
   def get_corrected_page_text(page_num, src = :gale)
@@ -556,8 +563,62 @@ class Document < ActiveRecord::Base
   end
 
   # return a string representing the page in TEI-A
-  def get_corrected_page_tei_a(page_num, src = :gale)
+  def get_corrected_page_tei_a(page_num, include_words, src = :gale)
+	  # This uses everything except the actual lines from the original XML file.
+	  page_xml_path = get_page_xml_file(page_num, src, uri_root)
+	  page_doc = XmlReader.open_xml_file(page_xml_path)
+	  page_node = page_doc.xpath('//page')
+	  page_content_node = page_node.xpath('//pageContent').first()
+	  # Remove the original paragraphs because we are going to regenerate them
+	  page_paragraph_nodes = page_node.xpath('//pageContent/p')
+	  page_paragraph_nodes.each { |paragraph_node|
+		  paragraph_node.unlink
+	  }
+	  # Remove the ocr tag because it is no longer relevant
+	  ocr_nodes = page_node.xpath('//pageInfo/ocr')
+	  ocr_nodes.each { |ocr_node|
+		  ocr_node.unlink
+	  }
 
+	  page_content_node.content = nil
+
+	  page_info = get_page_info(page_num, false, src)
+	  page_info[:lines].each { | line |
+		  # get the last entry that is not "correct", since they don't affect the output (They are just confirmation that the line was looked at.) We'll just loop through to find it.
+		  output_item = line[:words].first
+		  if line[:actions].present?
+			  line[:actions].each_with_index { |action, i|
+				  if action == 'change'
+					  output_item = line[:words][i]
+				  elsif action == 'delete'
+					  output_item = nil
+				  end
+			  }
+		  end
+
+		  if output_item.present?
+			  p_node = Nokogiri::XML::Node.new('ab', page_doc)
+			  page_content_node << p_node
+			  if include_words
+				  output_item.each { |word|
+					  wd_node = Nokogiri::XML::Node.new('wd', page_doc)
+					  wd_node.content = word[:word]
+					  pos_str = "#{word[:l]},#{word[:t]},#{word[:r]},#{word[:b]}"
+					  wd_node['pos'] = pos_str
+					  p_node << wd_node
+				  }
+			  else
+				  words = []
+				  output_item.each { |word|
+					  words.push(word[:word])
+				  }
+				  words = words.join(' ')
+				  p_node.content = words
+			  end
+		  end
+	  }
+
+	  return page_node
   end
 
   def self.do_command(cmd)

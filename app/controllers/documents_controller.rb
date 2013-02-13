@@ -174,7 +174,9 @@ class DocumentsController < ApplicationController
 					when 'text'
 						render :text => doc.get_corrected_text()
 					when 'tei-a'
-						render :text => doc.get_corrected_tei_a()
+						render :text => doc.get_corrected_tei_a(false)
+					when 'tei-a-words'
+						render :text => doc.get_corrected_tei_a(true)
 					when 'original-gale'
 						render :text => doc.get_original_gale_xml()
 					when 'original-text'

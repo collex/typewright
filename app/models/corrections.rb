@@ -86,8 +86,8 @@ class Corrections
 			id = id.document_id
 			d = Document.find_by_id(id)
 			# Get the number of corrections a user has made
-			count = Line.find_by_sql("select COUNT(*) from `lines` where document_id = #{id} and user_id = #{user_id};")
-			count = count[0]['COUNT(*)']
+			count = Line.find_by_sql("select COUNT(DISTINCT page,line) from `lines` where document_id = #{id} and user_id = #{user_id};")
+			count = count[0]['COUNT(DISTINCT page,line)']
 			most_recent_correction = Line.find_by_sql("select updated_at from `lines`where document_id = #{id} and user_id = #{user_id} ORDER BY updated_at DESC LIMIT 1;")
 			most_recent_correction = most_recent_correction[0].updated_at
 			documents.push({ id: d.uri, count: count, most_recent_correction: most_recent_correction })

@@ -15,20 +15,20 @@
 # ----------------------------------------------------------------------------
 
 class Corrections
-	def self.docs(page, page_size, sort, filter)
+	def self.docs(page, page_size, sort, order, filter)
 		page = page.to_i # guard against injection attacks by making sure only an int is passed.
 		page_size = page_size.to_i
 		page = (page-1)*page_size
 		# get all documents that have a correction
 		sort_by = 'uri'
 		sort_by = 'title' if sort == 'title'
+		sort_order = "ASC"
+		sort_order = "DESC" if order == "desc" 
 		#sort_by = 'most_recent' if sort == 'recent'
 		#sort_by = 'percent_completed' if sort == 'percent'
 
 		filter_phrase = filter.blank? ? "" : "and (title LIKE '%#{filter}%' or uri LIKE '%#{filter}%')"
-		#resp = Line.find_by_sql("select DISTINCT document_id from `lines` #{filter_phrase} ORDER BY document_id ASC LIMIT #{page} , #{page_size};")
-		#select DISTINCT d.id,uri,title from documents d, `lines` l where d.id = l.document_id and (title LIKE '%30%' or uri LIKE '%30%') ORDER BY title ASC limit 3,20
-		resp = Line.find_by_sql("select DISTINCT d.id,uri,title,total_pages from documents d, `lines` l where d.id = l.document_id #{filter_phrase} ORDER BY #{sort_by} ASC LIMIT #{page} , #{page_size};")
+		resp = Line.find_by_sql("select DISTINCT d.id,uri,title,total_pages from documents d, `lines` l where d.id = l.document_id #{filter_phrase} ORDER BY #{sort_by} #{sort_order} LIMIT #{page} , #{page_size};")
 		total = Line.find_by_sql("select COUNT(DISTINCT d.id,uri,title,total_pages) from documents d, `lines` l where d.id = l.document_id #{filter_phrase};")
 
 		total = total[0]['COUNT(DISTINCT d.id,uri,title,total_pages)']

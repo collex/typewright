@@ -52,7 +52,7 @@ class Corrections
 			pages_with_changes = Line.num_pages_with_changes(doc_id, :gale)
 
 			# This is the return value: what we are mapping the response to
-			{ uri: doc.uri, most_recent_correction: most_recent_correction, pages_with_changes: pages_with_changes,
+			{ uri: doc.uri, title: doc.title, most_recent_correction: most_recent_correction, pages_with_changes: pages_with_changes,
 				total_pages: doc.total_pages, users: users }
 		}
 		return { total: total, results: resp }
@@ -90,7 +90,7 @@ class Corrections
 			count = count[0]['COUNT(DISTINCT page,line)']
 			most_recent_correction = Line.find_by_sql("select updated_at from `lines`where document_id = #{id} and user_id = #{user_id} ORDER BY updated_at DESC LIMIT 1;")
 			most_recent_correction = most_recent_correction[0].updated_at
-			documents.push({ id: d.uri, count: count, most_recent_correction: most_recent_correction })
+			documents.push({ id: d.uri, title: d.title, count: count, most_recent_correction: most_recent_correction })
 		}
 		most_recent_correction = Line.find_by_sql("select updated_at from `lines`where user_id = #{user_id} ORDER BY updated_at DESC LIMIT 1;")
 		most_recent_correction = most_recent_correction[0].updated_at

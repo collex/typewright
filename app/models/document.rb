@@ -122,6 +122,8 @@ class Document < ActiveRecord::Base
       cmd = "#{identify} -format \"%w %h\" #{image_path}"
       Document.do_command(cmd)
     }
+    image_size = image_size.split("\n")
+    image_size = image_size.last
     width = image_size.split(' ')[0].to_i
     height = image_size.split(' ')[1].to_i
 

@@ -19,41 +19,44 @@ class Corrections
 		page = page.to_i # guard against injection attacks by making sure only an int is passed.
 		page_size = page_size.to_i
 		page = (page-1)*page_size
-		# get all documents that have a correction
+		
+		# set up sorting criteria
 		sort_by = 'uri'
 		sort_by = 'title' if sort == 'title'
+		sort_by = 'percent' if sort == 'percent'
+		sort_by = 'latest_update' if sort == 'modified'		
 		sort_order = "ASC"
 		sort_order = "DESC" if order == "desc" 
-		#sort_by = 'most_recent' if sort == 'recent'
-		#sort_by = 'percent_completed' if sort == 'percent'
 
+    # filter by title or uri
 		filter_phrase = filter.blank? ? "" : "and (title LIKE '%#{filter}%' or uri LIKE '%#{filter}%')"
-		resp = Line.find_by_sql("select DISTINCT d.id,uri,title,total_pages from documents d, `lines` l where d.id = l.document_id #{filter_phrase} ORDER BY #{sort_by} #{sort_order} LIMIT #{page} , #{page_size};")
-		total = Line.find_by_sql("select COUNT(DISTINCT d.id,uri,title,total_pages) from documents d, `lines` l where d.id = l.document_id #{filter_phrase};")
+		
+		# query for paged results
+		sql = "select d.id, uri, title, "
+		sql = sql << " max(l.updated_at) as latest_update, (COUNT(DISTINCT page) / total_pages)*100 as percent "
+		sql = sql << " from documents d inner join `lines` l on d.id = l.document_id "
+		sql = sql << " where l.src = 'gale' #{filter_phrase} group by d.id ORDER BY #{sort_by} #{sort_order} LIMIT #{page} , #{page_size};"
+		resp = Line.find_by_sql(sql)
+		
+		# get a count of ALL available results
+		total = Line.find_by_sql("select COUNT(DISTINCT d.id) from documents d, `lines` l where d.id = l.document_id #{filter_phrase};")
 
 		total = total[0]['COUNT(DISTINCT d.id,uri,title,total_pages)']
 		resp = resp.map { |doc|
-			doc_id = doc.id
-			#URI	Title	Correctors (Lines Corrected)	Most Recent Correction	Percent Corrected
-			#doc = Document.find_by_id(doc_id)
 			# Get all users that corrected at least one line
-			user_ids = Line.find_by_sql("select DISTINCT user_id from `lines` where document_id = #{doc_id};")
+			user_ids = Line.find_by_sql("select DISTINCT user_id from `lines` where document_id = #{doc.id};")
 			users = []
 			user_ids.each { |id|
 				id = id.user_id
 				u = User.find_by_id(id)
 				# Get the number of corrections a user has made
-				count = Line.find_by_sql("select COUNT(DISTINCT page,line) from `lines` where document_id = #{doc_id} and user_id = #{id};")
+				count = Line.find_by_sql("select COUNT(DISTINCT page,line) from `lines` where document_id = #{doc.id} and user_id = #{id};")
 				count = count[0]['COUNT(DISTINCT page,line)']
 				users.push({ federation: u.federation, id: u.orig_id, count: count })
 			}
-			most_recent_correction = Line.find_by_sql("select updated_at from `lines`where document_id = #{doc_id} ORDER BY updated_at DESC LIMIT 1;")
-			most_recent_correction = most_recent_correction[0].updated_at
-			pages_with_changes = Line.num_pages_with_changes(doc_id, :gale)
 
 			# This is the return value: what we are mapping the response to
-			{ uri: doc.uri, title: doc.title, most_recent_correction: most_recent_correction, pages_with_changes: pages_with_changes,
-				total_pages: doc.total_pages, users: users }
+			{ uri: doc.uri, title: doc.title, most_recent_correction: doc.latest_update, percent: doc.percent, users: users }
 		}
 		return { total: total, results: resp }
 	end

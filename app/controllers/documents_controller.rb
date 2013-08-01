@@ -142,6 +142,8 @@ class DocumentsController < ApplicationController
     end
   end
 
+  # Get the overview report for document and user admin pages
+  #
 	def corrections
 		if PRIVATE_TOKEN != params[:private_token]
 			render text: {"message" => "401 Unauthorized"}.to_json(), status: :unauthorized
@@ -152,7 +154,7 @@ class DocumentsController < ApplicationController
 			page ||= 1
 			page_size ||= 10
 			if view == 'users'
-				resp = Corrections.users(page, page_size, params[:sort], params[:filter])
+				resp = Corrections.users(page, page_size, params[:sort], params[:order], params[:filter])
 			else
 				resp = Corrections.docs(page, page_size, params[:sort], params[:order], params[:filter]) 
 			end

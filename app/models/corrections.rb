@@ -77,12 +77,13 @@ class Corrections
 
       # set up sorting criteria
       sort_by = 'u.id'
-      sort_by = 'u.id' if sort == 'edited'
+      sort_by = 'edited' if sort == 'edited'
       sort_by = 'latest_update' if sort == 'modified'
       sort_order = "ASC"
       sort_order = "DESC" if order == "desc"
 
-      sql = "select u.id, max(l.updated_at) as latest_update from users u inner join `lines` l on u.id = user_id"
+      sql = "select u.id, count(distinct l.document_id) as edited, max(l.updated_at) as latest_update"
+      sql = sql << " from users u inner join `lines` l on u.id = user_id"
       sql = sql << " #{filter_phrase} group by u.id ORDER BY #{sort_by} #{sort_order} LIMIT #{page}, #{page_size}"
       resp = Line.find_by_sql(sql)
       total = Line.find_by_sql("select COUNT(DISTINCT user_id) from `lines`;")
@@ -96,19 +97,14 @@ class Corrections
 
    def self.user(user_id, latest_update)
       user = User.find_by_id(user_id)
-      # Get all documents that the user corrected at least one line
-      document_ids = Line.find_by_sql("select DISTINCT document_id from `lines` where user_id = #{user_id};")
+      
+      sql = "select d.uri, d.title, count(distinct page,line) as cnt"
+      sql = sql << " from documents d inner join `lines` l on l.document_id = d.id where l.user_id = ? group by d.id"
+      res = Document.find_by_sql([sql, user_id])
       documents = []
-      document_ids.each { |id|
-         id = id.document_id
-         d = Document.find_by_id(id)
-         # Get the number of corrections a user has made
-         count = Line.find_by_sql("select COUNT(DISTINCT page,line) from `lines` where document_id = #{id} and user_id = #{user_id};")
-         count = count[0]['COUNT(DISTINCT page,line)']
-         most_recent_correction = Line.find_by_sql("select updated_at from `lines`where document_id = #{id} and user_id = #{user_id} ORDER BY updated_at DESC LIMIT 1;")
-         most_recent_correction = most_recent_correction[0].updated_at
-         documents.push({ id: d.uri, title: d.title, count: count, most_recent_correction: most_recent_correction })
-      }
+      res.each do | d |
+        documents.push({ id: d.uri, title: d.title, count: d.cnt })   
+      end
 
       # This is the return value: what we are mapping the response to
       return { federation: user.federation, id: user.orig_id, most_recent_correction: latest_update, documents: documents }

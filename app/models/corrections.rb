@@ -15,7 +15,10 @@
 # ----------------------------------------------------------------------------
 
 class Corrections
+  # Get the typewright admin documents overview
+  #
 	def self.docs(page, page_size, sort, order, filter)
+		# paging setup
 		page = page.to_i # guard against injection attacks by making sure only an int is passed.
 		page_size = page_size.to_i
 		page = (page-1)*page_size
@@ -61,20 +64,28 @@ class Corrections
 		return { total: total, results: resp }
 	end
 
-	def self.users(page, page_size, sort_by, filter)
+  # Get the typewright admin users overview
+  #
+	def self.users(page, page_size, sort_by, order, filter)
+		# paging setup
 		page = page.to_i # guard against injection attacks by making sure only an int is passed.
 		page_size = page_size.to_i
 		page = (page-1)*page_size
+		
+		# filter by user name. The filter is a comma separated list of user ids matching the filter
+		# text entered on the admin UI. Only pull data for these users
+    filter_phrase = filter.blank? ? "" : "where orig_id in ( #{filter})"
+		
 		# get all documents that have a correction
 		sort_by = 'uri'
 		sort_by = 'most_recent' if sort_by == 'recent'
 		sort_by = 'percent_completed' if sort_by == 'percent'
-		filter_phrase = filter.blank? ? "" : "WHERE ???"
-		resp = Line.find_by_sql("select DISTINCT user_id from `lines` #{filter_phrase} ORDER BY user_id ASC LIMIT #{page} , #{page_size};")
+
+		resp = Line.find_by_sql("select distinct u.id from users u inner join `lines` on u.id = user_id #{filter_phrase} ORDER BY u.id ASC LIMIT #{page} , #{page_size};")
 		total = Line.find_by_sql("select COUNT(DISTINCT user_id) from `lines`;")
 		total = total[0]['COUNT(DISTINCT user_id)']
-		resp = resp.map { |user_id|
-			user_id = user_id.user_id
+		resp = resp.map { |user|
+			user_id = user.id
 			self.user(user_id)
 		}
 		return { total: total, results: resp }

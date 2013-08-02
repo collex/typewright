@@ -29,8 +29,7 @@ class UsersController < ApplicationController
 		else
 			orig_id = params[:id]
 			federation = params[:federation]
-			user = User.find_by_federation_and_orig_id(federation, orig_id)
-			resp = Corrections.user(user.id)
+			resp = Corrections.user_corrections(federation, orig_id)
 			render text: resp.to_json()
 		end
 	end

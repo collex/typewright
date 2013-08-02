@@ -45,14 +45,14 @@ class Corrections
 
       resp = resp.map { |doc|
          # Get all users that corrected at least one line
-         user_sql = "select u.id, u.federation, u.username from users u inner join `lines` l on u.id = l.user_id where l.document_id = ? group by u.id"
+         user_sql = "select u.id, u.orig_id, u.federation, u.username from users u inner join `lines` l on u.id = l.user_id where l.document_id = ? group by u.id"
          user_resp = User.find_by_sql([user_sql, doc.id])
          users = []
          user_resp.each { |user|
             # Get the number of corrections a user has made
             count = Line.find_by_sql("select COUNT(DISTINCT page,line) from `lines` where document_id = #{doc.id} and user_id = #{user.id};")
             count = count[0]['COUNT(DISTINCT page,line)']
-            users.push({ id: user.id, federation: user.federation, username: user.username, count: count })
+            users.push({ id: user.orig_id, federation: user.federation, username: user.username, count: count })
          }
 
          # This is the return value: what we are mapping the response to
@@ -80,7 +80,7 @@ class Corrections
       sort_order = "ASC"
       sort_order = "DESC" if order == "desc"
 
-      sql = "select u.id, u.username, u.federation, count(distinct l.document_id) as edited, max(l.updated_at) as latest_update"
+      sql = "select u.id, u.orig_id, u.username, u.federation, count(distinct l.document_id) as edited, max(l.updated_at) as latest_update"
       sql = sql << " from users u inner join `lines` l on u.id = user_id"
       sql = sql << " #{filter_phrase} group by u.id ORDER BY #{sort_by} #{sort_order} LIMIT #{page}, #{page_size}"
       resp = Line.find_by_sql(sql)
@@ -91,7 +91,24 @@ class Corrections
       }
       return { total: total, results: resp }
    end
+   
+   # get a summary of all corrections made by the spacified user
+   #
+   def self.user_corrections(federation, orig_id)
+      user = User.where(:orig_id=>orig_id, :federation=>federation).first
+      sql = "select d.uri, d.title, count(distinct page,line) as cnt, max(l.updated_at) as latest_update"
+      sql = sql << " from documents d inner join `lines` l on l.document_id = d.id where l.user_id = ? group by d.id"
+      res = Document.find_by_sql([sql, user.id])
+      documents = []
+      res.each do | d |
+        documents.push({ id: d.uri, title: d.title, count: d.cnt, most_recent_correction: d.latest_update })   
+      end
 
+      # This is the return value: what we are mapping the response to
+      return { id: user.orig_id, username: user.username, federation: user.federation, documents: documents }
+   end
+
+   private
    def self.user_documents( user )      
       sql = "select d.uri, d.title, count(distinct page,line) as cnt"
       sql = sql << " from documents d inner join `lines` l on l.document_id = d.id where l.user_id = ? group by d.id"
@@ -102,6 +119,6 @@ class Corrections
       end
 
       # This is the return value: what we are mapping the response to
-      return { id: user.id, username: user.username, federation: user.federation, most_recent_correction: user.latest_update, documents: documents }
+      return { id: user.orig_id, username: user.username, federation: user.federation, most_recent_correction: user.latest_update, documents: documents }
    end
 end

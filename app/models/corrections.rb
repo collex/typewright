@@ -41,20 +41,18 @@ class Corrections
       resp = Line.find_by_sql(sql)
 
       # get a count of ALL available results
-      total = Line.find_by_sql("select COUNT(DISTINCT d.id) from documents d, `lines` l where d.id = l.document_id #{filter_phrase};")
+      total = Line.find_by_sql("select COUNT(DISTINCT d.id) as cnt from documents d, `lines` l where d.id = l.document_id #{filter_phrase};").first.cnt
 
-      total = total[0]['COUNT(DISTINCT d.id,uri,title,total_pages)']
       resp = resp.map { |doc|
-      # Get all users that corrected at least one line
-         user_ids = Line.find_by_sql("select DISTINCT user_id from `lines` where document_id = #{doc.id};")
+         # Get all users that corrected at least one line
+         user_sql = "select u.id, u.federation, u.username from users u inner join `lines` l on u.id = l.user_id where l.document_id = ? group by u.id"
+         user_resp = User.find_by_sql([user_sql, doc.id])
          users = []
-         user_ids.each { |id|
-            id = id.user_id
-            u = User.find_by_id(id)
+         user_resp.each { |user|
             # Get the number of corrections a user has made
-            count = Line.find_by_sql("select COUNT(DISTINCT page,line) from `lines` where document_id = #{doc.id} and user_id = #{id};")
+            count = Line.find_by_sql("select COUNT(DISTINCT page,line) from `lines` where document_id = #{doc.id} and user_id = #{user.id};")
             count = count[0]['COUNT(DISTINCT page,line)']
-            users.push({ federation: u.federation, id: u.orig_id, count: count })
+            users.push({ id: user.id, federation: user.federation, username: user.username, count: count })
          }
 
          # This is the return value: what we are mapping the response to
@@ -73,40 +71,37 @@ class Corrections
 
       # filter by user name. The filter is a comma separated list of user ids matching the filter
       # text entered on the admin UI. Only pull data for these users
-      filter_phrase = filter.blank? ? "" : "where orig_id in ( #{filter})"
+      filter_phrase = filter.blank? ? "" : "where u.username LIKE '%#{filter}%'"
 
       # set up sorting criteria
-      sort_by = 'u.id'
+      sort_by = 'u.username'
       sort_by = 'edited' if sort == 'edited'
       sort_by = 'latest_update' if sort == 'modified'
       sort_order = "ASC"
       sort_order = "DESC" if order == "desc"
 
-      sql = "select u.id, count(distinct l.document_id) as edited, max(l.updated_at) as latest_update"
+      sql = "select u.id, u.username, u.federation, count(distinct l.document_id) as edited, max(l.updated_at) as latest_update"
       sql = sql << " from users u inner join `lines` l on u.id = user_id"
       sql = sql << " #{filter_phrase} group by u.id ORDER BY #{sort_by} #{sort_order} LIMIT #{page}, #{page_size}"
       resp = Line.find_by_sql(sql)
       total = Line.find_by_sql("select COUNT(DISTINCT user_id) from `lines`;")
       total = total[0]['COUNT(DISTINCT user_id)']
       resp = resp.map { |user|
-         user_id = user.id
-         self.user(user_id, user.latest_update)
+         self.user_documents( user )
       }
       return { total: total, results: resp }
    end
 
-   def self.user(user_id, latest_update)
-      user = User.find_by_id(user_id)
-      
+   def self.user_documents( user )      
       sql = "select d.uri, d.title, count(distinct page,line) as cnt"
       sql = sql << " from documents d inner join `lines` l on l.document_id = d.id where l.user_id = ? group by d.id"
-      res = Document.find_by_sql([sql, user_id])
+      res = Document.find_by_sql([sql, user.id])
       documents = []
       res.each do | d |
         documents.push({ id: d.uri, title: d.title, count: d.cnt })   
       end
 
       # This is the return value: what we are mapping the response to
-      return { federation: user.federation, id: user.orig_id, most_recent_correction: latest_update, documents: documents }
+      return { id: user.id, username: user.username, federation: user.federation, most_recent_correction: user.latest_update, documents: documents }
    end
 end

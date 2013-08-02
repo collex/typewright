@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130213001215) do
+ActiveRecord::Schema.define(:version => 20130802125607) do
 
   create_table "document_users", :force => true do |t|
     t.integer  "document_id"
@@ -68,6 +68,7 @@ ActiveRecord::Schema.define(:version => 20130213001215) do
     t.integer  "orig_id"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "username"
   end
 
   add_index "users", ["federation"], :name => "index_users_on_federation"

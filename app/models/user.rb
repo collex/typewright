@@ -1,5 +1,5 @@
 class User < ActiveRecord::Base
-	attr_accessible :id, :federation, :orig_id
+	attr_accessible :id, :federation, :orig_id, :username
 	@@user_cache = {}
 
 	def self.get(id)
@@ -9,17 +9,4 @@ class User < ActiveRecord::Base
 		@@user_cache[id] = User.find_by_id(id)
 		return @@user_cache[id]
 	end
-
-#	def self.get_user(federation, orig_id)
-#		user = User.find_by_federation_and_orig_id(federation, orig_id)
-#		return user
-#	end
-#
-#	def self.get_or_create_user(federation, orig_id)
-#		user = self.get_user(federation, orig_id)
-#		if user == nil
-#			user = User.create({ :federation => federation, :orig_id => orig_id })
-#		end
-#		return user
-#	end
 end

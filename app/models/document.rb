@@ -19,6 +19,7 @@
 # XML files
 
 class Document < ActiveRecord::Base
+  validates_inclusion_of :status, :in => ['not_complete', 'user_complete', 'complete', :not_complete, :user_complete, :complete]
 	attr_accessible :uri, :total_pages
 
   THUMBNAIL_WIDTH = 300

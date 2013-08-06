@@ -48,6 +48,22 @@ class DocumentsController < ApplicationController
 		format.xml  { render :xml => result }
 	  end
 	end
+	
+	def update
+	 doc = Document.find(params[:id])
+	 if doc.status == 'not_complete'
+  	 doc.status = params[:document][:status]
+  	 respond_to do |format|
+        if doc.save
+          format.xml  { render :xml => doc, :status => :ok}
+        else
+          format.xml  { render :xml => doc.errors, :status => :unprocessable_entity }
+        end
+      end
+    else
+      render :xml => params[:document], :status => :unprocessable_entity
+    end
+	end
 
 	# GET /documents/{id}/report?page={page}
 	def report

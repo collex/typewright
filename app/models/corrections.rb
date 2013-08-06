@@ -34,7 +34,7 @@ class Corrections
       filter_phrase = filter.blank? ? "" : "and (title LIKE '%#{filter}%' or uri LIKE '%#{filter}%')"
 
       # query for paged results
-      sql = "select d.id, uri, title, "
+      sql = "select d.id, uri, title, d.status as status, "
       sql = sql << " max(l.updated_at) as latest_update, (COUNT(DISTINCT page) / total_pages)*100 as percent "
       sql = sql << " from documents d inner join `lines` l on d.id = l.document_id "
       sql = sql << " where l.src = 'gale' #{filter_phrase} group by d.id ORDER BY #{sort_by} #{sort_order} LIMIT #{page} , #{page_size};"
@@ -56,7 +56,7 @@ class Corrections
          }
 
          # This is the return value: what we are mapping the response to
-         { uri: doc.uri, title: doc.title, most_recent_correction: doc.latest_update, percent: doc.percent, users: users }
+         { uri: doc.uri, title: doc.title, most_recent_correction: doc.latest_update, percent: doc.percent, status: doc.status, users: users }
       }
       return { total: total, results: resp }
    end

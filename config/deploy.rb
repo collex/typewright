@@ -1,20 +1,32 @@
 # To deploy:
-# cap production
+# cap menu
 
 require 'rvm/capistrano'
-set :rvm_ruby_string, 'ruby-1.9.3-p194'
-#set :rvm_type, :system
 
 require 'bundler/capistrano'
 #require "delayed/recipes"
 require "whenever/capistrano"
 
+# Read in the site-specific information so that the initializers can take advantage of it.
+config_file = "config/site.yml"
+if File.exists?(config_file)
+  set :site_specific, YAML.load_file(config_file)['capistrano']
+else
+  puts "***"
+  puts "*** Failed to load capistrano configuration. Did you create #{config_file} with a capistrano section?"
+  puts "***"
+end
+
+reset = "\033[0m"
+green = "\033[32m" # Green
+red = "\033[31m" # Bright Red
+
 set :repository, "git://github.com/collex/typewright.git"
 set :scm, "git"
 set :branch, "master"
 set :deploy_via, :remote_cache
+set :keep_releases, 5
 
-set :user, "typewright"
 set :use_sudo, false
 
 set :normalize_asset_timestamps, false
@@ -23,76 +35,113 @@ set :rails_env, "production"
 
 set :whenever_command, "bundle exec whenever"
 
-desc "Print out a menu of all the options that a user probably wants."
-task :menu do
-	tasks = {
-		'1' => { name: "cap production" }
-	}
+def set_application(section, skin, dest)
+  set :skin, skin
+  set :deploy_to, "#{site_specific[section]['deploy_base']}/#{dest}"
+  set :application, site_specific[section]['ssh_name']
+  set :user, site_specific[section]['user']
+  set :rvm_ruby_string, site_specific[section]['ruby']
+  if site_specific[section]['system_rvm']
+    set :rvm_type, :system
+  end
 
-	tasks.each { |key, value|
-		puts "#{key}. #{value[:name]}"
-	}
-
-	print "Choose deployment type: "
-	begin
-		system("stty raw -echo")
-		option = STDIN.getc
-	ensure
-		system("stty -raw echo")
-	end
-	puts ""
-
-	value = tasks[option]
-	if !value.nil?
-		puts "Deploying..."
-		after :menu, 'production'
-	else
-		puts "Not deploying. Please enter a value from 1 - 1."
-	end
+  role :web, "#{application}"                          # Your HTTP server, Apache/etc
+  role :app, "#{application}"                          # This may be the same as your `Web` server
+  role :db,  "#{application}", :primary => true     # This is where Rails migrations will run
 end
 
-desc "Run tasks in production environment."
-task :production do
-	set :application, "typewright.sl.performantsoftware.com"
-	set :deploy_to, "/home/typewright/www/typewright"
+desc "Print out a menu of all the options that a user probably wants."
+task :menu do
+  tasks = {
+    '1' => { name: "cap edge_typewright", task: 'edge_typewright' },
+    '2' => { name: "cap production_typewright", task: 'production_typewright' }
+  }
 
-	role :web, "#{application}"                          # Your HTTP server, Apache/etc
-	role :app, "#{application}"                          # This may be the same as your `Web` server
-	role :db,  "#{application}", :primary => true 		# This is where Rails migrations will run
+  tasks.each { |key, value|
+    puts "#{key}. #{value[:name]}"
+  }
+
+  print "Choose deployment type: "
+  begin
+    system("stty raw -echo")
+    option = STDIN.getc
+  ensure
+    system("stty -raw echo")
+  end
+  puts option
+
+  value = tasks[option]
+  if !value.nil?
+    puts "#{green}Deploying \"#{value[:name]}\"#{reset}"
+    after :menu, value[:task]
+  else
+    puts "Not deploying. Please select a menu entry."
+  end
+end
+
+desc "Deploy typewright to edge."
+task :edge_typewright do
+  set_application('edge', 'typewright', 'typewright-edge')
+  after :edge_typewright, 'deploy'
+  after :deploy, :edge_finish
+end
+
+desc "Deploy typewright to production."
+task :production_typewright do
+  set_application('production', 'typewright', 'typewright')
+  after :production_typewright, 'deploy'
+  after :deploy, :production_finish
+end
+
+task :edge_finish do
+end
+
+task :production_finish do
 end
 
 namespace :passenger do
-	desc "Restart Application"
-	task :restart do
-		run "touch #{current_path}/tmp/restart.txt"
-	end
+  desc "Restart Application"
+  task :restart do
+    run "touch #{current_path}/tmp/restart.txt"
+  end
+end
+
+desc "Set up the edge server."
+task :edge_setup do
+  set_application('edge', 'typewright', 'typewright-edge')
+
+  after :edge_setup, 'deploy:setup'
+  after 'deploy:setup', :setup_config
+end
+
+desc "Set up the edge server's config."
+task :setup_config do
+  run "mkdir #{shared_path}/config"
+  run "touch #{shared_path}/config/database.yml"
+  run "touch #{shared_path}/config/site.yml"
+  puts ""
+  puts "#{red}!!!"
+  puts "!!! Now create the database.yml and site.yml files in the shared folder on the server."
+  puts "!!! Also create the database in mysql with:"
+  puts "GRANT ALL ON #{skin}_production.* TO 'APP-USER'@'localhost' IDENTIFIED BY 'APP-PASSWORD';"
+  puts "CREATE DATABASE #{skin}_production;"
+  puts "!!!#{reset}"
 end
 
 namespace :config do
-	desc "Config Symlinks"
-	task :symlinks do
-		run "ln -nfs #{shared_path}/config/database.yml #{release_path}/config/database.yml"
-		run "ln -nfs #{shared_path}/config/site.yml #{release_path}/config/site.yml"
-		run "ln -fs /raid/converted_images #{release_path}/public/uploaded"
-	end
+  desc "Config Symlinks"
+  task :symlinks do
+    run "ln -nfs #{shared_path}/config/database.yml #{release_path}/config/database.yml"
+    run "ln -nfs #{shared_path}/config/site.yml #{release_path}/config/site.yml"
+    run "ln -fs /raid/converted_images #{release_path}/public/uploaded"
+  end
 end
 
-#namespace :copy_files do
-#	desc "Copy all xsd files to the public path"
-#	task :xsd do
-#		puts "Updating xsd files..."
-#		source_dir = "#{release_path}/features/xsd"
-#		dest_dir = "#{release_path}/public/xsd"
-#		run "cp -R #{source_dir} #{dest_dir}"
-#	end
-#end
-
-after :production, 'deploy'
 after :deploy, "deploy:migrate"
 
 #after "deploy:stop",    "delayed_job:stop"
 #after "deploy:start",   "delayed_job:start"
 #after "deploy:restart", "delayed_job:restart"
 after "deploy:finalize_update", "config:symlinks"
-#after "deploy:finalize_update", "copy_files:xsd"
 after :deploy, "passenger:restart"
+after "passenger:restart", "deploy:cleanup"

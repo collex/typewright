@@ -51,3 +51,20 @@ paths:
 
 authentication:
   private_token: 'super-secret'
+
+##########################
+### CAPISTRANO
+##########################
+
+capistrano:
+  edge:
+    user: 'user-name-to-login-to-server'
+    ssh_name: 'ssh-name-to-login-to-server'
+    ruby: 'ruby-1.9.3-p194'
+    deploy_base: '/full/path/to/folder/that/all/web/apps/are/deployed/to'
+  production:
+    user: 'user-name-to-login-to-server'
+    ssh_name: 'ssh-name-to-login-to-server'
+    ruby: 'ruby-1.9.3-p194'
+    deploy_base: '/full/path/to/folder/that/all/web/apps/are/deployed/to'
+ 

@@ -16,7 +16,7 @@
 class Corrections
    # Get the typewright admin documents overview
    #
-   def self.docs(page, page_size, sort, order, filter)
+   def self.docs(page, page_size, sort, order, filter, status_filter)
       # paging setup
       page = page.to_i # guard against injection attacks by making sure only an int is passed.
       page_size = page_size.to_i
@@ -30,8 +30,11 @@ class Corrections
       sort_order = "ASC"
       sort_order = "DESC" if order == "desc"
 
-      # filter by title or uri
+      # filter by title / uri / status
       filter_phrase = filter.blank? ? "" : "and (title LIKE '%#{filter}%' or uri LIKE '%#{filter}%')"
+      if !status_filter.nil? && !status_filter.blank? && status_filter != 'all'
+        filter_phrase = filter_phrase << " and d.status = '#{status_filter}'"
+      end
 
       # query for paged results
       sql = "select d.id, uri, title, d.status as status, "
@@ -56,7 +59,7 @@ class Corrections
          }
 
          # This is the return value: what we are mapping the response to
-         { uri: doc.uri, title: doc.title, most_recent_correction: doc.latest_update, percent: doc.percent, status: doc.status, users: users }
+         { id: doc.id, uri: doc.uri, title: doc.title, most_recent_correction: doc.latest_update, percent: doc.percent, status: doc.status, users: users }
       }
       return { total: total, results: resp }
    end

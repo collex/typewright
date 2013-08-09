@@ -172,7 +172,7 @@ class DocumentsController < ApplicationController
 			if view == 'users'
 				resp = Corrections.users(page, page_size, params[:sort], params[:order], params[:filter])
 			else
-				resp = Corrections.docs(page, page_size, params[:sort], params[:order], params[:filter]) 
+				resp = Corrections.docs(page, page_size, params[:sort], params[:order], params[:filter], params[:status_filter]) 
 			end
 			render text: resp.to_json()
 		end

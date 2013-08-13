@@ -226,16 +226,19 @@ class Document < ActiveRecord::Base
     return info.merge(@attributes)
   end
 
-	def get_page_info(page, include_word_stats, src = :gale )
+	def get_page_info(page, include_word_stats, src = :gale, include_image_info = true )
     doc = XmlReader.open_xml_file(get_primary_xml_file())
 
 		page = (page == nil) ? 1 : page.to_i
 
     page_doc = XmlReader.open_xml_file(get_page_xml_file(page, :gale, self.uri_root()))
 
-    img_size = self.img_size(page, page_doc)
-		img_thumb = self.img_thumb(page)
-		img_full = self.img_full(page)
+    if include_image_info
+      img_size = self.img_size(page, page_doc)
+  		img_thumb = self.img_thumb(page)
+  		img_full = self.img_full(page)
+    end
+    
     num_pages = self.get_num_pages(doc)
 
     title = XmlReader.get_full_title(doc)
@@ -307,11 +310,17 @@ class Document < ActiveRecord::Base
 		}
 		Line.merge_changes(lines, changes)
 
-		result = { :doc_id => self.id, :page => page, :num_pages => num_pages, :img_full => img_full,
-			:img_thumb => img_thumb, :lines => lines, :title => title, :title_abbrev => title_abbrev,
-			:img_size => img_size, :ocr_sources => ocr_sources,
-      :word_stats => page_word_stats, :doc_word_stats => doc_word_stats
-		}
+    if include_image_info
+  		result = { :doc_id => self.id, :page => page, :num_pages => num_pages, :img_full => img_full,
+  			:img_thumb => img_thumb, :lines => lines, :title => title, :title_abbrev => title_abbrev,
+  			:img_size => img_size, :ocr_sources => ocr_sources,
+        :word_stats => page_word_stats, :doc_word_stats => doc_word_stats
+  		}
+  	else
+  	  result = { :doc_id => self.id, :page => page, :num_pages => num_pages, :lines => lines, :title => title, 
+  	    :title_abbrev => title_abbrev, :ocr_sources => ocr_sources, :word_stats => page_word_stats, :doc_word_stats => doc_word_stats
+      }
+  	end
     return result
   end
 
@@ -529,7 +538,7 @@ class Document < ActiveRecord::Base
   end
 
   def get_corrected_page_text(page_num, src = :gale)
-    page_info = get_page_info(page_num, false, src)
+    page_info = get_page_info(page_num, false, src, false)
     page_text = ''
     page_info[:lines].each { | line |
       the_text = line[:text] # the_text is an array listing all the changes. We want the last one, if it wasn't deleted.

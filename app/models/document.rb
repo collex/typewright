@@ -502,37 +502,31 @@ class Document < ActiveRecord::Base
   end
 
   def get_corrected_tei_a(include_words)
-	  doc = XmlReader.open_xml_file(get_primary_xml_file())
-	  page_num = 0
-	  doc.xpath('//page').each { |page_node|
-		  page_num += 1
-		  page_xml = get_corrected_page_tei_a(page_num, include_words)
-		  page_node.replace(page_xml)
-	  }
-	  xml_txt =  doc.to_xml
-	  xml_file = "#{Rails.root}/tmp/orig-#{uri_root}#{page_num}-#{Time.now.to_i}.xml"
+    book_dtd = "#{Rails.root}/tmp/book.dtd"
+    found = File.exist?(book_dtd)
+    if !found
+      File.open(book_dtd, "w") { |f| f.write("") }
+    end
+    
+    xml_txt = get_corrected_gale_xml()
+	  xml_file = "#{Rails.root}/tmp/orig-#{self.id}-#{Time.now.to_i}.xml"
 	  File.open(xml_file, "w") { |f| f.write(xml_txt) }
 	  
 	  saxon = "#{Rails.root}/lib/saxon"
-	  tmp_file = "#{Rails.root}/tmp/#{uri_root}#{page_num}-#{Time.now.to_i}.xml"
-	  xsl_file = "#{saxon}/GaleTEI-A-No-Word.xsl"
+	  tmp_file = "#{Rails.root}/tmp/#{self.id}-#{Time.now.to_i}.xml"
+	  xsl_file = "#{saxon}/GaleToTeiA.xsl"
+	  xsl_param = "showwd='n'"
+	  xsl_param = "showwd='y'"if include_words
+
 	  saxon_jar = "#{saxon}/Saxon-HE-9.5.1-1.jar"
-	  cmd = "java -jar #{saxon_jar}  #{xml_file} #{xsl_file} > #{tmp_file}"
-	   Document.do_command(cmd)
+	  cmd = "java -jar #{saxon_jar}  #{xml_file} #{xsl_file} #{xsl_param} > #{tmp_file}"
+	  Document.do_command(cmd)
 	  file = File.open(tmp_file)
-	  return file.read
+	  out = file.read
+	  File.delete(xml_file)
+	  File.delete(tmp_file)
+	  return out
   end
-  
-#  saxon = "#{Rails.root}/lib/saxon"
-#    tmp_file = "#{Rails.root}/tmp/#{uri_root}#{page_num}-#{Time.now.to_i}.xml"
-#    xml_file = get_page_xml_file(page_num, src, uri_root)
-#    xsl_file = "#{saxon}/GaleTEI-A-No-Word.xsl"
-#    saxon_jar = "#{saxon}/Saxon-HE-9.5.1-1.jar"
-#    cmd = "java -jar #{saxon_jar}  #{xml_file} #{xsl_file} > #{tmp_file}"
-#    Document.do_command(cmd)
-#    file = File.open(tmp_file)
-#    contents = file.read
-#    return contents
 
   def get_corrected_page_text(page_num, src = :gale)
     page_info = get_page_info(page_num, false, src)

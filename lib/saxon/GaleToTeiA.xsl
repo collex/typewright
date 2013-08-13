@@ -24,7 +24,7 @@
 <!--============================================================== -->
     
     
-
+     <xsl:param name="showwd" />
 
     <!--mjc: a value to determine how close the coordinates are for   -->
     <!--     two <wd>'s at the beginning of successive lines to       -->
@@ -34,8 +34,19 @@
     <!--     two lines                                                -->
     <xsl:variable name="whtspc">77</xsl:variable>
     
-    <!--mjc: set to true() to copy <wd> tags with attrs to result XML-->
-    <xsl:variable name="copyWD" select="false()"/>
+    <!--mjc: set to true() to copy <wd> tags with attrs to result XML -->
+    <xsl:variable name="copyWD" as="xs:boolean">
+        <xsl:value-of>
+            <xsl:choose>
+                <xsl:when test="$showwd = 'y'">
+                    <xsl:value-of select="true()" />
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="false()" />
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:value-of>
+    </xsl:variable>
     
     <xsl:variable name="lineFeed">\n+</xsl:variable>
 

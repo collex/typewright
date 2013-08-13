@@ -560,7 +560,7 @@ class Document < ActiveRecord::Base
     }
     page_content_node.content = nil
 
-    page_info = get_page_info(page_num, false, src)
+    page_info = get_page_info(page_num, false, src, false)
     page_info[:lines].each { | line |
 		# get the last entry that is not "correct", since they don't affect the output (They are just confirmation that the line was looked at.) We'll just loop through to find it.
 		output_item = line[:words].first
@@ -610,7 +610,7 @@ class Document < ActiveRecord::Base
 
 	  page_content_node.content = nil
 
-	  page_info = get_page_info(page_num, false, src)
+	  page_info = get_page_info(page_num, false, src, false)
 	  page_info[:lines].each { | line |
 		  # get the last entry that is not "correct", since they don't affect the output (They are just confirmation that the line was looked at.) We'll just loop through to find it.
 		  output_item = line[:words].first

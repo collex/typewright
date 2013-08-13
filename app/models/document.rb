@@ -509,8 +509,30 @@ class Document < ActiveRecord::Base
 		  page_xml = get_corrected_page_tei_a(page_num, include_words)
 		  page_node.replace(page_xml)
 	  }
-	  return doc.to_xml
+	  xml_txt =  doc.to_xml
+	  xml_file = "#{Rails.root}/tmp/orig-#{uri_root}#{page_num}-#{Time.now.to_i}.xml"
+	  File.open(xml_file, "w") { |f| f.write(xml_txt) }
+	  
+	  saxon = "#{Rails.root}/lib/saxon"
+	  tmp_file = "#{Rails.root}/tmp/#{uri_root}#{page_num}-#{Time.now.to_i}.xml"
+	  xsl_file = "#{saxon}/GaleTEI-A-No-Word.xsl"
+	  saxon_jar = "#{saxon}/Saxon-HE-9.5.1-1.jar"
+	  cmd = "java -jar #{saxon_jar}  #{xml_file} #{xsl_file} > #{tmp_file}"
+	   Document.do_command(cmd)
+	  file = File.open(tmp_file)
+	  return file.read
   end
+  
+#  saxon = "#{Rails.root}/lib/saxon"
+#    tmp_file = "#{Rails.root}/tmp/#{uri_root}#{page_num}-#{Time.now.to_i}.xml"
+#    xml_file = get_page_xml_file(page_num, src, uri_root)
+#    xsl_file = "#{saxon}/GaleTEI-A-No-Word.xsl"
+#    saxon_jar = "#{saxon}/Saxon-HE-9.5.1-1.jar"
+#    cmd = "java -jar #{saxon_jar}  #{xml_file} #{xsl_file} > #{tmp_file}"
+#    Document.do_command(cmd)
+#    file = File.open(tmp_file)
+#    contents = file.read
+#    return contents
 
   def get_corrected_page_text(page_num, src = :gale)
     page_info = get_page_info(page_num, false, src)

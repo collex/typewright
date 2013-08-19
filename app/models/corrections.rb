@@ -37,8 +37,14 @@ class Corrections
       end
 
       # query for paged results
+      # Note the special case in the COUNT. When a user marks a document
+      # as complete, but has not made any corections, the document will not
+      # show up in the reports. TO solve this, an auto correction from a system
+      # user is recorded for the document. The system user has id of 0. Don't count any
+      # of these edits as progess.
       sql = "select d.id, uri, title, d.status as status, "
-      sql = sql << " max(l.updated_at) as latest_update, (COUNT(DISTINCT page) / total_pages)*100 as percent "
+      sql = sql << " max(l.updated_at) as latest_update, "
+      sql = sql << "(COUNT(DISTINCT case when user_id > 0 then `page` end) / total_pages)*100 as percent  "
       sql = sql << " from documents d inner join `lines` l on d.id = l.document_id "
       sql = sql << " where l.src = 'gale' #{filter_phrase} group by d.id ORDER BY #{sort_by} #{sort_order} LIMIT #{page} , #{page_size};"
       resp = Line.find_by_sql(sql)

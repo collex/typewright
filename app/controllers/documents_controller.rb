@@ -52,13 +52,28 @@ class DocumentsController < ApplicationController
 	def update
 	 doc = Document.find(params[:id])
 	 doc.status = params[:document][:status]
-	 respond_to do |format|
-      if doc.save
-        format.xml  { render :xml => doc, :status => :ok}
-      else
-        format.xml  { render :xml => doc.errors, :status => :unprocessable_entity }
-      end
-    end
+	 if doc.save
+	   # see if there are any lines marked with corrections 
+	   # on a document that has just been tagged as user complete
+	   if doc.status = 'user_complete'
+	     if Line.where(document_id: 2).count == 0
+	       # none present, add a 'fake' edit from user 0 on page/line 0
+	       # this lets the document show up in the TW admin overview reports
+	       # but retaine the 0% corrected status
+	       sys_edit = Line.new
+	       sys_edit.user_id = 0
+	       sys_edit.status = 'auto'
+	       sys_edit.document_id = doc.id
+	       sys_edit.page = 0
+	       sys_edit.line = 0
+	       sys_edit.src = 'gale'
+	       sys_edit.save
+	     end
+	   end
+	   render :xml => doc, :status => :ok
+	 else
+	   render :xml => doc.errors, :status => :unprocessable_entity  
+	 end
 	end
 
 	# GET /documents/{id}/report?page={page}

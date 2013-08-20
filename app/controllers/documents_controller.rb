@@ -194,7 +194,11 @@ class DocumentsController < ApplicationController
 	end
 
 	def retrieve
-		if PRIVATE_TOKEN != params[:private_token]
+		x_auth_key = request.headers['HTTP_X_AUTH_KEY']
+		params_token = params[:private_token]
+		auth_token = x_auth_key
+		auth_token = params_token if x_auth_key.nil? || x_auth_key.blank?
+		if PRIVATE_TOKEN != auth_token
 			render text: { "message" => "401 Unauthorized" }.to_json(), status: :unauthorized
 		else
 			uri = params[:uri]

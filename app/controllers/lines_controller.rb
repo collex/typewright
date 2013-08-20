@@ -9,7 +9,7 @@ class LinesController < ApplicationController
 			if doc
 				id = doc.id
 				lines = Line.find_all_by_document_id_and_src(id, src)
-				lines = lines.sort { |a,b|
+				lines = lines.sort do |a,b|
 					if a.page == b.page
 						if a.line == b.line
 							a.updated_at <=> b.updated_at
@@ -19,7 +19,7 @@ class LinesController < ApplicationController
 					else
 						a.page <=> b.page
 					end
-				}
+				end
 				start = params[:start]
 				size = params[:size]
 				lines = lines[start.to_i,size.to_i]
@@ -36,17 +36,22 @@ class LinesController < ApplicationController
 		end
 
 		lines2 = []
-		lines.each { |line|
-			user = User.get(line.user_id)
-			w = line.words
-			if params[:revisions] == 'true'
-				if w == nil || w.length == 0
-					w = "0\t0\t0\t0\t1\tLine #{line.status}"
-				end
-			end
-			lines2.push({ :id => line.id, :federation => user.federation, :orig_id => user.orig_id, :updated_at => line.updated_at, :page => line.page,
-				 :line => line.line, :src => line.src, :status => line.status, :words =>w, :document_id => line.document_id })
-		} if lines.present?
+		if lines.present?
+  		lines.each do | ln |
+  		  if ln.user_id > 0
+    			user = User.get(ln.user_id)
+    			w = ln.words
+    			if params[:revisions] == 'true'
+    				if w == nil || w.length == 0
+    					w = "0\t0\t0\t0\t1\tLine #{ln.status}"
+    				end
+    			end
+    			lines2.push({ :id => ln.id, :federation => user.federation, :orig_id => user.orig_id, :updated_at => ln.updated_at, :page => ln.page,
+    				 :line => ln.line, :src => ln.src, :status => ln.status, :words =>w, :document_id => ln.document_id })
+    	  end
+  		end 
+    end
+		
 		respond_to do |format|
 			format.xml  { render :xml => lines2 }
 		end

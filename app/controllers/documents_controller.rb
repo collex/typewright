@@ -55,8 +55,8 @@ class DocumentsController < ApplicationController
 	 if doc.save
 	   # see if there are any lines marked with corrections 
 	   # on a document that has just been tagged as user complete
-	   if doc.status = 'user_complete'
-	     if Line.where(document_id: 2).count == 0
+	   if doc.status == 'user_complete'
+	     if Line.where(document_id: doc.id).count == 0
 	       # none present, add a 'fake' edit from user 0 on page/line 0
 	       # this lets the document show up in the TW admin overview reports
 	       # but retaine the 0% corrected status
@@ -69,6 +69,10 @@ class DocumentsController < ApplicationController
 	       sys_edit.src = 'gale'
 	       sys_edit.save
 	     end
+	   elsif doc.status == 'not_complete'
+	     # when status goes to not complete, remove any fake edits
+	     # that may have been created above
+	     Line.where(document_id: doc.id, user_id: 0).destroy_all
 	   end
 	   render :xml => doc, :status => :ok
 	 else

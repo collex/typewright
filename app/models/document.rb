@@ -202,6 +202,12 @@ class Document < ActiveRecord::Base
 	    :lines_with_changes => total_lines_revised.length, :last_revision => last_revision }
     return result
   end
+  
+  def get_gale_title()
+    doc = XmlReader.open_xml_file(get_primary_xml_file())
+    title = XmlReader.get_full_title(doc)
+    return title
+  end
 
 	def get_doc_info()
     doc = XmlReader.open_xml_file(get_primary_xml_file())

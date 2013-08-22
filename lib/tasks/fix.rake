@@ -35,6 +35,30 @@ namespace :fix do
 			print '.'
 		}
 	end
+	
+	desc "Go through each document in the database and see if the title matches Gale"
+  task :validate_title => :environment do
+    update_count = 0
+    docs = Document.all
+    docs.each_with_index do |doc, index|
+      begin
+        info = doc.get_doc_info()
+      rescue Exception => e
+        puts "#{doc.uri}: #{e.to_s}"
+        info = nil
+      end
+      if info.present? && info[:title] != doc.title
+        puts "#{doc.uri}: Title does not match Gale. Updating..."
+        doc.title = info[:title]
+        doc.save!
+        puts "#{doc.uri}: Title updated."
+        update_count = update_count +1
+      end
+      print "\n[#{index}]" if index % 100 == 0
+      print '.'
+    end
+    puts "DONE. Total documents updated: #{update_count}"
+  end
 
 	desc "Find usages of null documents in the database"
 	task :analyze_null_documents => :environment do

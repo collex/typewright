@@ -58,16 +58,20 @@ class XmlReader
 
   def self.read_all_lines_from_gale_page(page_doc)
     page_src = []
-    num_lines = 0
+    paragraph_num = 0
+
     # read the page data from gale's xml
-    page_doc.xpath('//pageContent/p').each { |ps|
-      ps.xpath('wd').each { |wd|
+    page_doc.xpath('//pageContent/p').each do |ps|
+      ps.xpath('wd').each do |wd|
         pos = wd.attribute('pos')
         arr = pos.to_s.split(',')
-        page_src.push({ :l => arr[0].to_i, :t => arr[1].to_i, :r => arr[2].to_i, :b => arr[3].to_i, :word => wd.text, :line => num_lines })
-      }
-      num_lines += 1
-    }
+        # initially treat a line and paragraph as the same thing
+        page_src.push({ :l => arr[0].to_i, :t => arr[1].to_i, :r => arr[2].to_i, :b => arr[3].to_i, :word => wd.text, :line => paragraph_num, :paragraph=>paragraph_num})
+      end
+      paragraph_num += 1
+    end
+
+    # now split the paragraph into lines based on y positions
     page_src = XmlReader.gale_create_lines(page_src)
     return page_src
   end
@@ -103,23 +107,23 @@ class XmlReader
     return :unknown
   end
 
- 	
-  ## USED
-	def self.line_factory(l, t, r, b, line, words, text, num, src)
-		return { :l => l, :t => t, :r => r, :b => b, :words => words, :text => text, :line => line, :num => num, :src => src }
+
+   ## USED
+	def self.line_factory(l, t, r, b, line, paragraph, words, text, num, src)
+		return { :l => l, :t => t, :r => r, :b => b, :words => words, :text => text, :paragraph=>paragraph, :line => line, :num => num, :src => src }
 	end
 
-  ## USED
+   ## USED
 	def self.create_lines(gamera_arr, src)
 		ret = []
 		gamera_arr.each_with_index { |wd, i|
 			if !ret[wd[:line]]
-				ret[wd[:line]] = { :l => wd[:l], :t => wd[:t], :r => wd[:r], :b => wd[:b], :words => [[wd]], :text => [wd[:word]], :line => wd[:line], :src => src }
+				ret[wd[:line]] = { :l => wd[:l], :t => wd[:t], :r => wd[:r], :b => wd[:b], :words => [[wd]], :text => [wd[:word]], :line => wd[:line], :paragraph=>wd[:paragraph], :src => src }
 			else
 				line = ret[wd[:line]]
 				line[:words][0].push(wd)
 				begin
-				line[:text][0] += ' ' +wd[:word]
+				  line[:text][0] += ' ' +wd[:word]
 				rescue
 					puts "Failed on entry:#{i}"
 				end
@@ -128,11 +132,38 @@ class XmlReader
 				line[:r] = wd[:r] if line[:r] < wd[:r]
 				line[:b] = wd[:b] if line[:b] < wd[:b]
 				line[:line] = wd[:line]
-        line[:src] = src
+				line[:paragraph] = wd[:paragraph]
+            line[:src] = src
 			end
 		}
 		return ret
 	end
+
+   def self.gale_create_lines_p(gale_arr)
+      ret = []
+      # this is an array of the paragraphs. We never want to join words across paragraphs, but we also want
+      # to split the paragraphs into lines by starting a new line whenever the word doesn't overlap the last one.
+      last_y = -1
+      last_h = -1
+      last_x = 200000
+      last_line = -1
+      line_num = -1
+      gale_arr.each do |p|
+         para = []
+         p.each do |wd|
+            if last_y > wd[:b] || last_h < wd[:t] || last_x > wd[:l] || last_line != wd[:line]
+               line_num += 1
+            end
+            para.push({ :l => wd[:l], :t => wd[:t], :r => wd[:r], :b => wd[:b], :word => wd[:word], :line => line_num, :src => wd[:src] })
+            last_y = wd[:t]
+            last_h = wd[:b]
+            last_x = wd[:l]
+            last_line = wd[:line]
+         end
+         ret << para
+      end
+      return ret
+  end
 
 	def self.gale_create_lines(gale_arr)
 		ret = []
@@ -147,7 +178,7 @@ class XmlReader
 			if last_y > wd[:b] || last_h < wd[:t] || last_x > wd[:l] || last_line != wd[:line]
 				line_num += 1
 			end
-			ret.push({ :l => wd[:l], :t => wd[:t], :r => wd[:r], :b => wd[:b], :word => wd[:word], :line => line_num, :src => wd[:src] })
+			ret.push({ :l => wd[:l], :t => wd[:t], :r => wd[:r], :b => wd[:b], :word => wd[:word], :line => line_num, :paragraph=>wd[:paragraph], :src => wd[:src] })
 			last_y = wd[:t]
 			last_h = wd[:b]
 			last_x = wd[:l]

@@ -9,49 +9,41 @@
     === Output: 
         a minimized, TEI compliant XML file 
     === Actions: 
-        1) Takes current <p> tags and converts to <l> tags
-        2) Takes current <wd> tags and converts to <w> tags
-        3) Attempts to identify paragraphs based on offsets of word
-            coordinates for each line. Not completely accurate, but
-            close, about 85-90%.                                   -->
+        1) Leaves <p> & <ab> tags as is
+        2) Takes current <wd> tags and converts to <w> tags        -->
 <!--=== history ================================================== -->
 <!--=== created:
             Based on XSLT created by Bryan Pytlik-Zilig (bpz), 2010
             Updated for 18thConnect by Matthew Christy (mjc),  2011
         modified:
-            mjc, 08/07/2013 
+            mjc, 08/07/2013: prepare for use in Typewright admin interface
+            mjc, 11/26/2013: change to work with new GaleXML structure output
+                by TW: previously, all <p> tags were lost when ingesting into 
+                TW and all lines were identified and tagged with <p>. Now, 
+                all original <p> tags are retained and lines are tagged with
+                <ab>.
                                                                    -->
 <!--============================================================== -->
     
-    
-     <xsl:param name="showwd" />
-
-    <!--mjc: a value to determine how close the coordinates are for   -->
-    <!--     two <wd>'s at the beginning of successive lines to       -->
-    <!--     determine if they're in the same paragraph               -->
-    <xsl:variable name="paraProx">20</xsl:variable>
-    <!--mjc: a value to determine how much whitespace exists between  -->
-    <!--     two lines                                                -->
-    <xsl:variable name="whtspc">77</xsl:variable>
-    
-    <!--mjc: set to true() to copy <wd> tags with attrs to result XML -->
-    <xsl:variable name="copyWD" as="xs:boolean">
+    <!--passed parameter to indicate whether to include <w> tag with
+        word coordinates -->
+    <xsl:param name="showW"/>
+    <!--mjc: set to true() to copy <wd> tags with attrs to result XML
+        as <w> tags-->
+    <xsl:variable name="copyW" as="xs:boolean">
         <xsl:value-of>
             <xsl:choose>
-                <xsl:when test="$showwd = 'y'">
-                    <xsl:value-of select="true()" />
+                <xsl:when test="$showW = 'y'">
+                    <xsl:value-of select="true()"/>
                 </xsl:when>
                 <xsl:otherwise>
-                    <xsl:value-of select="false()" />
+                    <xsl:value-of select="false()"/>
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:value-of>
     </xsl:variable>
-    
-    <xsl:variable name="lineFeed">\n+</xsl:variable>
 
-    <xsl:variable name="tab">&#x0009;+</xsl:variable>
-    
+
     <!--mjc: the name of the file we're working on-->
     <xsl:variable name="fname" select="substring-before(tokenize(document-uri(.), '/')[last()], '.xml')"/>
     
@@ -170,38 +162,15 @@
 
 
 <!--mjc: copy the text of the document. -->
-<!--    Here we pretty much want to just copy everything, except that we want to try 
-        to "rebuild" the paragraphs <lg>, which get lost in translation somewhere 
-        from Gale->Typewright->corrected XML.
-        The <p> tags that exist in the corrected XML output are really just describing 
-        lines. So we want to try to recreate the prargraphs by comparing offsets of
-        the begining positions of lines to try to determine when a paragraph is 
-        ending and a new one is starting. Also, TEI doesn't allow un-nested tags
-        so each page ends with a closed paragraph and begins with a new paragraph.
--->
+<!--    Here we pretty much want to just copy everything -->
             <text>
                 <body>
                     <xsl:for-each select="//page">
                         <div type="page" n="{pageInfo/pageID}">
                             <xsl:for-each select="pageContent/p">
-                                <xsl:choose>
-                                    <xsl:when test="child::*">
-                                        <!--mjc: TW output is losing the paragraphs by outputing    -->
-                                        <!--     all lines as <p>. Compare the position of the first-->
-                                        <!--     <wd> in each <p> to determine if it's offset, and  -->
-                                        <!--     therefore the beginnning of a new paragraph.       -->
-
-                                        <!-- The generateLG template is recursive.                  -->
-                                        <xsl:call-template name="generateLG">
-                                            <xsl:with-param name="p" select="."/>
-                                        </xsl:call-template>
-                                    </xsl:when>
-
-                                    <!--mjc: if the empty (<p/>) then just output that-->
-                                    <xsl:otherwise>
-                                        <xsl:value-of disable-output-escaping="yes">&lt;p /&gt;</xsl:value-of>
-                                    </xsl:otherwise>
-                                </xsl:choose>
+                                <p>
+                                    <xsl:apply-templates/>
+                                </p>
                             </xsl:for-each>
                         </div>
                     </xsl:for-each>
@@ -211,91 +180,18 @@
     </xsl:template>
     
     
-    <xsl:template name="generateLG">
-        <xsl:param name="p"/>
-        
-        <!--mjc: currpos   -->
-        <!--     a variable holding the position of the first <wd>  -->
-        <!--     of the current "paragraph"                           -->
-        <xsl:variable name="currpos" select="$p/descendant::wd[1]/@pos"/>
-        <!-- mjc: we are just interested in the first coordinate    -->
-        <xsl:variable name="c1" select="substring-before($currpos, ',')"/>
-        <!--mjc: prevpos   -->
-        <!--     a variable holding the position of the first <wd>  -->
-        <!--     of the previous "paragraph"                          -->
-        <xsl:variable name="prevpos" select="$p/preceding-sibling::p[1]/descendant::wd[1]/@pos"/>
-        <!--mjc: we are just interested in the first coordinate     -->
-        <xsl:variable name="p1" select="substring-before($prevpos, ',')"/>
-        <!--mjc: nextpos   -->
-        <!--     a variable holding the position of the first <wd>  -->
-        <!--     of the next "paragraph"                              -->
-        <xsl:variable name="nextpos" select="$p/following-sibling::p[1]/descendant::wd[1]/@pos"/>
-        <!--mjc: we are just interested in the first coordinate     -->
-        <xsl:variable name="n1" select="substring-before($nextpos, ',')"/>
-        <!--mjc: we also need some variables to let us look at how  -->
-        <!--     much whitespace is between the current line ("paragraph") and the-->
-        <!--     next. use the last coord in the pos for this       -->
-        <xsl:variable name="plinebot" select="substring-after(substring-after(substring-after($prevpos, ','), ','), ',')"/>
-        <xsl:variable name="clinebot" select="substring-after(substring-after(substring-after($currpos, ','), ','), ',')"/>
-        <xsl:variable name="nlinebot" select="substring-after(substring-after(substring-after($nextpos, ','), ','), ',')"/>
-        <xsl:variable name="plinetop" select="substring-before(substring-after($prevpos, ','), ',')"/>
-        <xsl:variable name="clinetop" select="substring-before(substring-after($currpos, ','), ',')"/>
-        <xsl:variable name="nlinetop" select="substring-before(substring-after($nextpos, ','), ',')"/>
-        
-        <xsl:choose>
-            <!--if this is the first line ("paragraph") on the page -->
-            <xsl:when test="string(number($p1))='NaN'">
-                <!-- start a new <p> -->
-                <xsl:value-of disable-output-escaping="yes">&lt;p&gt;</xsl:value-of>
-                    <xsl:apply-templates/><lb />
-            </xsl:when>
-            
-            <!--if the next line is indented from the curr line ("Paragraph")-->
-            <xsl:when test="(number($n1) - number($c1) &gt; $paraProx) or (number($c1) - number($n1) &gt; $paraProx)">
-                <xsl:choose>
-                    <xsl:when test="(number($p1) - number($c1) &gt; $paraProx) or (number($c1) - number($p1) &gt; $paraProx)">
-                        <!-- close the current <p> and start a new one -->
-                        <xsl:value-of disable-output-escaping="yes">&lt;/p&gt;</xsl:value-of>
-                        <xsl:value-of disable-output-escaping="yes">&lt;p&gt;</xsl:value-of>
-                            <xsl:apply-templates/><lb />
-                    </xsl:when>
-                    
-                    <!-- there is no indent, so just add a space to cat the two "paragraphs" -->
-                    <xsl:otherwise>
-                        <xsl:apply-templates/><lb />
-                    </xsl:otherwise>
-                </xsl:choose>
-            </xsl:when>
-            
-            <!--if the previous line is indented from the curr line ("paragraph") -->
-            <xsl:when test="string(number($n1))='NaN'">
-                <xsl:choose>
-                    <xsl:when test="(number($p1) - number($c1) &gt; $paraProx) or (number($c1) - number($p1) &gt; $paraProx)">
-                        <!-- close the current <p> and start a new one -->
-                        <xsl:value-of disable-output-escaping="yes">&lt;/p&gt;</xsl:value-of>
-                        <xsl:value-of disable-output-escaping="yes">&lt;p&gt;</xsl:value-of>
-                        <xsl:apply-templates/><lb />
-                    </xsl:when>
-                    
-                    <xsl:otherwise>
-                        <xsl:apply-templates/><lb />
-                    </xsl:otherwise>
-                </xsl:choose>
-            </xsl:when>
-            
-            <!-- there is no indent, so just add a space to cat the two "paragraphs" -->
-            <xsl:otherwise>
-                <xsl:apply-templates/><lb />
-            </xsl:otherwise>
-        </xsl:choose>
-        
-        <!-- if this is the last "paragraph" on the page, then close the <p> -->
-        <xsl:if test="string(number($n1))='NaN'">
-            <xsl:value-of disable-output-escaping="yes">&lt;/p&gt;</xsl:value-of>
-        </xsl:if>
+
+    <!--mjc: ab template -->
+    <!--     ==          -->
+    <!-- copy each line (anonymous block)                    -->
+    <xsl:template match="ab">
+        <ab>
+            <xsl:apply-templates/>
+        </ab>
     </xsl:template>
-
-
+        
+    
+        
     <!--mjc: wd template -->
     <!--     ==          -->
     <!-- If $copyWD is set to true (passed from the shell script call)  -->
@@ -303,7 +199,7 @@
     <xsl:template match="wd">
     <!--                 ==-->
         <xsl:choose>
-            <xsl:when test="$copyWD">
+            <xsl:when test="$copyW">
                 <w>
                     <xsl:copy-of select="@*"/>
                     <xsl:value-of select="text()"/>

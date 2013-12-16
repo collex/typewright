@@ -3,13 +3,13 @@
     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xd="http://www.oxygenxml.com/ns/doc/xsl" xmlns:tei="http://www.tei-c.org/ns/1.0"
     exclude-result-prefixes="xs xd tei" version="2.0">
 <!--=== Gale-convertToTEI-A_p-byFile.xsl ========================= -->
-<!--                                                                
-    === Input: 
-        takes Gale OCR XML or 18thConnect Typewright XML files 
-    === Output: 
-        a minimized, TEI compliant XML file 
-    === Actions: 
-        1) Leaves <p> & <ab> tags as is
+<!--
+    === Input:
+        takes Gale OCR XML or 18thConnect Typewright XML files
+    === Output:
+        a minimized, TEI compliant XML file
+    === Actions:
+        1) Copies <p> & <ab> tags as is
         2) Takes current <wd> tags and converts to <w> tags        -->
 <!--=== history ================================================== -->
 <!--=== created:
@@ -18,13 +18,13 @@
         modified:
             mjc, 08/07/2013: prepare for use in Typewright admin interface
             mjc, 11/26/2013: change to work with new GaleXML structure output
-                by TW: previously, all <p> tags were lost when ingesting into 
-                TW and all lines were identified and tagged with <p>. Now, 
+                by TW: previously, all <p> tags were lost when ingesting into
+                TW and all lines were identified and tagged with <p>. Now,
                 all original <p> tags are retained and lines are tagged with
                 <ab>.
                                                                    -->
 <!--============================================================== -->
-    
+
     <!--passed parameter to indicate whether to include <w> tag with
         word coordinates -->
     <xsl:param name="showW"/>
@@ -46,19 +46,19 @@
 
     <!--mjc: the name of the file we're working on-->
     <xsl:variable name="fname" select="substring-before(tokenize(document-uri(.), '/')[last()], '.xml')"/>
-    
+
 
     <!-- main template -->
     <!-- ============= -->
     <!-- match on the first tag in the document -->
-    <xsl:template match="*[not(parent::*)]">       
+    <xsl:template match="*[not(parent::*)]">
 <!--mjc: begin TEI output-->
         <TEI xmlns="http://www.tei-c.org/ns/1.0">
             <xsl:attribute name="n">
                 <xsl:value-of select="$fname"/>
             </xsl:attribute>
             <xsl:attribute name="version">5.0</xsl:attribute>
-            
+
 
 <!--mjc: Copy the TEI header-->
             <teiHeader>
@@ -94,7 +94,7 @@
                             <p>These documents are available only to 18thConnect under the terms and
                                 conditions specified in the contract with Gale Cengage Learning
                                 dated June 22-23, 2010. For more information, contact Laura Mandell
-                                at mandellc@muohio.edu</p>
+                                at mandell@tamu.edu</p>
                         </availability>
                     </publicationStmt>
                     <sourceDesc>
@@ -127,19 +127,13 @@
                         <p>18thConnect (http://www.18thConnect.org) is a scholarly community and
                             online finding aid designed to make searchable all primary texts and
                             peer-reviewed resources in the field of eighteenth-century studies. It
-                            is supported by Miami University, NINES (http://www.nines.org) at the
-                            University of Virginia, I-CHASS
-                            (http://ichass.illinois.edu/Home/Home.html) at the University of
-                            Illinois, Glasgow University, and the NCSA or National Center for
-                            Supercomputer Applications.</p>
+                            is supported by the University of Virginia, NINES.org, the Initiative for
+                            Digital Humanities, Media, and Culture (IDHMC) at Texas A&amp;M University
+                            (http://idhmc.tamu.edu), and by the Advanced Research Constortium (ARC) (http://ar-c.org).
+                        </p>
                     </projectDesc>
                     <editorialDecl>
-                        <p>These documents have been generated from the Gamera open-source OCR
-                            program that 18thConnect developer Michael Behrens has trained to read
-                            specifically eigtheenth-century texts. David Woods has created XML
-                            output from Gamera; Brian Pytlik Zillig has transformed the Gamera XML
-                            output into these documents using the tool that he created for this
-                            purpose, l8mda.</p>
+                        <p>These documents have been generated from 18thConnect's TypeWright tool and are based on the OCR output created by Gale/Cengage Learning for the Eighteenth Century Collections Online (ECCO) proprietary database product. The XSLT that converts the documents from Gale's OCR output XML format to TEI-A was written by Matthew Christy at the IDHMC, Texas A&amp;M University. The code is open source.</p>
                     </editorialDecl>
                 </encodingDesc>
                 <revisionDesc>
@@ -155,6 +149,13 @@
                         <name xml:id="MJC">Matthew J. Christy</name>
                         <list>
                             <item>Revise XSLT to transform XMLs of corrected Gale OCR documents</item>
+                        </list>
+                    </change>
+                    <change n="3" when="2013-12" who="#MJC">
+                        <label>Changed by</label>
+                        <name xml:id="MJC">Matthew J. Christy</name>
+                        <list>
+                            <item>Revise XSLT to change TEI tags used and update Header info</item>
                         </list>
                     </change>
                 </revisionDesc>
@@ -178,8 +179,8 @@
             </text>
         </TEI>
     </xsl:template>
-    
-    
+
+
 
     <!--mjc: ab template -->
     <!--     ==          -->
@@ -189,9 +190,9 @@
             <xsl:apply-templates/>
         </ab>
     </xsl:template>
-        
-    
-        
+
+
+
     <!--mjc: wd template -->
     <!--     ==          -->
     <!-- If $copyWD is set to true (passed from the shell script call)  -->
@@ -205,13 +206,13 @@
                     <xsl:value-of select="text()"/>
                 </w>
             </xsl:when>
-            
+
             <xsl:otherwise>
                 <xsl:choose>
                     <xsl:when test="name(./following-sibling::*[1])='wd'">
                         <xsl:value-of select="concat(text(), ' ')"/>
                     </xsl:when>
-                    
+
                     <xsl:otherwise>
                         <xsl:value-of select="text()"/>
                     </xsl:otherwise>

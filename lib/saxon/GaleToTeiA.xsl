@@ -74,7 +74,7 @@
                     </extent>
                     <publicationStmt>
                         <publisher>18thConnect</publisher>
-                        <pubPlace>Oxford, OH 45056</pubPlace>
+                        <pubPlace>IDHMC, 4227 TAMU, College Station, TX 77843-4227</pubPlace>
                         <date>2010</date>
 <!--                        <idno type="TCP">
                             <xsl:value-of select="$metadataFromTabDelimitedFile//cell[1]"/>

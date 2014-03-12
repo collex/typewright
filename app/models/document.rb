@@ -540,8 +540,8 @@ class Document < ActiveRecord::Base
       saxon = "#{Rails.root}/lib/saxon"
       tmp_file = "#{Rails.root}/tmp/#{self.id}-#{Time.now.to_i}.xml"
       xsl_file = "#{saxon}/GaleToTeiA.xsl"
-      xsl_param = "showwd='n'"
-      xsl_param = "showwd='y'"if include_words
+      xsl_param = "showW='n'"
+      xsl_param = "showW='y'"if include_words
 
       saxon_jar = "#{saxon}/Saxon-HE-9.5.1-1.jar"
       cmd = "java -jar #{saxon_jar}  #{xml_file} #{xsl_file} #{xsl_param} > #{tmp_file}"

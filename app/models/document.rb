@@ -561,7 +561,9 @@ class Document < ActiveRecord::Base
          # the_text is an array listing all the changes.
          # We want the last one, if it wasn't deleted.
          page_text += the_text.last + "\n" if the_text.last.present?
-      end
+	  end
+	  page_text = page_text.gsub(/<del>.+<\/del>/, '')
+	  page_text = ActionView::Base.full_sanitizer.sanitize(page_text)
       return page_text
    end
 

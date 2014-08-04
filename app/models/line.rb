@@ -39,6 +39,10 @@ class Line < ActiveRecord::Base
       end
    end
 
+   def self.since(document_id, page, since)
+	   return Line.where("document_id = ? AND page = ? AND updated_at > ?", document_id, page, since)
+   end
+
    private
 
    def self.db_to_words(db, paragraph)

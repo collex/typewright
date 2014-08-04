@@ -11,7 +11,23 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130805191009) do
+ActiveRecord::Schema.define(:version => 20140729180741) do
+
+  create_table "current_editors", :force => true do |t|
+    t.integer  "user_id"
+    t.integer  "document_id"
+    t.integer  "page"
+    t.string   "token"
+    t.datetime "open_time"
+    t.datetime "last_contact_time"
+    t.datetime "created_at",        :null => false
+    t.datetime "updated_at",        :null => false
+  end
+
+  add_index "current_editors", ["document_id", "page"], :name => "index_current_editors_on_document_id_and_page"
+  add_index "current_editors", ["token"], :name => "index_current_editors_on_token"
+  add_index "current_editors", ["user_id", "document_id", "page"], :name => "index_current_editors_on_user_id_and_document_id_and_page"
+  add_index "current_editors", ["user_id"], :name => "index_current_editors_on_user_id"
 
   create_table "document_users", :force => true do |t|
     t.integer  "document_id"

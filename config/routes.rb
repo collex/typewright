@@ -1,7 +1,11 @@
 Typewright::Application.routes.draw do
   resources :page_reports
 
-	resources :lines
+	resources :lines do
+		collection do
+			get 'ping'
+		end
+	end
 	resources :users do
 		member do
 			get 'corrections'
@@ -20,6 +24,7 @@ Typewright::Application.routes.draw do
 	  collection do
 		  get 'corrections'
 		  get 'retrieve'
+		  get 'unload'
 	  end
   end
   get 'documents/:id/report' => 'documents#report', :as => :report

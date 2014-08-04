@@ -13,6 +13,9 @@ class DocumentsController < ApplicationController
 
   # GET /documents.xml
   def index
+	  # Called by Typewright::Document#get_page, and other places.
+	  # When it is called by get_page, it includes a user_id. That is the
+	  # call that happens when the page is opened for editing.
     doc = find_doc(params)
     page = params[:page]
     src = params[:src].to_sym unless params[:src].nil?
@@ -49,6 +52,14 @@ class DocumentsController < ApplicationController
     end
   end
 
+	def unload
+		token = params[:token]
+		CurrentEditor.unload(token)
+		respond_to do |format|
+			format.xml  { head :ok }
+		end
+	end
+
   def update
     doc = Document.find(params[:id])
     doc.status = params[:document][:status]
@@ -59,7 +70,7 @@ class DocumentsController < ApplicationController
         if Line.where(document_id: doc.id).count == 0
           # none present, add a 'fake' edit from user 0 on page/line 0
           # this lets the document show up in the TW admin overview reports
-          # but retaine the 0% corrected status
+          # but retain the 0% corrected status
           sys_edit = Line.new
           sys_edit.user_id = 0
           sys_edit.status = 'auto'
@@ -221,75 +232,75 @@ class DocumentsController < ApplicationController
     end
   end
 
-  # GET /documents/export_corrected_text?uri=lib://{source_id}/{book_id}
-  def export_corrected_text()
-    if !check_auth()
-      render text: "Unauthorized", status: :unauthorized
-      return
-    end
-    @document = find_doc(params)
-    if @document.present?
-      render :text => @document.get_corrected_text()
-    else
-      render text: "Document not found", status: :not_found
-    end
-  end
-
-   # GET /documents/export_corrected_gale_xml?uri=lib://{source_id}/{book_id}
-  def export_corrected_gale_xml()
-    if !check_auth()
-      render text: "Unauthorized", status: :unauthorized
-      return
-    end
-    @document = find_doc(params)
-    if @document.present?
-      render :text => @document.get_corrected_gale_xml()
-    else
-      render text: "Document not found", status: :not_found
-    end
-  end
-
-  # GET /documents/export_corrected_tei_a?uri=lib://{source_id}/{book_id}
-  def export_corrected_tei_a()
-    if !check_auth()
-      render text: "Unauthorized", status: :unauthorized
-      return
-    end
-    @document = find_doc(params)
-    if @document.present?
-      render :text => @document.get_corrected_tei_a()
-    else
-      render text: "Document not found", status: :not_found
-    end
-  end
-
-  # GET /documents/export_original_gate_xml?uri=lib://{source_id}/{book_id}
-  def export_original_gale_xml()
-    if !check_auth()
-      render text: "Unauthorized", status: :unauthorized
-      return
-    end
-    @document = find_doc(params)
-    if @document.present?
-      render :text => @document.get_original_gale_xml()
-    else
-      render text: "Document not found", status: :not_found
-    end
-  end
-
-  # GET /documents/export_original_gate_text?uri=lib://{source_id}/{book_id}
-  def export_original_gale_text()
-    if !check_auth()
-      render text: "Unauthorized", status: :unauthorized
-      return
-    end
-    @document = find_doc(params)
-    if @document.present?
-      render :text => @document.get_original_gale_text()
-    else
-      render text: "Document not found", status: :not_found
-    end
-  end
+  # # GET /documents/export_corrected_text?uri=lib://{source_id}/{book_id}
+  # def export_corrected_text()
+  #   if !check_auth()
+  #     render text: "Unauthorized", status: :unauthorized
+  #     return
+  #   end
+  #   @document = find_doc(params)
+  #   if @document.present?
+  #     render :text => @document.get_corrected_text()
+  #   else
+  #     render text: "Document not found", status: :not_found
+  #   end
+  # end
+  #
+  #  # GET /documents/export_corrected_gale_xml?uri=lib://{source_id}/{book_id}
+  # def export_corrected_gale_xml()
+  #   if !check_auth()
+  #     render text: "Unauthorized", status: :unauthorized
+  #     return
+  #   end
+  #   @document = find_doc(params)
+  #   if @document.present?
+  #     render :text => @document.get_corrected_gale_xml()
+  #   else
+  #     render text: "Document not found", status: :not_found
+  #   end
+  # end
+  #
+  # # GET /documents/export_corrected_tei_a?uri=lib://{source_id}/{book_id}
+  # def export_corrected_tei_a()
+  #   if !check_auth()
+  #     render text: "Unauthorized", status: :unauthorized
+  #     return
+  #   end
+  #   @document = find_doc(params)
+  #   if @document.present?
+  #     render :text => @document.get_corrected_tei_a()
+  #   else
+  #     render text: "Document not found", status: :not_found
+  #   end
+  # end
+  #
+  # # GET /documents/export_original_gate_xml?uri=lib://{source_id}/{book_id}
+  # def export_original_gale_xml()
+  #   if !check_auth()
+  #     render text: "Unauthorized", status: :unauthorized
+  #     return
+  #   end
+  #   @document = find_doc(params)
+  #   if @document.present?
+  #     render :text => @document.get_original_gale_xml()
+  #   else
+  #     render text: "Document not found", status: :not_found
+  #   end
+  # end
+  #
+  # # GET /documents/export_original_gate_text?uri=lib://{source_id}/{book_id}
+  # def export_original_gale_text()
+  #   if !check_auth()
+  #     render text: "Unauthorized", status: :unauthorized
+  #     return
+  #   end
+  #   @document = find_doc(params)
+  #   if @document.present?
+  #     render :text => @document.get_original_gale_text()
+  #   else
+  #     render text: "Document not found", status: :not_found
+  #   end
+  # end
   
   private
   def check_auth

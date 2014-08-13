@@ -5,13 +5,14 @@ class CurrentEditor < ActiveRecord::Base
 		# this returns all the other editors on a page.
 		recs_page = CurrentEditor.where("document_id = ? AND page = ? AND token <> ?", doc_id, page, token)
 		recs_doc = CurrentEditor.where("document_id = ? AND page <> ? AND token <> ?", doc_id, page, token)
+		now = Time.now
 		recs_page = recs_page.map { |rec|
 			user = User.find(rec.user_id)
-			{ user_id: rec.user_id, last_contact_time: rec.last_contact_time, username: user.username, federation: user.federation, federation_user_id: user.orig_id, page: rec.page }
+			{ user_id: rec.user_id, last_contact_time: rec.last_contact_time, idle_time: now - rec.last_contact_time, username: user.username, federation: user.federation, federation_user_id: user.orig_id, page: rec.page }
 		}
 		recs_doc = recs_doc.map { |rec|
 			user = User.find(rec.user_id)
-			{ user_id: rec.user_id, last_contact_time: rec.last_contact_time, username: user.username, federation: user.federation, federation_user_id: user.orig_id, page: rec.page }
+			{ user_id: rec.user_id, last_contact_time: rec.last_contact_time, idle_time: now - rec.last_contact_time, username: user.username, federation: user.federation, federation_user_id: user.orig_id, page: rec.page }
 		}
 		return { page: recs_page, doc: recs_doc }
 	end

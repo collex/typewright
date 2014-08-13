@@ -13,6 +13,7 @@ class Line < ActiveRecord::Base
          if changes[line_num]
             line[:authors] = [ :federation  => nil, :orig_id => 'Original' ]
             line[:dates] = [ '' ]
+            line[:exact_time] = [ '' ]
             line[:actions] = [ '' ]
             changes[line_num].each do |lin|
                user = ::User.get(lin.user_id)
@@ -20,6 +21,7 @@ class Line < ActiveRecord::Base
                words = self.db_to_words(lin[:words], line[:paragraph] )
                line[:authors].push(author)
                line[:dates].push(lin[:updated_at].getlocal.strftime("%b %e, %Y %I:%M%P"))
+               line[:exact_time].push(lin[:updated_at].getlocal.strftime("%s"))
                line[:words].push(words)
                line[:actions].push(lin[:status])
                if lin[:status] == 'correct'

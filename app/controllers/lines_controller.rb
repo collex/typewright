@@ -75,6 +75,7 @@ class LinesController < ApplicationController
 		respond_to do |format|
 			if @line.save
 				line[:updated_at] = @line.updated_at.getlocal.strftime("%b %e, %Y %I:%M%P")
+				line[:exact_time] = @line.updated_at.getlocal.strftime("%s")
 				format.xml { render :xml => line, :status => :created, :location => @line }
 			else
 				format.xml { render :xml => @line.errors, :status => :unprocessable_entity }
@@ -114,6 +115,7 @@ class LinesController < ApplicationController
 				line: line[:line],
 				action: line[:status],
 				date: line[:updated_at].getlocal.strftime("%b %e, %Y %I:%M%P"),
+				exact_time: line[:updated_at].getlocal.strftime("%s"),
 				words: line[:words]
 			}
 		}

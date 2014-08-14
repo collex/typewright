@@ -106,19 +106,21 @@ class LinesController < ApplicationController
 		lines = Line.since(document_id, page, since)
 		editors = CurrentEditor.editors(token, document_id, page)
 		lines = format_lines(lines, is_revisions)
-		lines = lines.map { |line|
-			{
-				id: line[:id],
-				federation: line[:federation],
-				orig_id: line[:orig_id],
-				page: line[:page],
-				line: line[:line],
-				action: line[:status],
-				date: line[:updated_at].getlocal.strftime("%b %e, %Y %I:%M%P"),
-				exact_time: line[:updated_at].getlocal.strftime("%s"),
-				words: line[:words]
+		if lines.present?
+			lines = lines.map { |line|
+				{
+					id: line[:id],
+					federation: line[:federation],
+					orig_id: line[:orig_id],
+					page: line[:page],
+					line: line[:line],
+					action: line[:status],
+					date: line[:updated_at].getlocal.strftime("%b %e, %Y %I:%M%P"),
+					exact_time: line[:updated_at].getlocal.strftime("%s"),
+					words: line[:words]
+				}
 			}
-		}
+		end
 
 		return { lines: lines, editors: editors }
 	end

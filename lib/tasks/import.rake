@@ -29,6 +29,26 @@ namespace :upload do
 		end
 	end
 
+  desc "Upload typewright files (ALTO format) to the server (id=0123456789-0123456789-...)"
+  task :alto_document, :id do |t, args|
+    # It will search for a document in all the possible places for it, and stop when it finds it.
+
+    ids = args[:id] #ENV['id']
+    if ids == nil
+      puts "Usage: call with id=0123456789-0123456789-..."
+    else
+      ids = ids.split('-')
+      ids.each {|id|
+        full_path = find_file(id)
+        if full_path.present?
+          upload_alto(full_path)
+        else
+          puts "NOT FOUND: #{id}"
+        end
+      }
+    end
+  end
+
 	desc "Install ECCO documents that are on the same server as typewright (file=path$path) [one 10-digit number per line]"
 	task :install, [:file] => :environment do |t, args|
 		# It will search for a document in all the possible places for it, and stop when it finds it.
@@ -76,8 +96,8 @@ namespace :upload do
 		}
 	end
 
-	desc "Upload typewright files to the server from a set of files (file=path$path) [one 10-digit number per line]"
-	task :from_file, :file do |t, args|
+	desc "Upload typewright files (gale format) to the server from a set of files (file=path$path) [one 10-digit number per line]"
+	task :gale_from_file, :file do |t, args|
 		# It will search for a document in all the possible places for it, and stop when it finds it.
 
 		fnames = args[:file]
@@ -100,6 +120,31 @@ namespace :upload do
 			end
 		}
 	end
+
+  desc "Upload typewright files (ALTO format) to the server from a set of files (file=path$path) [one 10-digit number per line]"
+  task :alto_from_file, :file do |t, args|
+    # It will search for a document in all the possible places for it, and stop when it finds it.
+
+    fnames = args[:file]
+    fnames = fnames.split("$")
+    puts fnames.map { |str| ">>> #{str} <<<"}
+    fnames.each { |fname|
+      ids = File.open(fname, 'r') { |f| f.read }
+      ids = ids.split("\n")
+      if ids == nil
+        puts "Usage: call with a filename. The file contains one 10-digit number per line"
+      else
+        ids.each { |id|
+          full_path = find_file(id)
+          if full_path.present?
+            upload_alto(full_path)
+          else
+            puts "NOT FOUND: #{id}"
+          end
+        }
+      end
+    }
+  end
 
 	desc "Create scripts to run on Brazos for all documents specified in the set of files (file=path$path) [one 10-digit number per line]"
 	task :create_scripts, :file do |t, args|
@@ -407,6 +452,13 @@ def upload_gale(full_path)
 
 	puts "uploading: #{full_path}..."
 	`#{script} #{full_path} >> #{Rails.root}/log/manual_upload.log`
+end
+
+def upload_alto(full_path)
+  script = "./script/import/alto_xml -v -f typewright.sl.performantsoftware.com"
+
+  puts "uploading: #{full_path}..."
+  `#{script} #{full_path} >> #{Rails.root}/log/manual_upload.log`
 end
 
 def base_path()

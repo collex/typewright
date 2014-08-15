@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 
 def do_usage()
-  puts "Usage: gale_dir [flags] server directory"
+  puts "Usage: alto_dir [flags] server directory"
   puts "Import all books in the given directory into specified TypeWright server."
-  puts "Books must be in gale format."
+  puts "Books must be in ALTO format."
   puts "If a book already exists, skip it and issue error."
   puts " -f  Force import and issue warning if book already exists."
   puts " -v  Verbose output"
@@ -65,7 +65,7 @@ Dir.glob("*") { |file|
 Dir.chdir(original_dir)
 file_list.each { |book|
   xml_file = File.join(book, "xml", "#{book}.xml")
-  cmd = "script/import/gale_xml #{cmd_flags} #{server} #{File.join(directory,xml_file)}"
+  cmd = "script/import/alto_xml #{cmd_flags} #{server} #{File.join(directory,xml_file)}"
   puts "" if verbose_output
   puts "" if verbose_output
   puts cmd

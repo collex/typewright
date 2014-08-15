@@ -9,13 +9,13 @@ namespace :upload do
 	#ln -s /Volumes/18th\ C\ Collections\ Online\ 2of2/RelAndPhil/ /Users/USERNAME/ecco2b
 	#ln -s /Volumes/ECHOII/ /Users/USERNAME/ecco3
 
-	desc "Upload typewright files to the server (id=0123456789-0123456789-...)"
-	task :document, :id do |t, args|
+	desc "Upload typewright files (gale format) to the server (id=0123456789-0123456789-...)"
+	task :gale_document, :id do |t, args|
 		# It will search for a document in all the possible places for it, and stop when it finds it.
 
 		ids = args[:id] #ENV['id']
 		if ids == nil
-			puts "Usage: call with id=0123456789,0123456789,..."
+			puts "Usage: call with id=0123456789-0123456789-..."
 		else
 			ids = ids.split('-')
 			ids.each {|id|

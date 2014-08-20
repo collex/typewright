@@ -2,18 +2,15 @@
 
 require "#{Dir.pwd}/app/models/xml_reader.rb"
 
-# upload xml file for a new book, given the directory
+# upload xml file for a book page
 
 def do_usage()
   puts "Usage: alto_xml [flags] server /path/to/xml_file.xml"
-  puts "Import ALTO ocr for a book into specified TypeWright server. Expects single xml file for all pages."
-  puts "If book already exists, issue error."
-  puts " -f  Force import and issue warning if book already exists."
-  puts " -s  Skip book import without error if book already exists."
-  puts " -v  Verbose output"
-  puts " -t  Test only -- don't actually upload files"
+  puts "Import ALTO ocr for a page into specified TypeWright server."
+  puts "If the book does not exist, issue error."
+  puts " -v Verbose output"
+  puts " -t Test only -- don't actually upload files"
 	puts " -c Output the curl commands that would have been executed."
-	puts " -2 Assume the file structure of the ECCOII disk."
 end
 
 
@@ -24,6 +21,16 @@ def do_curl_command(cmd, verbose, test_only)
   resp = `curl #{cmd} 2>&1`
   puts resp if verbose
   return resp
+end
+
+def parse_exists_response(response)
+  result = {}
+  doc_id_str = response[/<id>\d+<\/id>/]
+  result[:doc_id] = 0
+  result[:doc_id] = doc_id_str[4..-6].to_i unless doc_id_str.nil?
+  exists_str = response[/<exists>\D+<\/exists>/]
+  result[:exists] = (exists_str[8..11] == 'true')
+  return result
 end
 
 def parse_upload_response(response)
@@ -42,7 +49,7 @@ end
 
 # start by reading our input parameters
 
-VALID_OPTION_FLAGS = %w( f s v t c 2 )
+VALID_OPTION_FLAGS = %w( v t c )
 VALID_OPTIONS = %w( )
 
 if ARGV.size < 2
@@ -82,12 +89,9 @@ ARGV.each do |arg|
   end
 end
 
-error_on_duplicate = option_flags.index('f').nil?
-skip_existing = !option_flags.index('s').nil?
 verbose_output = !option_flags.index('v').nil?
 test_only = !option_flags.index('t').nil?
 output_curl_only = !option_flags.index('c').nil?
-ecco2 = !option_flags.index('2').nil?
 
 xml_doc = XmlReader.open_xml_file(xml_file)
 if xml_doc.nil?
@@ -95,33 +99,33 @@ if xml_doc.nil?
   exit(1)
 end
 
-book_id = XmlReader.get_ecco_id(xml_doc)
-book_id = File.basename(xml_file) if book_id.nil?
+# ALTO files are provided as follows
+# /some/dir/structure/EMOP_ID/BATCH_ID/page.xml
 
-# now that we have all the parameters, start the upload
-curl_cmd = "-F \"uri=lib://ECCO/#{book_id}\" -X POST #{server}/documents/upload.xml"
-curl_cmd = "-F \"nocreate=1]\" " + curl_cmd if test_only
+# get eMOP work ID and resolve to an ECCO ID
+book_id = "0000100100"    # FIXME
+
+# now that we have all the parameters, determine if the book exists
+curl_cmd = "-F \"uri=lib://ECCO/#{book_id}\" -X GET #{server}/documents/exists.xml"
 raw_response = do_curl_command(curl_cmd, verbose_output, false)
-response = parse_upload_response(raw_response)
+response = parse_exists_response(raw_response)
 puts response if verbose_output
-doc_id = response[:doc_id]
-auth_token = response[:auth_token]
-puts "#{doc_id} - lib://ECCO/#{book_id} - \"#{XmlReader.get_full_title(xml_doc)}\"" if !output_curl_only
-# check to see if it already exists
-if response[:exists]
-  if skip_existing
-    puts "#{xml_file} Exists [#{doc_id}] -skipped- (DONE)" if !output_curl_only
-    exit(0)
-  elsif error_on_duplicate
-    puts "ERROR: Document lib://ECCO/#{book_id} already exists with internal id [#{doc_id}]. Add -f to force import or -s to skip." if !output_curl_only
-    exit(1)
-  else
-    puts "WARNING: Document lib://ECCO/#{book_id} already exists with internal id [#{doc_id}], replacing it." if !output_curl_only
-  end
+
+# check to see if it exists; if not, bail out
+if response[:exists] == false
+   puts "Book for #{xml_file} does not exist -skipped- (DONE)" if !output_curl_only
+   exit(0)
 end
 
+doc_id = response[:doc_id]
+
+# determine the page number
+page_num = 0
+page_num_str = File.basename( xml_file )[/\d+_alto\.xml/i]
+page_num = page_num_str[0..-9].to_i unless page_num_str.nil?
+
 # upload the xml file
-curl_cmd = "-F \"xml_file=@#{xml_file};type=text/xml\" -F \"authenticity_token=#{auth_token}\" -X POST #{server}/documents/#{doc_id}/upload.xml"
+curl_cmd = "-F \"xml_file=@#{xml_file};type=text/xml\" -F \"page=#{page_num}\" -X POST #{server}/documents/#{doc_id}/upload_alto.xml"
 if output_curl_only
 	ret_value.push("curl #{curl_cmd} 2>&1")
 else
@@ -131,43 +135,12 @@ response = parse_upload_response(raw_response) unless test_only || output_curl_o
 puts response if verbose_output
 puts "#{xml_file} #{File.new(xml_file).size} (DONE)" if !output_curl_only
 
-# now upload all the individual images for each page
-if ecco2
-	images_path = File.join(File.realpath(File.join(File.dirname(xml_file), '..')), "Images/#{book_id}")
-else
-	images_path = File.join(File.realpath(File.join(File.dirname(xml_file), '..')), 'images')
-end
-Dir.chdir(images_path)
-if output_curl_only
-	if ecco2
-		ret_value.push("cd #{File.join(File.join(File.dirname(xml_file), '..'), "Images/#{book_id}")}")
-	else
-		ret_value.push("cd #{File.join(File.join(File.dirname(xml_file), '..'), 'images')}")
-	end
-end
-
-count = 0
-images = []
-Dir.glob("*") { |img_file|
-  images.push(img_file) if img_file.include?('TIF') || img_file.include?('tif')
-}
-images.sort!
-
-images.each { |img_file|
-  count += 1
-  auth_token = response[:auth_token]
-  curl_cmd = "-F \"image_file=@#{img_file};type=image/tiff\" -F \"authenticity_token=#{auth_token}\" -X POST #{server}/documents/#{doc_id}/upload.xml?page=#{count}"
-  if output_curl_only
-	  ret_value.push("curl #{curl_cmd} 2>&1")
-  else
-	  raw_response = do_curl_command(curl_cmd, verbose_output, test_only)
-	end
-  response = parse_upload_response(raw_response) unless test_only || output_curl_only
-  puts response if verbose_output
-  puts "#{img_file} #{File.new(img_file).size} (DONE)" if !output_curl_only
-}
-
 if output_curl_only
 	puts ret_value.map { |line| "#{line}\n"}
 end
+
 exit 0
+
+#
+# end of file
+#

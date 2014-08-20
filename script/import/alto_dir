@@ -2,17 +2,16 @@
 
 def do_usage()
   puts "Usage: alto_dir [flags] server directory"
-  puts "Import all books in the given directory into specified TypeWright server."
-  puts "Books must be in ALTO format."
-  puts "If a book already exists, skip it and issue error."
-  puts " -f  Force import and issue warning if book already exists."
+  puts "Import all pages in the given directory into specified TypeWright server."
+  puts "Pages must be in ALTO format."
+  puts "If the book does not exist, issue error."
   puts " -v  Verbose output"
   puts " -t  Test only -- don't actually upload files"
 end
 
 # start by reading our input parameters
 
-VALID_OPTION_FLAGS = %w( f v t )
+VALID_OPTION_FLAGS = %w( v t )
 VALID_OPTIONS = %w( )
 
 if ARGV.size < 2
@@ -51,26 +50,42 @@ ARGV.each do |arg|
   end
 end
 
-skip_on_duplicate = option_flags.index('f').nil?
 verbose_output = !option_flags.index('v').nil?
 test_only = !option_flags.index('t').nil?
-cmd_flags = "#{skip_on_duplicate ? '-s':'-f'} #{verbose_output ? '-v':''} #{test_only ? '-t':''}"
+cmd_flags = "#{verbose_output ? '-v':''} #{test_only ? '-t':''}"
 
 original_dir = Dir.pwd
 Dir.chdir(directory)
-file_list = []
-Dir.glob("*") { |file|
-  file_list << file if file.size > 8
+dir_list = []
+Dir.glob("*") { |f|
+  dir_list << f if File.directory?( f )
 }
+
+# find the maximum batch number in the directory
+max_batch = 0
+dir_list.each { |dir|
+  max_batch = dir.to_i if dir.to_i > max_batch
+}
+
+Dir.chdir( max_batch.to_s)
+page_list = []
+Dir.glob("*") { |f|
+  page_list << f
+}
+
 Dir.chdir(original_dir)
-file_list.each { |book|
-  xml_file = File.join(book, "xml", "#{book}.xml")
-  cmd = "script/import/alto_xml #{cmd_flags} #{server} #{File.join(directory,xml_file)}"
-  puts "" if verbose_output
-  puts "" if verbose_output
-  puts cmd
-  result = `#{cmd}`
-  puts result
+
+# process each page we have identified
+page_list.sort!
+page_list.each { |page|
+
+   xml_file = File.join("#{max_batch}", "#{page}")
+   cmd = "script/import/alto_xml #{cmd_flags} #{server} #{File.join(directory,xml_file)}"
+   puts "" if verbose_output
+   puts "" if verbose_output
+   puts cmd
+   result = `#{cmd}`
+   puts result
 }
 
 exit 0

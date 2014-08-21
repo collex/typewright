@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 
 def do_usage()
-  puts "Usage: alto_dir [flags] server directory"
-  puts "Import all pages in the given directory into specified TypeWright server."
+  puts "Usage: alto_doc [flags] server /path/to/directory"
+  puts "Import all pages in the given document directory into specified TypeWright server."
   puts "Pages must be in ALTO format."
   puts "If the book does not exist, issue error."
   puts " -v  Verbose output"
@@ -67,6 +67,11 @@ dir_list.each { |dir|
   max_batch = dir.to_i if dir.to_i > max_batch
 }
 
+if max_batch == 0
+  puts "WARNING: no alto pages located here #{directory}"
+  exit( 1 )
+end
+
 Dir.chdir( max_batch.to_s)
 page_list = []
 Dir.glob("*") { |f|
@@ -75,12 +80,21 @@ Dir.glob("*") { |f|
 
 Dir.chdir(original_dir)
 
+if page_list.empty?
+  puts "WARNING: no alto pages located here #{directory}"
+  exit( 1 )
+end
+
+# resolve the eMOP work Id to an ecco Id
+work_id = File.basename( directory )
+echo_id = "0000100100"    # FIXME
+
 # process each page we have identified
 page_list.sort!
 page_list.each { |page|
 
    xml_file = File.join("#{max_batch}", "#{page}")
-   cmd = "script/import/alto_xml #{cmd_flags} #{server} #{File.join(directory,xml_file)}"
+   cmd = "script/import/alto_page #{cmd_flags} #{server} #{File.join(directory,xml_file)} #{echo_id}"
    puts "" if verbose_output
    puts "" if verbose_output
    puts cmd

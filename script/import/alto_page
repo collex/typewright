@@ -5,7 +5,7 @@ require "#{Dir.pwd}/app/models/xml_reader.rb"
 # upload xml file for a book page
 
 def do_usage()
-  puts "Usage: alto_xml [flags] server /path/to/xml_file.xml"
+  puts "Usage: alto_page [flags] server /path/to/xml_file.xml ecco_id"
   puts "Import ALTO ocr for a page into specified TypeWright server."
   puts "If the book does not exist, issue error."
   puts " -v Verbose output"
@@ -52,13 +52,14 @@ end
 VALID_OPTION_FLAGS = %w( v t c )
 VALID_OPTIONS = %w( )
 
-if ARGV.size < 2
+if ARGV.size < 3
   do_usage()
   exit(1)
 end
 
 server = ''
 xml_file = ''
+ecco_id = ''
 option_flags = []
 options = {}
 ret_value = []
@@ -84,6 +85,8 @@ ARGV.each do |arg|
     server = arg
   elsif xml_file.empty?
     xml_file = arg
+  elsif ecco_id.empty?
+    ecco_id = arg
   else
     puts "WARNING: Ignoring unknown parameter: #{arg}"
   end
@@ -99,14 +102,8 @@ if xml_doc.nil?
   exit(1)
 end
 
-# ALTO files are provided as follows
-# /some/dir/structure/EMOP_ID/BATCH_ID/page.xml
-
-# get eMOP work ID and resolve to an ECCO ID
-book_id = "0000100100"    # FIXME
-
 # now that we have all the parameters, determine if the book exists
-curl_cmd = "-F \"uri=lib://ECCO/#{book_id}\" -X GET #{server}/documents/exists.xml"
+curl_cmd = "-F \"uri=lib://ECCO/#{ecco_id}\" -X GET #{server}/documents/exists.xml"
 raw_response = do_curl_command(curl_cmd, verbose_output, false)
 response = parse_exists_response(raw_response)
 puts response if verbose_output

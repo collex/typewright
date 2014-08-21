@@ -125,7 +125,7 @@ page_num_str = File.basename( xml_file )[/\d+_alto\.xml/i]
 page_num = page_num_str[0..-9].to_i unless page_num_str.nil?
 
 # upload the xml file
-curl_cmd = "-F \"xml_file=@#{xml_file};type=text/xml\" -F \"page=#{page_num}\" -X POST #{server}/documents/#{doc_id}/upload_alto.xml"
+curl_cmd = "-F \"xml_file=@#{xml_file};type=text/xml\" -F \"page=#{page_num}\" -F \"src=alto\" -X POST #{server}/documents/#{doc_id}/update_page_ocr.xml"
 if output_curl_only
 	ret_value.push("curl #{curl_cmd} 2>&1")
 else

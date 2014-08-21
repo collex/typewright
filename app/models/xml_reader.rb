@@ -16,7 +16,7 @@
 # ----------------------------------------------------------------------------
 
 class XmlReader
-#	require 'nokogiri'
+	require 'nokogiri'
 
 	def self.format_page(page)
     "0000#{page}"[-4, 4]
@@ -93,7 +93,36 @@ class XmlReader
     return page_src
   end
 
+  def self.read_all_lines_from_alto_page(page_doc)
+    page_src = []
+    num_lines = 0
+    paragraph_num = 0
+    # read the page data from alto's xml
+    page_doc.xpath('//ns:Page', 'ns' => 'http://schema.ccs-gmbh.com/ALTO').each { |pg|
+      pg.xpath('TextBlock').each { |tb|
+        paragraph_num += 1
+        tb.xpath('TextLine').each { |ln|
+          ln.xpath('String').each { |wd|
+            width = wd.attributes['WIDTH']
+            height = wd.attributes['HEIGHT']
+            hpos = wd.attributes['HPOS']
+            vpos = wd.attributes['VPOS']
+            word = wd.attributes['CONTENT']
+            page_src.push({ :l => hpos.to_i, :t => vpos.to_i, :r => hpos.to_i + width.to_1, :b => vpos.to_i + height.to_i, :word => word, :line => num_lines, :paragraph=>paragraph_num })
+          }
+          num_lines += 1
+        }
+      }
+    }
+    return page_src
+  end
+
   def self.detect_ocr_source(xml_doc)
+
+    if !xml_doc.xpath('//ns:TextBlock', 'ns' => 'http://schema.ccs-gmbh.com/ALTO').empty?
+      return :alto # alto page
+    end
+
     has_page_info = !xml_doc.xpath('//page/pageInfo').empty?
     has_book_info = !xml_doc.xpath('//book/bookInfo').empty?
     has_page_line = !xml_doc.xpath('//page/line').empty?

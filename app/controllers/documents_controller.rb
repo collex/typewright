@@ -133,7 +133,7 @@ class DocumentsController < ApplicationController
       end
       @action_params = ''
     else
-    # we are modifying a document already created, error out if not found
+      # we are modifying a document already created, error out if not found
       @document = Document.find(id)
       # are we uploading a page or are we uploading xml file?
       page_num = params[:page]

@@ -56,14 +56,14 @@ test_only = !option_flags.index('t').nil?
 cmd_flags = "#{verbose_output ? '-v':''} #{test_only ? '-t':''}"
 
 if limit.to_i == 0
-  puts "Invalid limit specified (must be numeric, greater than 0)"
+  puts "ERROR: Invalid limit specified (must be numeric, greater than 0)"
   exit(1)
 end
 
 pages = PageQueue.get_pages( limit.to_i )
 
 if pages.empty? == true
-  puts "No pages available for import"
+  puts "WARNING: No pages available for import"
   exit( 0 )
 end
 

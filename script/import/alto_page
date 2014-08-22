@@ -96,9 +96,14 @@ verbose_output = !option_flags.index('v').nil?
 test_only = !option_flags.index('t').nil?
 output_curl_only = !option_flags.index('c').nil?
 
+if File.exists?( xml_file ) == false
+  puts "ERROR: #{xml_file} does not exist or is not readable"
+  exit(1)
+end
+
 xml_doc = XmlReader.open_xml_file(xml_file)
 if xml_doc.nil?
-  puts "ERROR: couldn't open XML file [#{xml_doc}]"
+  puts "ERROR: couldn't open XML file [#{xml_file}]"
   exit(1)
 end
 

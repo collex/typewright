@@ -298,7 +298,7 @@ namespace :upload do
 				begin
 					info = doc.get_doc_info()
 					info['num_pages'].times { |x|
-						doc.get_page_info(x+1, false,:gale)
+						doc.get_page_info(x+1, false )
 					}
 				rescue Exception => e
 					puts "#{doc.uri}: #{e.to_s}"

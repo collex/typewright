@@ -18,6 +18,12 @@
 class XmlReader
 	require 'nokogiri'
 
+  @alto_namespace = namespace = 'http://schema.ccs-gmbh.com/ALTO'
+
+  def self.alto_namespace
+    return @alto_namespace
+  end
+
 	def self.format_page(page)
     "0000#{page}"[-4, 4]
 	end
@@ -98,28 +104,27 @@ class XmlReader
     num_lines = 0
     paragraph_num = 0
     # read the page data from alto's xml
-    page_doc.xpath('//ns:Page', 'ns' => 'http://schema.ccs-gmbh.com/ALTO').each { |pg|
-      pg.xpath('TextBlock').each { |tb|
-        paragraph_num += 1
-        tb.xpath('TextLine').each { |ln|
-          ln.xpath('String').each { |wd|
-            width = wd.attributes['WIDTH']
-            height = wd.attributes['HEIGHT']
-            hpos = wd.attributes['HPOS']
-            vpos = wd.attributes['VPOS']
-            word = wd.attributes['CONTENT']
-            page_src.push({ :l => hpos.to_i, :t => vpos.to_i, :r => hpos.to_i + width.to_1, :b => vpos.to_i + height.to_i, :word => word, :line => num_lines, :paragraph=>paragraph_num })
+    page_doc.xpath('//ns:TextBlock', 'ns' => @alto_namespace ).each { |tb|
+       paragraph_num += 1
+       tb.xpath('ns:TextLine', 'ns' => namespace ).each { |ln|
+          ln.xpath('ns:String', 'ns' => namespace ).each { |wd|
+            width = wd.attributes['WIDTH'].to_s.to_i
+            height = wd.attributes['HEIGHT'].to_s.to_i
+            hpos = wd.attributes['HPOS'].to_s.to_i
+            vpos = wd.attributes['VPOS'].to_s.to_i
+            word = wd.attributes['CONTENT'].to_s
+            page_src.push({ :l => hpos, :t => vpos, :r => hpos + width, :b => vpos + height, :word => word, :line => num_lines, :paragraph=>paragraph_num })
           }
           num_lines += 1
-        }
-      }
+       }
     }
     return page_src
   end
 
   def self.detect_ocr_source(xml_doc)
 
-    if !xml_doc.xpath('//ns:TextBlock', 'ns' => 'http://schema.ccs-gmbh.com/ALTO').empty?
+    # look for an alto doc first...
+    if !xml_doc.xpath('//ns:TextBlock', 'ns' => @alto_namespace ).empty?
       return :alto # alto page
     end
 

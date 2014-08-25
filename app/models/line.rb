@@ -2,8 +2,8 @@ class Line < ActiveRecord::Base
    attr_accessible :user_id, :document_id, :page, :line, :status, :words, :src, :box
    serialize :box, Hash
 
-   def self.num_pages_with_changes(doc_id, src)
-      pages = Line.find_all_by_document_id_and_src(doc_id, src, { :group => 'page' })
+   def self.num_pages_with_changes( doc_id )
+      pages = Line.find_all_by_document_id(doc_id, { :group => 'page' })
       return pages.length
    end
 

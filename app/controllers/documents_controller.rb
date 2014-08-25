@@ -1,4 +1,5 @@
 class DocumentsController < ApplicationController
+
   def find_doc(params)
     id = params[:id]
     if id
@@ -18,8 +19,8 @@ class DocumentsController < ApplicationController
 	  # call that happens when the page is opened for editing.
     doc = find_doc(params)
     page = params[:page]
-    src = params[:src].to_sym unless params[:src].nil?
-    src = :gale if src.nil?
+    #src = params[:src].to_sym unless params[:src].nil?
+    #src = :gale if src.nil?
     include_word_stats = params[:wordstats].nil? ? false : true
     if doc.nil?
     # nothing found
@@ -27,15 +28,15 @@ class DocumentsController < ApplicationController
 
     elsif params[:stats] == 'true'
       # looking for document stats
-      result = [ doc.get_doc_stats(doc.id, include_word_stats, src) ]
+      result = [ doc.get_doc_stats(doc.id, include_word_stats ) ]
 
     elsif !page.nil?
       # looking for info on a particular page of the document
-      result = [ doc.get_page_info(page, include_word_stats, src) ]
+      result = [ doc.get_page_info(page, include_word_stats) ]
 
     else
     # looking for info on the document as a whole
-      result = [ doc.get_doc_info() ]
+      result = [ doc.get_doc_info( ) ]
     end
 
     # Can no longer send symbols through the web service
@@ -217,6 +218,8 @@ class DocumentsController < ApplicationController
           render :text => doc.get_corrected_gale_xml()
         when 'text'
           render :text => doc.get_corrected_text()
+        when 'alto'
+          render :text => doc.get_corrected_alto_xml()
         when 'tei-a'
           render :text => doc.get_corrected_tei_a(false)
         when 'tei-a-words'
@@ -225,6 +228,8 @@ class DocumentsController < ApplicationController
           render :text => doc.get_original_gale_xml()
         when 'original-text'
           render :text => doc.get_original_gale_text()
+        when 'original-alto'
+          render :text => doc.get_original_alto_xml()
         end
       else
         render text: { "message" => "Document #{uri} not found" }.to_json(), status: :not_found

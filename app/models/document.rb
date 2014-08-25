@@ -28,7 +28,8 @@ class Document < ActiveRecord::Base
    SLICE_WIDTH = 800
    SLICE_HEIGHT = 50
 
-   SUPPORTED_OCR_SOURCES = %w(gale gamera)
+   SUPPORTED_OCR_SOURCES = %w(alto gale)
+
    def to_xml(options = {})
       puts @attributes
       super
@@ -64,7 +65,7 @@ class Document < ActiveRecord::Base
       return img_cache_path
    end
 
-   def img_thumb(page, src = :gale)
+   def img_thumb(page, src)
       page_name = "#{book_id}#{XmlReader.format_page(page)}0"
       img_cache_path = self.img_folder()
       url_path = File.join(img_cache_path, 'thumbnails')
@@ -79,6 +80,17 @@ class Document < ActiveRecord::Base
          Document.generate_thumbnail(get_page_image_file(page, nil, src, self.uri_root()), page_path, page_name, THUMBNAIL_WIDTH)
       end
       return url
+   end
+
+   # get the prefered OCR source
+   def get_ocr_source( page )
+
+     SUPPORTED_OCR_SOURCES.each { |ocr_src|
+       if File.exist?(get_page_xml_file(page, ocr_src, self.uri_root()))
+         return ocr_src.to_sym
+       end
+     }
+     nil
    end
 
    def self.generate_slices(master_image, dst_path, file_name, width, height)
@@ -101,20 +113,20 @@ class Document < ActiveRecord::Base
       Document.do_command(cmd)
    end
 
-   def img_full(page)
+   def img_full(page, src)
       page_name = "#{book_id}#{XmlReader.format_page(page)}0"
       return "#{img_folder}/#{page_name}/#{page_name}-*.png"
    end
 
-   def get_page_image_file(page, page_doc = nil, src = :gale, uri_root = "")
+   def get_page_image_file(page, page_doc, src, uri_root = "")
       page_doc = XmlReader.open_xml_file(get_page_xml_file(page, src, uri_root)) if page_doc.nil?
       image_filename = XmlReader.get_page_image_filename(page_doc)
       image_path = File.join(get_image_directory(), image_filename)
       return image_path
    end
 
-   def img_size(page, page_doc = nil)
-      image_path = get_page_image_file(page, page_doc)
+   def img_size(page, page_doc, src)
+      image_path = get_page_image_file(page, page_doc, src)
       image_filename = image_path.split('/').last
 
       image_size = Rails.cache.fetch("imgsize.#{image_filename}") {
@@ -132,8 +144,8 @@ class Document < ActiveRecord::Base
       return { :width => width, :height => height }
    end
 
-   def thumb()
-      return img_thumb(1)
+   def thumb(src)
+      return img_thumb(1, src)
    end
 
    def get_num_pages(doc = nil)
@@ -184,9 +196,9 @@ class Document < ActiveRecord::Base
       return word_stats
    end
 
-   def get_doc_stats(doc_id, include_word_stats, src)
-      changes = Line.num_pages_with_changes(doc_id, src)
-      total = Line.find_all_by_document_id_and_src(doc_id, src)
+   def get_doc_stats( doc_id, include_word_stats )
+      changes = Line.num_pages_with_changes( doc_id )
+      total = Line.find_all_by_document_id( doc_id )
       total_lines_revised = {}
       last_revision = {}
       total.each { |rec|
@@ -199,9 +211,11 @@ class Document < ActiveRecord::Base
             last_revision[id] = { 'page' => rec['page'], 'line' => rec['line'] } if is_newer
          end
       }
+
       if include_word_stats
-         doc_word_stats = get_doc_word_stats(src)
+         doc_word_stats = get_doc_word_stats( )
       end
+
       result = { :pages_with_changes => changes, :total_revisions => total.length, :doc_word_stats => doc_word_stats,
          :lines_with_changes => total_lines_revised.length, :last_revision => last_revision }
       return result
@@ -213,30 +227,22 @@ class Document < ActiveRecord::Base
       return title
    end
 
-   def get_doc_info()
+   def get_doc_info( )
       doc = XmlReader.open_xml_file(get_primary_xml_file())
 
-      img_thumb = self.thumb()
-      num_pages = XmlReader.get_num_pages(doc)
+      img_thumb = self.thumb( :gale )   # TODO: only gale images for now
+      num_pages = XmlReader.get_num_pages( doc )
 
       title = XmlReader.get_full_title(doc)
       title_abbrev = title.length > 32 ? title.slice(0..30)+'...' : title
 
-      ocr_sources = []
-      SUPPORTED_OCR_SOURCES.each { |ocr_src|
-         if File.exist?(get_page_xml_file(1, ocr_src, self.uri_root()))
-         ocr_sources << ocr_src
-         end
-      }
-
       info = { 'doc_id' => self.id, 'num_pages' => num_pages,
-         'img_thumb' => img_thumb, 'title' => title, 'title_abbrev' => title_abbrev,
-         'ocr_sources' => ocr_sources
+         'img_thumb' => img_thumb, 'title' => title, 'title_abbrev' => title_abbrev
       }
       return info.merge(@attributes)
    end
 
-   def get_page_info(page, include_word_stats, src = :gale, include_image_info = true )
+   def get_page_info(page, include_word_stats, include_image_info = true )
       doc = XmlReader.open_xml_file(get_primary_xml_file())
 
       page = (page.nil?) ? 1 : page.to_i
@@ -244,9 +250,9 @@ class Document < ActiveRecord::Base
       page_doc = XmlReader.open_xml_file(get_page_xml_file(page, :gale, self.uri_root()))
 
       if include_image_info
-         img_size = self.img_size(page, page_doc)
-         img_thumb = self.img_thumb(page)
-         img_full = self.img_full(page)
+         img_size = self.img_size(page, page_doc, :gale)  # TODO: only gale images for now
+         img_thumb = self.img_thumb(page, :gale)          # TODO: only gale images for now
+         img_full = self.img_full(page, :gale)            # TODO: only gale images for now
       end
 
       num_pages = self.get_num_pages(doc)
@@ -254,13 +260,8 @@ class Document < ActiveRecord::Base
       title = XmlReader.get_full_title(doc)
       title_abbrev = title.length > 32 ? title.slice(0..30)+'...' : title
 
-      # figure out which OCR sources are available for this page
-      ocr_sources = []
-      SUPPORTED_OCR_SOURCES.each { |ocr_src|
-         if File.exist?(get_page_xml_file(page, ocr_src, self.uri_root()))
-            ocr_sources << ocr_src
-         end
-      }
+      # figure out the best OCR source for this page
+      src = get_ocr_source( page )
 
       # open the source specific page xml document
       unless src == :gale
@@ -283,7 +284,7 @@ class Document < ActiveRecord::Base
             words[box[:word]] = words[box[:word]] == nil ? 1 : words[box[:word]] + 1
          }
          page_word_stats = self.process_word_stats(words)
-         doc_word_stats = get_doc_word_stats(src)
+         doc_word_stats = get_doc_word_stats( )
       else
          page_word_stats = nil
          doc_word_stats = nil
@@ -330,23 +331,24 @@ class Document < ActiveRecord::Base
       if include_image_info
          result = { :doc_id => self.id, :page => page, :num_pages => num_pages, :img_full => img_full,
             :img_thumb => img_thumb, :lines => lines, :title => title, :title_abbrev => title_abbrev,
-            :img_size => img_size, :ocr_sources => ocr_sources,
+            :img_size => img_size,
             :word_stats => page_word_stats, :doc_word_stats => doc_word_stats
          }
       else
          result = { :doc_id => self.id, :page => page, :num_pages => num_pages, :lines => lines, :title => title,
-            :title_abbrev => title_abbrev, :ocr_sources => ocr_sources, :word_stats => page_word_stats, :doc_word_stats => doc_word_stats
+            :title_abbrev => title_abbrev, :word_stats => page_word_stats, :doc_word_stats => doc_word_stats
          }
       end
       return result
    end
 
-   def get_doc_word_stats(src = :gale)
+   def get_doc_word_stats( )
       doc_word_stats = Rails.cache.fetch("doc-stats-#{src}-#{self.book_id()}") {
          words = {}
          num_pages = self.get_num_pages()
          pgs = num_pages < 100 ? num_pages : 100
          pgs.times { |page|
+            src = get_ocr_source( page + 1 )
             page_doc = XmlReader.open_xml_file(get_page_xml_file(page+1, src, self.uri_root()))
             page_src = XmlReader.read_all_lines_from_page(page_doc, src)
             page_src.each {|box|
@@ -371,6 +373,10 @@ class Document < ActiveRecord::Base
       return File.join(get_xml_directory(), 'gale')
    end
 
+   def get_alto_xml_directory()
+     return File.join(get_xml_directory(), 'alto')
+   end
+
    def get_image_directory()
       return Document.get_book_image_directory(self.book_id(), self.uri_root())
    end
@@ -379,7 +385,7 @@ class Document < ActiveRecord::Base
       return Document.get_book_primary_xml_file(self.book_id(), self.uri_root())
    end
 
-   def get_page_xml_file(page, src = :gale, uri_root = "")
+   def get_page_xml_file(page, src, uri_root = "")
       return Document.get_book_page_xml_file(self.book_id(), page, src, uri_root)
    end
 
@@ -394,6 +400,8 @@ class Document < ActiveRecord::Base
    end
 
    def import_primary_xml(xml_file)
+
+      is_alto = false
       doc = Nokogiri::XML(xml_file)
 
       # first, figure out the URI
@@ -402,20 +410,23 @@ class Document < ActiveRecord::Base
       doc.xpath('//documentID').each { |doc_id|
          uri = 'lib://ECCO/' + doc_id
       }
+
+      # if ECCO id not found, check for ESTC ID
       if uri.nil?
-         # ECCO id not found, check for ESTC ID
          doc.xpath('//ESTCID').each { |doc_id|
             uri = 'lib://ESTC/' + doc_id
          }
       end
+
       if uri.nil?
          # worst-case, make the URI from the xml filename, with assumption
          # that it is an ECCO id
          name = xml_file.original_filename
          uri = 'lib://ECCO/' + name.split('.')[0]
       end
+
       if self.uri.nil?
-      self.uri = uri  # left over from ECCO-only days
+         self.uri = uri  # left over from ECCO-only days
       end
 
       # extract all of the page nodes and store them
@@ -457,20 +468,22 @@ class Document < ActiveRecord::Base
 
    end
 
-   def import_page_ocr(page_num, xml_file, src = nil, uri_root = "")
+   def import_page_ocr(page_num, xml_file, uri_root = "")
       xml_doc = XmlReader.open_xml_file(xml_file)
       src = XmlReader.detect_ocr_source(xml_doc)
       page_xml_path = get_page_xml_file(page_num, src, uri_root)
       File.open(page_xml_path, "w") { |f| f.write(xml_doc.to_xml) }
    end
 
+   # get the corrected document in text format (nothing to do with the source of the OCR)
    def get_corrected_text()
       doc = XmlReader.open_xml_file(get_primary_xml_file())
       title = XmlReader.get_full_title(doc)
       num_pages = XmlReader.get_num_pages(doc)
       output = title + "\n\n"
       num_pages.times { | page |
-         page_text = self.get_corrected_page_text(page + 1)
+         src = self.get_ocr_source( page + 1 )
+         page_text = self.get_corrected_page_text(page + 1, src)
          output += "Page #{page + 1}\n\n"
          output += page_text unless page_text.nil?
          output += "(empty page)" if page_text.nil? || page_text.empty?
@@ -479,6 +492,20 @@ class Document < ActiveRecord::Base
       return output
    end
 
+   # get the corrected document in alto format (nothing to do with the source of the OCR)
+   def get_corrected_alto_xml( )
+     primary_file = get_primary_xml_file()
+     doc = XmlReader.open_xml_file( primary_file )
+     page_num = 0
+     doc.xpath('//page').each { |page_node|
+       page_num += 1
+       page_xml = get_corrected_page_alto_xml(page_num)
+       page_node.replace(page_xml)
+     }
+     return doc.to_xml
+   end
+
+   # get the corrected document in gale format (nothing to do with the source of the OCR)
    def get_corrected_gale_xml()
       primary_file = get_primary_xml_file()
       doc = XmlReader.open_xml_file( primary_file )
@@ -487,21 +514,6 @@ class Document < ActiveRecord::Base
          page_num += 1
          page_xml = get_corrected_page_gale_xml(page_num)
          page_node.replace(page_xml)
-      }
-      return doc.to_xml
-   end
-
-   def get_original_gale_xml()
-      doc = XmlReader.open_xml_file(get_primary_xml_file())
-      gale_dir = get_gale_xml_directory()
-
-      doc.xpath('//page').each { |page_node|
-         page_file = File.join(gale_dir, page_node['fileRef'])
-         page_doc = XmlReader.open_xml_file(page_file)
-         page_doc_els = page_doc.xpath('//page')
-         if page_doc_els.length > 0
-            page_node.replace(page_doc_els[0])
-         end
       }
       return doc.to_xml
    end
@@ -524,6 +536,96 @@ class Document < ActiveRecord::Base
          output += "\n\n"
       }
       return output
+   end
+
+   # get the original page in gale format (nothing to do with the source of the OCR)
+   def get_original_gale_xml()
+     doc = XmlReader.open_xml_file(get_primary_xml_file())
+     gale_dir = get_gale_xml_directory()
+
+     doc.xpath('//page').each { |page_node|
+       page_file = File.join(gale_dir, page_node['fileRef'])
+       page_doc = XmlReader.open_xml_file(page_file)
+       page_doc_els = page_doc.xpath('//page')
+       if page_doc_els.length > 0
+         page_node.replace(page_doc_els[0])
+       end
+     }
+     return doc.to_xml
+   end
+
+   # get the original page in alto format (nothing to do with the source of the OCR)
+   def get_original_alto_xml()
+
+     # use the gale metadata for structure
+     doc = XmlReader.open_xml_file(get_primary_xml_file())
+
+     # for each page, get all the lines
+     page_num = 0
+     doc.xpath('//page').each { |page_node|
+       page_num += 1
+       src = get_ocr_source( page_num )
+       page_xml_path = get_page_xml_file(page_num, src, uri_root)
+       xml_doc = XmlReader.open_xml_file(page_xml_path)
+
+       alto_page = gale_xml_to_alto_page( xml_doc ) if src == :gale
+       alto_page = alto_xml_to_alto_page( xml_doc ) if src == :alto
+       page_node.replace( alto_page )
+     }
+     return doc.to_xml
+   end
+
+
+   def gale_xml_to_alto_page( xml_doc )
+     page = Nokogiri::XML::Node.new('page', xml_doc )
+     info_xml = xml_doc.xpath( '//pageInfo' ).first
+     page_xml = xml_doc.xpath( '//pageContent' ).first
+     page.add_child( make_alto_description( info_xml ) )
+     page.add_child( make_alto_page( page_xml ) )
+     return( page )
+   end
+
+   def alto_xml_to_alto_page( xml_doc )
+
+     namespace = XmlReader.alto_namespace
+     page = Nokogiri::XML::Node.new('page', xml_doc )
+     description_xml = xml_doc.xpath( '//ns:Description', 'ns' => namespace ).first
+     page_xml = xml_doc.xpath( '//ns:Page', 'ns' => namespace ).first
+     page.add_child( description_xml )
+     page.add_child( page_xml )
+     return( page )
+   end
+
+   def make_alto_description( xml_doc )
+     description = Nokogiri::XML::Node.new('Description', xml_doc )
+     return( description )
+   end
+
+   def make_alto_page( xml_doc )
+     layout = Nokogiri::XML::Node.new('Layout', xml_doc )
+     page = Nokogiri::XML::Node.new('Page', xml_doc )
+     layout.add_child( page )
+
+     page_words = XmlReader.read_all_lines_from_gale_page( xml_doc )
+     current_paragraph = 0
+     page_words.each { | wd |
+       # time for a new paragraph
+       if wd[ :paragraph ] != current_paragraph
+         textblock = Nokogiri::XML::Node.new('TextBlock', xml_doc )
+         textline = Nokogiri::XML::Node.new('TextLine', xml_doc )
+         textblock.add_child( textline )
+         page.add_child( textblock )
+         current_paragraph = wd[ :paragraph ]
+       end
+
+       w = Nokogiri::XML::Node.new('String', xml_doc )
+
+       # TODO add word attributes to doc
+
+       textline.add_child( w )
+     }
+
+     return( layout )
    end
 
    def get_corrected_tei_a(include_words)
@@ -553,8 +655,8 @@ class Document < ActiveRecord::Base
       return out
    end
 
-   def get_corrected_page_text(page_num, src = :gale)
-      page_info = get_page_info(page_num, false, src, false)
+   def get_corrected_page_text(page_num, src)
+      page_info = get_page_info(page_num, false, false)
       page_text = ''
       page_info[:lines].each do | line |
          the_text = line[:text]
@@ -567,9 +669,11 @@ class Document < ActiveRecord::Base
       return page_text
    end
 
-   def get_corrected_page_gale_xml(page_num, src = :gale, uri_root = "")
-      # This uses everything except the actual lines from the original XML file.
-      page_xml_path = get_page_xml_file(page_num, src, uri_root)
+   # get the corrected page in gale format (nothing to do with the source of the OCR)
+   def get_corrected_page_gale_xml(page_num, uri_root = "")
+
+      page_xml_path = get_page_xml_file(page_num, :gale, uri_root)          # use the gale source material and amend as appropriate
+
       page_doc = XmlReader.open_xml_file(page_xml_path)
       page_node = page_doc.xpath('//page')
       page_content_node = page_node.xpath('//pageContent').first()
@@ -577,7 +681,7 @@ class Document < ActiveRecord::Base
 
       p_node = nil
       curr_p_num = 0
-      page_info = get_page_info(page_num, false, src, false)
+      page_info = get_page_info(page_num, false, false)
       page_info[:lines].each do | line |
          # get the last entry that is not "correct", since they don't affect the output
          # (They are just confirmation that the line was looked at.) We'll just loop through to find it.
@@ -618,6 +722,14 @@ class Document < ActiveRecord::Base
       # dump out the last paragraph
       page_content_node << p_node if !p_node.nil?
       return page_node
+   end
+
+   # get the corrected page in alto format (nothing to do with the source of the OCR)
+   def get_corrected_page_alto_xml(page_num, uri_root = "")
+
+     src = get_ocr_source( page_num )
+
+     # TODO
    end
 
    def self.do_command(cmd)

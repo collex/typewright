@@ -570,21 +570,23 @@ class Document < ActiveRecord::Base
 
        alto_page = gale_xml_to_alto_page( xml_doc ) if src == :gale
        alto_page = alto_xml_to_alto_page( xml_doc ) if src == :alto
-       page_node.replace( alto_page )
+       page_node.replace( alto_page ) unless alto_page.nil?
      }
      return doc.to_xml
    end
 
 
+   # attempt to create an ALTO page from gale page xml
    def gale_xml_to_alto_page( xml_doc )
      page = Nokogiri::XML::Node.new('page', xml_doc )
      info_xml = xml_doc.xpath( '//pageInfo' ).first
      page_xml = xml_doc.xpath( '//pageContent' ).first
-     page.add_child( make_alto_description( info_xml ) )
-     page.add_child( make_alto_page( page_xml ) )
+     page.add_child( gale_xml_to_alto_description( info_xml ) )
+     page.add_child( gale_xml_to_alto_page_content( page_xml ) )
      return( page )
    end
 
+   # attempt to create an ALTO page from ALTO page xml
    def alto_xml_to_alto_page( xml_doc )
 
      namespace = XmlReader.alto_namespace
@@ -596,33 +598,56 @@ class Document < ActiveRecord::Base
      return( page )
    end
 
-   def make_alto_description( xml_doc )
+   def gale_xml_to_alto_description( xml_doc )
      description = Nokogiri::XML::Node.new('Description', xml_doc )
+     filename_xml = Nokogiri::XML::Node.new('filename', xml_doc )
+     filename_xml.content = xml_doc.xpath( '//imageLink').first.content
+     description.add_child( filename_xml )
      return( description )
    end
 
-   def make_alto_page( xml_doc )
+   def gale_xml_to_alto_page_content( xml_doc )
      layout = Nokogiri::XML::Node.new('Layout', xml_doc )
      page = Nokogiri::XML::Node.new('Page', xml_doc )
      layout.add_child( page )
 
      page_words = XmlReader.read_all_lines_from_gale_page( xml_doc )
-     current_paragraph = 0
+     current_paragraph = -1   # placeholder...
+     textblock = nil
+     textline = nil
+     paragraph_num = 0
+     word_num = 0
      page_words.each { | wd |
        # time for a new paragraph
        if wd[ :paragraph ] != current_paragraph
          textblock = Nokogiri::XML::Node.new('TextBlock', xml_doc )
          textline = Nokogiri::XML::Node.new('TextLine', xml_doc )
+         paragraph_num += 1
+         textblock['ID'] = "par_#{paragraph_num}"
+         textblock['WIDTH'] = ''    # we dont get any of this information from gale documents
+         textblock['HEIGHT'] = ''
+         textblock['HPOS'] = ''
+         textblock['VPOS'] = ''
+         textline['ID'] = "line_1"   # only 1 line per paragraph because gale documents do not have line information
+         textline['WIDTH'] = ''      # we dont get any of this information from gale documents
+         textline['HEIGHT'] = ''
+         textline['HPOS'] = ''
+         textline['VPOS'] = ''
+
          textblock.add_child( textline )
          page.add_child( textblock )
          current_paragraph = wd[ :paragraph ]
        end
 
        w = Nokogiri::XML::Node.new('String', xml_doc )
-
-       # TODO add word attributes to doc
-
-       textline.add_child( w )
+       word_num += 1
+       w['ID'] = "word_#{word_num}"
+       w['WIDTH'] = wd[:r] - wd[:l]
+       w['HEIGHT'] = wd[:b] - wd[:t]
+       w['HPOS'] = wd[:l]
+       w['VPOS'] = wd[:t]
+       w['CONTENT'] = wd[:word]
+       textline.add_child( w ) unless textline.nil?
      }
 
      return( layout )

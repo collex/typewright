@@ -7,6 +7,11 @@ class Line < ActiveRecord::Base
       return pages.length
    end
 
+   def self.num_changes_for_page( doc_id, page_num )
+      lines = Line.where("document_id = ? AND page = ?", doc_id, page_num )
+      return lines.length
+   end
+
    def self.merge_changes(lines, changes)
       lines.each do |line|
          line_num = "#{0.0 + line[:num]}"

@@ -756,6 +756,10 @@ class Document < ActiveRecord::Base
      # TODO
    end
 
+   def edits_exist?( doc_id, page_num )
+     return Line.num_changes_for_page( doc_id, page_num ) != 0
+   end
+
    def self.do_command(cmd)
       Rails.logger.info(cmd)
       # this also redirects stderr into resp

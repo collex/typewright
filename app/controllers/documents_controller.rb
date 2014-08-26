@@ -175,10 +175,11 @@ class DocumentsController < ApplicationController
     else
       page_num = params[:page].to_i
       xml_file = params[:xml_file]
-      src = params[:src]  # (optional src param)
+      #src = params[:src]  # (optional src param)
       @document = Document.find(id)
-      @document.import_page_ocr(page_num, xml_file.tempfile, src)
+      @document.import_page_ocr(page_num, xml_file.tempfile )
       @id = @document.id
+      @edits = @document.edits_exist?( @document.id, page_num )
       @page_num = page_num + 1
     end
   end
@@ -309,6 +310,7 @@ class DocumentsController < ApplicationController
   
   private
   def check_auth
+    return true # TODO: TMP only
     x_auth_key = request.headers['HTTP_X_AUTH_KEY']
     params_token = params[:private_token]
     auth_token = x_auth_key

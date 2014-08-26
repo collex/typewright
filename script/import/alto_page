@@ -41,6 +41,8 @@ def parse_upload_response(response)
   exists_str = response[/<exists>\D+<\/exists>/]
   result[:exists] = (exists_str[8..11] == 'true')
   auth_token_str = response[/<auth_token>\S*<\/auth_token>/]
+  edits_str = response[/<edits>\D+<\/edits>/]
+  result[:edits] = (edits_str[7..10] == 'true')
   result[:auth_token] = auth_token_str[12..-14]
   uri_str = response[/<uri>\S*<\/uri>/]
   result[:uri] = uri_str[5..-7]
@@ -127,7 +129,7 @@ page_num_str = File.basename( xml_file )[/\d+_alto\.xml/i]
 page_num = page_num_str[0..-9].to_i unless page_num_str.nil?
 
 # upload the xml file
-curl_cmd = "-F \"xml_file=@#{xml_file};type=text/xml\" -F \"page=#{page_num}\" -F \"src=alto\" -X POST #{server}/documents/#{doc_id}/update_page_ocr.xml"
+curl_cmd = "-F \"xml_file=@#{xml_file};type=text/xml\" -F \"page=#{page_num}\" -X POST #{server}/documents/#{doc_id}/update_page_ocr.xml"
 if output_curl_only
 	ret_value.push("curl #{curl_cmd} 2>&1")
 else
@@ -136,6 +138,7 @@ end
 response = parse_upload_response(raw_response) unless test_only || output_curl_only
 puts response if verbose_output
 puts "#{xml_file} #{File.new(xml_file).size} (DONE)" if !output_curl_only
+puts "WARNING: user edits exist for this page" if response[:edits] == true
 
 if output_curl_only
 	puts ret_value.map { |line| "#{line}\n"}

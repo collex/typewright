@@ -9,13 +9,13 @@ namespace :upload do
 	#ln -s /Volumes/18th\ C\ Collections\ Online\ 2of2/RelAndPhil/ /Users/USERNAME/ecco2b
 	#ln -s /Volumes/ECHOII/ /Users/USERNAME/ecco3
 
-	desc "Upload typewright files to the server (id=0123456789-0123456789-...)"
-	task :document, :id do |t, args|
+	desc "Upload typewright files (gale format) to the server (id=0123456789-0123456789-...)"
+	task :gale_document, :id do |t, args|
 		# It will search for a document in all the possible places for it, and stop when it finds it.
 
 		ids = args[:id] #ENV['id']
 		if ids == nil
-			puts "Usage: call with id=0123456789,0123456789,..."
+			puts "Usage: call with id=0123456789-0123456789-..."
 		else
 			ids = ids.split('-')
 			ids.each {|id|
@@ -28,6 +28,37 @@ namespace :upload do
 			}
 		end
 	end
+
+        desc "Import typewright files from eMOP (limit=n)"
+        task :alto_import, :limit do |t, args|
+
+          limit = args[:limit]
+          if limit == nil
+            puts "Usage: call with limit=n"
+          else
+            import_alto(limit)
+          end
+        end
+
+        desc "Upload typewright files (ALTO format) to the server (id=0123456789-0123456789-...)"
+        task :alto_document, :id do |t, args|
+        # It will search for a document in all the possible places for it, and stop when it finds it.
+
+          ids = args[:id] #ENV['id']
+          if ids == nil
+            puts "Usage: call with id=0123456789-0123456789-..."
+          else
+            ids = ids.split('-')
+            ids.each {|id|
+              full_path = find_dir(id)
+              if full_path.present?
+                upload_alto_doc(full_path)
+              else
+                puts "NOT FOUND: #{id}"
+              end
+            }
+          end
+        end
 
 	desc "Install ECCO documents that are on the same server as typewright (file=path$path) [one 10-digit number per line]"
 	task :install, [:file] => :environment do |t, args|
@@ -76,8 +107,8 @@ namespace :upload do
 		}
 	end
 
-	desc "Upload typewright files to the server from a set of files (file=path$path) [one 10-digit number per line]"
-	task :from_file, :file do |t, args|
+	desc "Upload typewright files (gale format) to the server from a set of files (file=path$path) [one 10-digit number per line]"
+	task :gale_from_file, :file do |t, args|
 		# It will search for a document in all the possible places for it, and stop when it finds it.
 
 		fnames = args[:file]
@@ -100,6 +131,31 @@ namespace :upload do
 			end
 		}
 	end
+
+        desc "Upload typewright files (ALTO format) to the server from a set of files (file=path$path) [one 10-digit number per line]"
+        task :alto_from_file, :file do |t, args|
+          # It will search for a document in all the possible places for it, and stop when it finds it.
+
+          fnames = args[:file]
+          fnames = fnames.split("$")
+          puts fnames.map { |str| ">>> #{str} <<<"}
+          fnames.each { |fname|
+            ids = File.open(fname, 'r') { |f| f.read }
+            ids = ids.split("\n")
+            if ids == nil
+              puts "Usage: call with a filename. The file contains one 10-digit number per line"
+            else
+              ids.each { |id|
+                full_path = find_dir(id)
+                if full_path.present?
+                  upload_alto_doc(full_path)
+                else
+                  puts "NOT FOUND: #{id}"
+                end
+              }
+            end
+          }
+        end
 
 	desc "Create scripts to run on Brazos for all documents specified in the set of files (file=path$path) [one 10-digit number per line]"
 	task :create_scripts, :file do |t, args|
@@ -242,7 +298,7 @@ namespace :upload do
 				begin
 					info = doc.get_doc_info()
 					info['num_pages'].times { |x|
-						doc.get_page_info(x+1, false)
+						doc.get_page_info(x+1, false )
 					}
 				rescue Exception => e
 					puts "#{doc.uri}: #{e.to_s}"
@@ -409,6 +465,20 @@ def upload_gale(full_path)
 	`#{script} #{full_path} >> #{Rails.root}/log/manual_upload.log`
 end
 
+def upload_alto_doc(full_path)
+  script = "./script/import/alto_doc -v -f typewright.sl.performantsoftware.com"
+
+  puts "uploading: #{full_path}..."
+  `#{script} #{full_path} >> #{Rails.root}/log/manual_upload.log`
+end
+
+def import_alto(limit)
+  script = "rails runner script/import/alto_importer -- -v typewright.sl.performantsoftware.com #{limit}"
+
+  puts "importing up to #{limit} page(s)..."
+  `#{script} >> #{Rails.root}/log/automated_upload.log`
+end
+
 def base_path()
 	path = "#{Rails.root}".split('/')
 	path = "/#{path[1]}/#{path[2]}/"
@@ -432,6 +502,22 @@ def create_remote_script(full_path, substitutions, flags='')
 	ret = ret.gsub("#{base_path}ecco1/", substitutions[0])
 	ret = ret.gsub("#{base_path}ecco2/", substitutions[1]) if substitutions.length > 1
 	return ret
+end
+
+def find_dir(id)
+	if id.length != 10
+		puts "Bad id: #{id}"
+	end
+	folders = ['ecco1/HistAndGeo', 'ecco1/MedSciTech', 'ecco1/SSAndFineArt', 'ecco2/GenRef',
+		'ecco2/Law', 'ecco2/LitAndLang_1', 'ecco2/LitAndLang_2', 'ecco2/RelAndPhil', 'ecco2b']
+
+	folders.each { |folder|
+		full_path = base_path + folder + '/' + id
+		if Dir.exists?(full_path)
+			return full_path
+		end
+	}
+	return nil
 end
 
 def find_file(id)

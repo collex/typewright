@@ -16,7 +16,13 @@
 # ----------------------------------------------------------------------------
 
 class XmlReader
-#	require 'nokogiri'
+	require 'nokogiri'
+
+  @alto_namespace = namespace = 'http://schema.ccs-gmbh.com/ALTO'
+
+  def self.alto_namespace
+    return @alto_namespace
+  end
 
 	def self.format_page(page)
     "0000#{page}"[-4, 4]
@@ -93,7 +99,35 @@ class XmlReader
     return page_src
   end
 
+  def self.read_all_lines_from_alto_page(page_doc)
+    page_src = []
+    num_lines = 0
+    paragraph_num = 0
+    # read the page data from alto's xml
+    page_doc.xpath('//ns:TextBlock', 'ns' => @alto_namespace ).each { |tb|
+       paragraph_num += 1
+       tb.xpath('ns:TextLine', 'ns' => namespace ).each { |ln|
+          ln.xpath('ns:String', 'ns' => namespace ).each { |wd|
+            width = wd.attributes['WIDTH'].to_s.to_i
+            height = wd.attributes['HEIGHT'].to_s.to_i
+            hpos = wd.attributes['HPOS'].to_s.to_i
+            vpos = wd.attributes['VPOS'].to_s.to_i
+            word = wd.attributes['CONTENT'].to_s
+            page_src.push({ :l => hpos, :t => vpos, :r => hpos + width, :b => vpos + height, :word => word, :line => num_lines, :paragraph=>paragraph_num })
+          }
+          num_lines += 1
+       }
+    }
+    return page_src
+  end
+
   def self.detect_ocr_source(xml_doc)
+
+    # look for an alto doc first...
+    if !xml_doc.xpath('//ns:TextBlock', 'ns' => @alto_namespace ).empty?
+      return :alto # alto page
+    end
+
     has_page_info = !xml_doc.xpath('//page/pageInfo').empty?
     has_book_info = !xml_doc.xpath('//book/bookInfo').empty?
     has_page_line = !xml_doc.xpath('//page/line').empty?

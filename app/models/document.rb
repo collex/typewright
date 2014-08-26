@@ -213,7 +213,7 @@ class Document < ActiveRecord::Base
       }
 
       if include_word_stats
-         doc_word_stats = get_doc_word_stats( )
+         doc_word_stats = get_doc_word_stats( :gale )   # TODO
       end
 
       result = { :pages_with_changes => changes, :total_revisions => total.length, :doc_word_stats => doc_word_stats,
@@ -284,7 +284,7 @@ class Document < ActiveRecord::Base
             words[box[:word]] = words[box[:word]] == nil ? 1 : words[box[:word]] + 1
          }
          page_word_stats = self.process_word_stats(words)
-         doc_word_stats = get_doc_word_stats( )
+         doc_word_stats = get_doc_word_stats( src )
       else
          page_word_stats = nil
          doc_word_stats = nil
@@ -342,7 +342,7 @@ class Document < ActiveRecord::Base
       return result
    end
 
-   def get_doc_word_stats( )
+   def get_doc_word_stats( src )
       doc_word_stats = Rails.cache.fetch("doc-stats-#{src}-#{self.book_id()}") {
          words = {}
          num_pages = self.get_num_pages()
@@ -492,19 +492,6 @@ class Document < ActiveRecord::Base
       return output
    end
 
-   # get the corrected document in alto format (nothing to do with the source of the OCR)
-   def get_corrected_alto_xml( )
-     primary_file = get_primary_xml_file()
-     doc = XmlReader.open_xml_file( primary_file )
-     page_num = 0
-     doc.xpath('//page').each { |page_node|
-       page_num += 1
-       page_xml = get_corrected_page_alto_xml(page_num)
-       page_node.replace(page_xml)
-     }
-     return doc.to_xml
-   end
-
    # get the corrected document in gale format (nothing to do with the source of the OCR)
    def get_corrected_gale_xml()
       primary_file = get_primary_xml_file()
@@ -516,6 +503,19 @@ class Document < ActiveRecord::Base
          page_node.replace(page_xml)
       }
       return doc.to_xml
+   end
+
+   # get the corrected document in alto format (nothing to do with the source of the OCR)
+   def get_corrected_alto_xml( )
+     primary_file = get_primary_xml_file()
+     doc = XmlReader.open_xml_file( primary_file )
+     page_num = 0
+     doc.xpath('//page').each { |page_node|
+       page_num += 1
+       page_xml = get_corrected_page_alto_xml(page_num)
+       page_node.replace(page_xml)
+     }
+     return doc.to_xml
    end
 
    def get_original_gale_text()
@@ -574,7 +574,6 @@ class Document < ActiveRecord::Base
      }
      return doc.to_xml
    end
-
 
    # attempt to create an ALTO page from gale page xml
    def gale_xml_to_alto_page( xml_doc )

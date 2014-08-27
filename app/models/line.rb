@@ -2,14 +2,21 @@ class Line < ActiveRecord::Base
    attr_accessible :user_id, :document_id, :page, :line, :status, :words, :src, :box
    serialize :box, Hash
 
+   # get the number of pages that have corrections in the specified document
    def self.num_pages_with_changes( doc_id )
       pages = Line.find_all_by_document_id(doc_id, { :group => 'page' })
       return pages.length
    end
 
+   # get the number of corrections for the specified page in the specified document
    def self.num_changes_for_page( doc_id, page_num )
       lines = Line.where("document_id = ? AND page = ?", doc_id, page_num )
       return lines.length
+   end
+
+   # delete all corrections associated with the specified page, document and source
+   def self.delete_changes( doc_id, page_num, src )
+     Line.where("document_id = ? AND page = ? and src = ?", doc_id, page_num, src ).destroy_all
    end
 
    def self.merge_changes(lines, changes)

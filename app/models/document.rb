@@ -753,11 +753,17 @@ class Document < ActiveRecord::Base
 
      src = get_ocr_source( page_num )
 
-     # TODO
+     # TODO implement me
    end
 
-   def edits_exist?( doc_id, page_num )
+   # do any corrections exist for the specified page and document
+   def corrections_exist?( doc_id, page_num )
      return Line.num_changes_for_page( doc_id, page_num ) != 0
+   end
+
+   # delete any corrections for the specified page, document and source
+   def delete_corrections( doc_id, page_num, src )
+      Line.delete_changes( doc_id, page_num, src )
    end
 
    def self.do_command(cmd)

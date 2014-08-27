@@ -179,7 +179,7 @@ class DocumentsController < ApplicationController
       @document = Document.find(id)
       @document.import_page_ocr(page_num, xml_file.tempfile )
       @id = @document.id
-      @edits = @document.edits_exist?( @document.id, page_num )
+      @edits = @document.corrections_exist?( @document.id, page_num )
       @page_num = page_num + 1
     end
   end
@@ -187,7 +187,7 @@ class DocumentsController < ApplicationController
   # Get the overview report for document and user admin pages
   #
   def corrections
-    if PRIVATE_TOKEN != params[:private_token]
+    if !check_auth()
       render text: {"message" => "401 Unauthorized"}.to_json(), status: :unauthorized
     else
       view = params[:view]
@@ -235,6 +235,25 @@ class DocumentsController < ApplicationController
       else
         render text: { "message" => "Document #{uri} not found" }.to_json(), status: :not_found
       end
+    end
+  end
+
+  def delete_corrections
+    doc = find_doc(params)
+    page = params[:page]
+    src = params[:src].to_sym unless params[:src].nil?
+    src = :gale if src.nil?
+    if doc.nil? == false
+      if page.nil? == false
+         doc.delete_corrections( doc.id, page, src )
+         render text: {"message" => "Corrections deleted"}.to_json(), status: :ok
+      else
+        render text: { "message" => "Page not specified" }.to_json(), status: :unprocessable_entity
+      end
+    else
+      id = params[:id]
+      uri = params[:uri]
+      render text: { "message" => "Document #{uri.nil? ? id : uri} not found" }.to_json(), status: :not_found
     end
   end
 
@@ -310,7 +329,6 @@ class DocumentsController < ApplicationController
   
   private
   def check_auth
-    return true # TODO: TMP only
     x_auth_key = request.headers['HTTP_X_AUTH_KEY']
     params_token = params[:private_token]
     auth_token = x_auth_key

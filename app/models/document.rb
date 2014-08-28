@@ -530,7 +530,6 @@ class Document < ActiveRecord::Base
          page_file = File.join(gale_dir, page_node['fileRef'])
          page_doc = XmlReader.open_xml_file(page_file)
          page_doc.xpath('//p').each { |p_node|
-            tmp = 0
             output += p_node.content
          }
          output += "\n\n"
@@ -538,7 +537,7 @@ class Document < ActiveRecord::Base
       return output
    end
 
-   # get the original page in gale format (nothing to do with the source of the OCR)
+   # get the original gale pages
    def get_original_gale_xml()
      doc = XmlReader.open_xml_file(get_primary_xml_file())
      gale_dir = get_gale_xml_directory()
@@ -554,25 +553,29 @@ class Document < ActiveRecord::Base
      return doc.to_xml
    end
 
-   # get the original page in alto format (nothing to do with the source of the OCR)
+   # get the original alto pages
    def get_original_alto_xml()
 
-     # use the gale metadata for structure
+     # use the gale metadata to get a possible set of pages
      doc = XmlReader.open_xml_file(get_primary_xml_file())
 
-     # for each page, get all the lines
+     alto = Nokogiri::XML::Node.new('alto', doc )
+
+     # for each page, attempt to get an alto page
      page_num = 0
      doc.xpath('//page').each { |page_node|
        page_num += 1
-       src = get_ocr_source( page_num )
-       page_xml_path = get_page_xml_file(page_num, src, uri_root)
-       xml_doc = XmlReader.open_xml_file(page_xml_path)
 
-       alto_page = gale_xml_to_alto_page( xml_doc ) if src == :gale
-       alto_page = alto_xml_to_alto_page( xml_doc ) if src == :alto
-       page_node.replace( alto_page ) unless alto_page.nil?
+       # if we have an alto page, add it to the alto document
+       src = get_ocr_source( page_num )
+       if src == :alto
+          page_xml_path = get_page_xml_file(page_num, src, uri_root)
+          xml_doc = XmlReader.open_xml_file(page_xml_path)
+          alto_page = alto_xml_to_alto_page( xml_doc, page_num )
+          alto.add_child( alto_page )
+       end
      }
-     return doc.to_xml
+     return alto.to_xml
    end
 
    # attempt to create an ALTO page from gale page xml
@@ -586,12 +589,12 @@ class Document < ActiveRecord::Base
    end
 
    # attempt to create an ALTO page from ALTO page xml
-   def alto_xml_to_alto_page( xml_doc )
-
+   def alto_xml_to_alto_page( xml_doc, page_num )
      namespace = XmlReader.alto_namespace
      page = Nokogiri::XML::Node.new('page', xml_doc )
      description_xml = xml_doc.xpath( '//ns:Description', 'ns' => namespace ).first
      page_xml = xml_doc.xpath( '//ns:Page', 'ns' => namespace ).first
+     page_xml[ 'ID' ] = "page_#{page_num}"
      page.add_child( description_xml )
      page.add_child( page_xml )
      return( page )
@@ -612,41 +615,23 @@ class Document < ActiveRecord::Base
 
      page_words = XmlReader.read_all_lines_from_gale_page( xml_doc )
      current_paragraph = -1   # placeholder...
-     textblock = nil
-     textline = nil
-     paragraph_num = 0
+     line = nil
      word_num = 0
      page_words.each { | wd |
+
        # time for a new paragraph
        if wd[ :paragraph ] != current_paragraph
-         textblock = Nokogiri::XML::Node.new('TextBlock', xml_doc )
-         textline = Nokogiri::XML::Node.new('TextLine', xml_doc )
-         paragraph_num += 1
-         textblock['ID'] = "par_#{paragraph_num}"
-         textblock['WIDTH'] = ''    # we dont get any of this information from gale documents
-         textblock['HEIGHT'] = ''
-         textblock['HPOS'] = ''
-         textblock['VPOS'] = ''
-         textline['ID'] = "line_1"   # only 1 line per paragraph because gale documents do not have line information
-         textline['WIDTH'] = ''      # we dont get any of this information from gale documents
-         textline['HEIGHT'] = ''
-         textline['HPOS'] = ''
-         textline['VPOS'] = ''
-
-         textblock.add_child( textline )
-         page.add_child( textblock )
          current_paragraph = wd[ :paragraph ]
+         para = new_alto_paragraph( xml_doc, current_paragraph + 1 )   # gale paragraph #'s are 0 indexed
+         line = new_alto_line( xml_doc, 1 )                            # only 1 line per paragraph because gale documents do not have line information
+
+         para.add_child( line )
+         page.add_child( para )
        end
 
-       w = Nokogiri::XML::Node.new('String', xml_doc )
        word_num += 1
-       w['ID'] = "word_#{word_num}"
-       w['WIDTH'] = wd[:r] - wd[:l]
-       w['HEIGHT'] = wd[:b] - wd[:t]
-       w['HPOS'] = wd[:l]
-       w['VPOS'] = wd[:t]
-       w['CONTENT'] = wd[:word]
-       textline.add_child( w ) unless textline.nil?
+       w = new_alto_word( xml_doc, word_num, wd )
+       line.add_child( w ) unless line.nil?
      }
 
      return( layout )
@@ -754,6 +739,40 @@ class Document < ActiveRecord::Base
      src = get_ocr_source( page_num )
 
      # TODO implement me
+   end
+
+   # create a new alto paragraph node; really just a placeholder
+   def new_alto_paragraph( xml_doc, paragraph_num )
+     para = Nokogiri::XML::Node.new('TextBlock', xml_doc )
+     para['ID'] = "par_#{paragraph_num}"
+     para['WIDTH'] = ''                # we dont get any of this information from gale documents
+     para['HEIGHT'] = ''
+     para['HPOS'] = ''
+     para['VPOS'] = ''
+     return( para )
+   end
+
+   # create a new alto line node; really just a placeholder
+   def new_alto_line( xml_doc, line_num )
+     line = Nokogiri::XML::Node.new('TextLine', xml_doc )
+     line['ID'] = "line_#{line_num}"
+     line['WIDTH'] = ''                # we dont get any of this information from gale documents
+     line['HEIGHT'] = ''
+     line['HPOS'] = ''
+     line['VPOS'] = ''
+     return( line )
+   end
+
+   # create a new alto word node
+   def new_alto_word( xml_doc, word_num, wd )
+     word = Nokogiri::XML::Node.new('String', xml_doc )
+     word['ID'] = "word_#{word_num}"
+     word['WIDTH'] = wd[:r] - wd[:l]
+     word['HEIGHT'] = wd[:b] - wd[:t]
+     word['HPOS'] = wd[:l]
+     word['VPOS'] = wd[:t]
+     word['CONTENT'] = wd[:word]
+     return( word )
    end
 
    # do any corrections exist for the specified page and document

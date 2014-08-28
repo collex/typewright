@@ -240,21 +240,25 @@ class DocumentsController < ApplicationController
 
   # PUT /documents/1/delete_corrections
   def delete_corrections
-    doc = find_doc(params)
-    page = params[:page]
-    src = params[:src].to_sym unless params[:src].nil?
-    src = :gale if src.nil?
-    if doc.nil? == false
-      if page.nil? == false
-         doc.delete_corrections( doc.id, page, src )
-         render text: {"message" => "Corrections deleted"}.to_json(), status: :ok
-      else
-        render text: { "message" => "Page not specified" }.to_json(), status: :unprocessable_entity
-      end
+    if !check_auth()
+      render text: { "message" => "401 Unauthorized" }.to_json(), status: :unauthorized
     else
-      id = params[:id]
-      uri = params[:uri]
-      render text: { "message" => "Document #{uri.nil? ? id : uri} not found" }.to_json(), status: :not_found
+      doc = find_doc(params)
+      page = params[:page]
+      src = params[:src].to_sym unless params[:src].nil?
+      src = :gale if src.nil?
+      if doc.nil? == false
+        if page.nil? == false
+           doc.delete_corrections( doc.id, page, src )
+           render text: {"message" => "Corrections deleted"}.to_json(), status: :ok
+        else
+          render text: { "message" => "Page not specified" }.to_json(), status: :unprocessable_entity
+        end
+      else
+        id = params[:id]
+        uri = params[:uri]
+        render text: { "message" => "Document #{uri.nil? ? id : uri} not found" }.to_json(), status: :not_found
+      end
     end
   end
 

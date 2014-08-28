@@ -18,7 +18,7 @@
 class XmlReader
 	require 'nokogiri'
 
-  @alto_namespace = namespace = 'http://schema.ccs-gmbh.com/ALTO'
+  @alto_namespace = 'http://schema.ccs-gmbh.com/ALTO'
 
   def self.alto_namespace
     return @alto_namespace
@@ -106,8 +106,8 @@ class XmlReader
     # read the page data from alto's xml
     page_doc.xpath('//ns:TextBlock', 'ns' => @alto_namespace ).each { |tb|
        paragraph_num += 1
-       tb.xpath('ns:TextLine', 'ns' => namespace ).each { |ln|
-          ln.xpath('ns:String', 'ns' => namespace ).each { |wd|
+       tb.xpath('ns:TextLine', 'ns' => @alto_namespace ).each { |ln|
+          ln.xpath('ns:String', 'ns' => @alto_namespace ).each { |wd|
             width = wd.attributes['WIDTH'].to_s.to_i
             height = wd.attributes['HEIGHT'].to_s.to_i
             hpos = wd.attributes['HPOS'].to_s.to_i

@@ -11,7 +11,7 @@ class PageQueue < ActiveRecord::Base
   STATUS_READY_FOR_IMPORT = 3
   STATUS_IMPORTING = 4
   STATUS_IMPORTED = 5
-  STATUS_ERRORED = 6
+  STATUS_ERRORED = 7
   CONFIDENCE_THRESHOLD = 0.8
 
   def self.mark_importing( page_id )

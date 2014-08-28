@@ -238,6 +238,7 @@ class DocumentsController < ApplicationController
     end
   end
 
+  # PUT /documents/1/delete_corrections
   def delete_corrections
     doc = find_doc(params)
     page = params[:page]

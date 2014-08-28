@@ -30,7 +30,7 @@ Typewright::Application.routes.draw do
   get 'documents/:id/report' => 'documents#report', :as => :report
   post 'documents/:id/upload' => 'documents#upload', :as => :upload
   post 'documents/:id/update_page_ocr' => 'documents#update_page_ocr', :as => :update_page_ocr
-  post 'documents/:id/delete_corrections' => 'documents#delete_corrections', :as => :delete_corrections
+  put 'documents/:id/delete_corrections' => 'documents#delete_corrections', :as => :delete_corrections
 
   get "/test_exception_notifier" => "users#test_exception_notifier"
 

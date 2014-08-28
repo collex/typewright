@@ -610,7 +610,7 @@ class Document < ActiveRecord::Base
 
    def gale_xml_to_alto_page_content( xml_doc )
      layout = Nokogiri::XML::Node.new('Layout', xml_doc )
-     page = Nokogiri::XML::Node.new('Page', xml_doc )
+     page = new_alto_page( xml_doc, 1 )
      layout.add_child( page )
 
      page_words = XmlReader.read_all_lines_from_gale_page( xml_doc )
@@ -675,7 +675,7 @@ class Document < ActiveRecord::Base
 	  end
 	  page_text = page_text.gsub(/<del>.+<\/del>/, '')
 	  page_text = ActionView::Base.full_sanitizer.sanitize(page_text)
-      return page_text
+    return page_text
    end
 
    # get the corrected page in gale format (nothing to do with the source of the OCR)
@@ -692,19 +692,8 @@ class Document < ActiveRecord::Base
       curr_p_num = 0
       page_info = get_page_info(page_num, false, false)
       page_info[:lines].each do | line |
-         # get the last entry that is not "correct", since they don't affect the output
-         # (They are just confirmation that the line was looked at.) We'll just loop through to find it.
-         output_item = line[:words].first
-         if line[:actions].present?
-            line[:actions].each_with_index do |action, i|
-               if action == 'change'
-                  output_item = line[:words][i]
-               elsif action == 'delete'
-                  output_item = nil
-               end
-            end
-         end
 
+         output_item = apply_line_edits( line )
          if output_item.present?
 
             # if there is no paragrah node - or the first word of the
@@ -736,9 +725,61 @@ class Document < ActiveRecord::Base
    # get the corrected page in alto format (nothing to do with the source of the OCR)
    def get_corrected_page_alto_xml(page_num, uri_root = "")
 
-     src = get_ocr_source( page_num )
+     # use the gale metadata
+     doc = XmlReader.open_xml_file(get_primary_xml_file())
+     page = new_alto_page( doc, page_num )
 
-     # TODO implement me
+     current_paragraph = -1    # placeholder
+     word_num = 0
+     line = nil
+     page_info = get_page_info( page_num, false, false )
+     page_info[:lines].each do | ln |
+
+       output_item = apply_line_edits( ln )
+       if output_item.present?
+          if current_paragraph != output_item[0][:paragraph]
+            current_paragraph = output_item[0][ :paragraph ]
+            para = new_alto_paragraph( doc, current_paragraph )
+            line = new_alto_line( doc, 1 )                            # only 1 line per paragraph because gale documents do not have line information
+
+            para.add_child( line )
+            page.add_child( para )
+
+          end
+
+          output_item.each do |word|
+             word_num += 1
+             wd = new_alto_word( doc, word_num, word )
+             line.add_child( wd ) unless line.nil?
+          end
+       end
+     end
+
+     return( page )
+   end
+
+   def apply_line_edits( line )
+
+     # get the last entry that is not "correct", since they don't affect the output
+     # (They are just confirmation that the line was looked at.) We'll just loop through to find it.
+     output_item = line[:words].first
+     if line[:actions].present?
+       line[:actions].each_with_index do |action, i|
+         if action == 'change'
+           output_item = line[:words][i]
+         elsif action == 'delete'
+           output_item = nil
+         end
+       end
+     end
+     return( output_item )
+   end
+
+   # create a new alto page node; really just a placeholder
+   def new_alto_page( xml_doc, page_num )
+     page = Nokogiri::XML::Node.new('Page', xml_doc )
+     page[ 'ID' ] = "page_#{page_num}"
+     return( page )
    end
 
    # create a new alto paragraph node; really just a placeholder

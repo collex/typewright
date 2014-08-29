@@ -14,6 +14,8 @@ class CurrentEditor < ActiveRecord::Base
 			user = User.find(rec.user_id)
 			{ user_id: rec.user_id, last_contact_time: rec.last_contact_time, idle_time: now - rec.last_contact_time, username: user.username, federation: user.federation, federation_user_id: user.orig_id, page: rec.page }
 		}
+		recs_page.delete_if {|rec| rec[:idle_time] > 5*60 }
+		recs_doc.delete_if {|rec| rec[:idle_time] > 5*60 }
 		return { page: recs_page, doc: recs_doc }
 	end
 

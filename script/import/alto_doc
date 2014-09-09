@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+require "#{Dir.pwd}/app/models/work.rb"
+
 def do_usage()
   puts "Usage: alto_doc [flags] server /path/to/directory"
   puts "Import all pages in the given document directory into specified TypeWright server."
@@ -87,14 +89,19 @@ end
 
 # resolve the eMOP work Id to an ecco Id
 work_id = File.basename( directory )
-echo_id = "0000100100"    # FIXME
+ecco_id = Work.getEccoNumber( work_id )
+
+if ecco_id.empty?
+  puts "WARNING: cannot locate document ECCO identifier"
+  exit( 1 )
+end
 
 # process each page we have identified
 page_list.sort!
 page_list.each { |page|
 
    xml_file = File.join("#{max_batch}", "#{page}")
-   cmd = "script/import/alto_page #{cmd_flags} #{server} #{File.join(directory,xml_file)} #{echo_id}"
+   cmd = "script/import/alto_page #{cmd_flags} #{server} #{File.join(directory,xml_file)} #{ecco_id}"
    puts "" if verbose_output
    puts "" if verbose_output
    puts cmd

@@ -24,10 +24,29 @@ class Work < ActiveRecord::Base
 
    # get the ecco number from the work ID
    def self.getEccoNumber( work_id )
-     work = self.get_by_wks_work_id( work_id )
+     work = Work.find( work_id )
      if work.nil? == false
        return( work.wks_ecco_number)
      end
-     return ""
+     return nil
    end
+
+   # get the citation id from the work ID
+   def self.getCitationId( work_id )
+     work = Work.find( work_id )
+     if work.nil? == false
+       return( work.wks_eebo_citation_id )
+     end
+     return nil
+   end
+
+   # get the EEBO directory from the work ID
+   def self.getEeboDir( work_id )
+     work = Work.find( work_id )
+     if work.nil? == false
+       return( work.wks_eebo_directory )
+     end
+     return nil
+   end
+
 end

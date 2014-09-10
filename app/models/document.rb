@@ -877,7 +877,7 @@ class Document < ActiveRecord::Base
       return path
    end
 
-   def self.install(uri, xml_file, path_to_images)
+   def self.ecco_install(uri, xml_file, path_to_images)
       # example params: ('lib://ECCO/0011223300',
       # '/raw/path/GenRef/XML/0011223300.xml',
       # '/raw/path/GenRef/Images/0011223300')
@@ -909,5 +909,16 @@ class Document < ActiveRecord::Base
          document.import_page(page_num+1, image_file)
          end
       }
+   end
+
+   def self.eebo_install( uri, path_to_xml, path_to_images )
+     # example params: ('lib://EEBO/0011223300-0005567893',
+     # '/data/shared/text-xml/IDHMC-ocr/0/0/153',
+     # '/data/eebo/e0014/40093')
+
+     puts "URI: #{uri}"
+     puts "XML: #{path_to_xml}"
+     puts "IMG: #{path_to_images}"
+
    end
 end

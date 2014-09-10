@@ -29,39 +29,104 @@ namespace :upload do
 		end
 	end
 
-        desc "Import typewright files from eMOP (limit=n)"
-        task :alto_import, :limit do |t, args|
+  desc "Import typewright files (ALTO format) from eMOP (limit=n)"
+  task :alto_import, :limit do |t, args|
 
-          limit = args[:limit]
-          if limit == nil
-            puts "Usage: call with limit=n"
-          else
-            import_alto(limit)
-          end
+    limit = args[:limit]
+    if limit == nil
+      puts "Usage: call with limit=n"
+    else
+      import_alto(limit)
+    end
+  end
+
+  desc "Upload typewright files (ALTO format) to the server (id=0123456789-0123456789-...)"
+  task :alto_document, :id do |t, args|
+  # It will search for a document in all the possible places for it, and stop when it finds it.
+
+    ids = args[:id] #ENV['id']
+    if ids == nil
+      puts "Usage: call with id=0123456789-0123456789-..."
+    else
+      ids = ids.split('-')
+      ids.each {|id|
+        full_path = find_dir(id)
+        if full_path.present?
+          upload_alto_doc(full_path)
+        else
+          puts "NOT FOUND: #{id}"
         end
+      }
+    end
+  end
 
-        desc "Upload typewright files (ALTO format) to the server (id=0123456789-0123456789-...)"
-        task :alto_document, :id do |t, args|
-        # It will search for a document in all the possible places for it, and stop when it finds it.
+  desc "Install EEBO documents that are on the same server as typewright (file=path$path) [one directory per line]"
+  task :eebo_from_file, [:file] => :environment do |t, args|
 
-          ids = args[:id] #ENV['id']
-          if ids == nil
-            puts "Usage: call with id=0123456789-0123456789-..."
-          else
-            ids = ids.split('-')
-            ids.each {|id|
-              full_path = find_dir(id)
-              if full_path.present?
-                upload_alto_doc(full_path)
-              else
-                puts "NOT FOUND: #{id}"
-              end
-            }
-          end
-        end
+    fnames = args[:file]
+    fnames = fnames.split("$")
+    fnames.each { |fname|
+      dirnames = File.open(fname, 'r') { |f| f.read }
+      dirnames = dirnames.split("\n")
+      if dirnames != []
+        dirnames.each { |dirname|
+          install_eebo_doc( dirname )
+        }
+      else
+        puts "Usage: call with a filename. The file contains one directory (EEBO document) per line"
+      end
+    }
+  end
+
+  desc "Install EEBO document on the same server as typewright (dir=path$path)"
+  task :install_eebo, [:dir] => :environment do |t, args|
+
+    require "#{Rails.root}/app/models/work.rb"
+
+    dirnames = args[:dir]
+    dirnames = dirnames.split("$")
+    dirnames.each { |dirname|
+      install_eebo_doc( dirname )
+    }
+
+  end
+
+  def install_eebo_doc( dirname )
+
+    # dirname in the format
+    # /bla/bla/bla/workId/batchId
+    tokens = dirname.split( "/" )
+    if tokens.size >= 2
+      work_id = tokens[ tokens.size - 2 ]
+
+      citation_id = Work.getCitationId( work_id )
+      if citation_id.nil?
+        puts "WARNING: cannot locate document citation identifier for #{dirname}"
+        return
+      end
+
+      image_dir = Work.getEeboDir( work_id )
+      if image_dir.nil?
+        puts "WARNING: cannot locate document image directory for #{dirname}"
+        return
+      end
+
+      image_id = File.basename( image_dir )
+      uri = "lib://EEBO/#{sprintf( "%010d", image_id.to_i )}-#{sprintf( "%010d", citation_id)}"
+
+      begin
+        Document.eebo_install( uri, dirname, image_dir )
+      rescue Exception => e
+        puts "#{e.to_s} [#{dirname}]"
+      end
+    else
+      puts "ERROR: not found #{dirname}"
+    end
+
+  end
 
 	desc "Install ECCO documents that are on the same server as typewright (file=path$path) [one 10-digit number per line]"
-	task :install, [:file] => :environment do |t, args|
+	task :install_ecco, [:file] => :environment do |t, args|
 		# It will search for a document in all the possible places for it, and stop when it finds it.
 
 		fnames = args[:file]
@@ -80,7 +145,7 @@ namespace :upload do
 					if full_path.present?
 						folder = up_one_folder(full_path) + "/images/"
 						begin
-						Document.install(uri, full_path, folder)
+						Document.ecco_install(uri, full_path, folder)
 						rescue Exception => e
 							puts "#{e.to_s} [#{full_path}]"
 						end
@@ -91,7 +156,7 @@ namespace :upload do
 						if full_path.present?
 							folder = up_one_folder(full_path) + "/Images/#{id}/"
 							begin
-							Document.install(uri, full_path, folder)
+							Document.ecco_install(uri, full_path, folder)
 							rescue Exception => e
 								puts "#{e.to_s} [#{full_path}]"
 							end
@@ -132,30 +197,30 @@ namespace :upload do
 		}
 	end
 
-        desc "Upload typewright files (ALTO format) to the server from a set of files (file=path$path) [one 10-digit number per line]"
-        task :alto_from_file, :file do |t, args|
-          # It will search for a document in all the possible places for it, and stop when it finds it.
+  desc "Upload typewright files (ALTO format) to the server from a set of files (file=path$path) [one 10-digit number per line]"
+  task :alto_from_file, :file do |t, args|
+    # It will search for a document in all the possible places for it, and stop when it finds it.
 
-          fnames = args[:file]
-          fnames = fnames.split("$")
-          puts fnames.map { |str| ">>> #{str} <<<"}
-          fnames.each { |fname|
-            ids = File.open(fname, 'r') { |f| f.read }
-            ids = ids.split("\n")
-            if ids == nil
-              puts "Usage: call with a filename. The file contains one 10-digit number per line"
-            else
-              ids.each { |id|
-                full_path = find_dir(id)
-                if full_path.present?
-                  upload_alto_doc(full_path)
-                else
-                  puts "NOT FOUND: #{id}"
-                end
-              }
-            end
-          }
-        end
+    fnames = args[:file]
+    fnames = fnames.split("$")
+    puts fnames.map { |str| ">>> #{str} <<<"}
+    fnames.each { |fname|
+      ids = File.open(fname, 'r') { |f| f.read }
+      ids = ids.split("\n")
+      if ids == nil
+        puts "Usage: call with a filename. The file contains one 10-digit number per line"
+      else
+        ids.each { |id|
+          full_path = find_dir(id)
+          if full_path.present?
+            upload_alto_doc(full_path)
+          else
+            puts "NOT FOUND: #{id}"
+          end
+        }
+      end
+    }
+  end
 
 	desc "Create scripts to run on Brazos for all documents specified in the set of files (file=path$path) [one 10-digit number per line]"
 	task :create_scripts, :file do |t, args|
@@ -467,6 +532,13 @@ end
 
 def upload_alto_doc(full_path)
   script = "./script/import/alto_doc -v -f typewright.sl.performantsoftware.com"
+
+  puts "uploading: #{full_path}..."
+  `#{script} #{full_path} >> #{Rails.root}/log/manual_upload.log`
+end
+
+def upload_eebo_doc(full_path)
+  script = "./script/import/eebo_doc -v -f typewright.sl.performantsoftware.com"
 
   puts "uploading: #{full_path}..."
   `#{script} #{full_path} >> #{Rails.root}/log/manual_upload.log`

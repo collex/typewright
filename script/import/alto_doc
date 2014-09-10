@@ -91,7 +91,7 @@ end
 work_id = File.basename( directory )
 ecco_id = Work.getEccoNumber( work_id )
 
-if ecco_id.empty?
+if ecco_id.nil?
   puts "WARNING: cannot locate document ECCO identifier"
   exit( 1 )
 end

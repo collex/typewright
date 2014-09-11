@@ -55,6 +55,10 @@ class Document < ActiveRecord::Base
       return !self.uri.match(/\/\/ecco\//i).nil?
    end
 
+   def is_eebo?
+     return !self.uri.match(/\/\/eebo\//i).nil?
+   end
+
    def img_folder()
       directory = 'uploaded'
       directory = File.join(directory, self.uri_root())
@@ -622,15 +626,15 @@ class Document < ActiveRecord::Base
        # time for a new paragraph
        if wd[ :paragraph ] != current_paragraph
          current_paragraph = wd[ :paragraph ]
-         para = new_alto_paragraph( xml_doc, current_paragraph + 1 )   # gale paragraph #'s are 0 indexed
-         line = new_alto_line( xml_doc, 1 )                            # only 1 line per paragraph because gale documents do not have line information
+         para = self.new_alto_paragraph( xml_doc, current_paragraph + 1 )   # gale paragraph #'s are 0 indexed
+         line = self.new_alto_line( xml_doc, 1 )                            # only 1 line per paragraph because gale documents do not have line information
 
          para.add_child( line )
          page.add_child( para )
        end
 
        word_num += 1
-       w = new_alto_word( xml_doc, word_num, wd )
+       w = self.new_alto_word( xml_doc, word_num, wd )
        line.add_child( w ) unless line.nil?
      }
 
@@ -749,7 +753,7 @@ class Document < ActiveRecord::Base
 
           output_item.each do |word|
              word_num += 1
-             wd = new_alto_word( doc, word_num, word )
+             wd = self.new_alto_word( doc, word_num, word )
              line.add_child( wd ) unless line.nil?
           end
        end
@@ -808,8 +812,8 @@ class Document < ActiveRecord::Base
    def new_alto_word( xml_doc, word_num, wd )
      word = Nokogiri::XML::Node.new('String', xml_doc )
      word['ID'] = "word_#{word_num}"
-     word['WIDTH'] = wd[:r] - wd[:l]
-     word['HEIGHT'] = wd[:b] - wd[:t]
+     word['WIDTH'] = wd[:r].to_i - wd[:l].to_i
+     word['HEIGHT'] = wd[:b].to_i - wd[:t].to_i
      word['HPOS'] = wd[:l]
      word['VPOS'] = wd[:t]
      word['CONTENT'] = wd[:word]
@@ -920,5 +924,69 @@ class Document < ActiveRecord::Base
      puts "XML: #{path_to_xml}"
      puts "IMG: #{path_to_images}"
 
+     original_dir = Dir.pwd
+     Dir.chdir( path_to_xml )
+     xml_list = []
+     Dir.glob("*") { |f|
+       xml_list << f if f.end_with?( ".xml" ) || f.end_with?( ".XML" )
+     }
+
+     Dir.chdir( original_dir )
+     Dir.chdir( path_to_images )
+     image_list = []
+     Dir.glob("*") { |f|
+       image_list << f if f.end_with?( ".tif" ) || f.end_with?( ".TIF" )
+     }
+
+     # make sure we have some images...
+     if image_list.length != 0
+       if image_list.length >= xml_list.length
+
+         puts "Found #{image_list.length} images, #{xml_list.length} XML files"
+
+         puts "Creating #{uri} ..."
+         document = Document.find_by_uri(uri)
+         document = Document.create!({ uri: uri }) if document.blank?
+
+         page_num = 1
+         while true
+
+           image_file = get_image_filename_for_page( image_list, page_num )
+           break if image_file.empty?
+
+           xml_file = get_xml_filename_for_page( xml_list, page_num )
+           puts "processing page #{page_num}, img #{image_file}, xml #{xml_file}"
+           page_num += 1
+         end
+
+       else
+         puts "Cannot match images with pages (too many pages) for #{uri}"
+       end
+     else
+       puts "No images available in #{path_to_images} for #{uri}"
+     end
+   end
+
+   def self.get_image_filename_for_page( image_list, page_num )
+
+     image_list.each { |name|
+        # the EEBO image names have the form
+        # nnnnn.xxx.xxx.tif where nnnnn is the page number
+        tokens = name.split( "." )
+        return name if tokens.length == 4 && tokens[ 0 ].to_i == page_num
+     }
+
+     # could not find an image for this page so there are no more pages
+     return ""
+   end
+
+   def self.get_xml_filename_for_page( xml_list, page_num )
+     xml_list.each { |name|
+       tokens = name.split( "." )
+       return name if tokens.length == 2 && tokens[ 0 ].to_i == page_num
+     }
+
+     # we could not find a file for this page, return the blank template
+     return "blablabla"
    end
 end

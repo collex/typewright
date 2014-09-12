@@ -99,25 +99,18 @@ namespace :upload do
     if tokens.size >= 2
       work_id = tokens[ tokens.size - 2 ]
 
-      citation_id = Work.getCitationId( work_id )
-      if citation_id.nil?
-        puts "WARNING: cannot locate document citation identifier for #{dirname}"
+      work_item = Work.find( work_id )
+      if work_item.nil?
+        puts "ERROR: cannot locate document work item for #{dirname}"
         return
       end
 
-      image_dir = Work.getEeboDir( work_id )
-      if image_dir.nil?
-        puts "WARNING: cannot locate document image directory for #{dirname}"
-        return
-      end
-
-      image_id = File.basename( image_dir )
-      uri = "lib://EEBO/#{sprintf( "%010d", image_id.to_i )}-#{sprintf( "%010d", citation_id)}"
+      uri = "lib://EEBO/#{sprintf( "%010d", work_item.wks_eebo_image_id.to_i )}-#{sprintf( "%010d", work_item.wks_eebo_citation_id)}"
 
       begin
-        Document.eebo_install( uri, dirname, image_dir )
+         Document.eebo_install( uri, dirname, work_item.wks_eebo_directory )
       rescue Exception => e
-        puts "#{e.to_s} [#{dirname}]"
+         puts "#{e.to_s} [#{dirname}]"
       end
     else
       puts "ERROR: not found #{dirname}"

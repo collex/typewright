@@ -34,9 +34,16 @@ class XmlReader
     return doc
   end
 
-  def self.get_page_image_filename(page_doc)
-    image_filename = page_doc.xpath('//pageInfo/imageLink')[0].content
-    return image_filename
+  def self.get_page_image_filename(page_doc,src)
+
+    # alto pages have a different structure and represent the image link differently
+    if src == :alto
+       image_filename = page_doc.xpath('//ns:filename', 'ns' => @alto_namespace )[0].content
+    else
+       image_filename = page_doc.xpath('//pageInfo/imageLink')[0].content
+    end
+
+    return image_filename.strip!
   end
 
   def self.get_num_pages(doc)

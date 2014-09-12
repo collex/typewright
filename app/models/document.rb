@@ -89,7 +89,7 @@ class Document < ActiveRecord::Base
       thumb_file = File.join(pub_path, url)
       unless FileTest.exist?(thumb_file)
          # the thumbnail file doesn't exist, create the image files
-         thumb_path = File.join(pub_path, url_path)
+         # thumb_path = File.join(pub_path, url_path)
          page_path = File.join(pub_path, img_cache_path)
          Document.generate_slices(self.get_page_image_file(page, nil, src, self.uri_root()), page_path, page_name, SLICE_WIDTH, SLICE_HEIGHT)
          Document.generate_thumbnail(self.get_page_image_file(page, nil, src, self.uri_root()), page_path, page_name, THUMBNAIL_WIDTH)
@@ -135,7 +135,7 @@ class Document < ActiveRecord::Base
 
    def get_page_image_file(page, page_doc, src, uri_root = "")
       page_doc = XmlReader.open_xml_file(get_page_xml_file(page, src, uri_root)) if page_doc.nil?
-      image_filename = XmlReader.get_page_image_filename(page_doc)
+      image_filename = XmlReader.get_page_image_filename(page_doc,src)
       image_path = File.join(self.get_image_directory(), image_filename)
       return image_path
    end
@@ -160,7 +160,7 @@ class Document < ActiveRecord::Base
    end
 
    def thumb(src)
-      return self.img_thumb(1, src)
+      return self.img_thumb( 1, src )
    end
 
    def get_num_pages(doc = nil)
@@ -212,6 +212,7 @@ class Document < ActiveRecord::Base
    end
 
    def get_doc_stats( doc_id, include_word_stats )
+
       changes = Line.num_pages_with_changes( doc_id )
       total = Line.find_all_by_document_id( doc_id )
       total_lines_revised = {}
@@ -245,7 +246,10 @@ class Document < ActiveRecord::Base
    def get_doc_info( )
       doc = XmlReader.open_xml_file(get_primary_xml_file())
 
-      img_thumb = self.thumb( :gale )   # TODO: only gale images for now
+      src = :gale              # most documents have gale OCR (some have replaced alto pages but still mainly gale)
+      src = :alto if is_eebo?  # all EEBO documents have only alto OCR
+
+      img_thumb = self.thumb( src )
       num_pages = XmlReader.get_num_pages( doc )
 
       title = XmlReader.get_full_title(doc)
@@ -258,16 +262,20 @@ class Document < ActiveRecord::Base
    end
 
    def get_page_info(page, include_word_stats, include_image_info = true )
+
+      src = :gale              # most documents have gale OCR (some have replaced alto pages but still mainly gale)
+      src = :alto if is_eebo?  # all EEBO documents have only alto OCR
+
       doc = XmlReader.open_xml_file(get_primary_xml_file())
 
       page = (page.nil?) ? 1 : page.to_i
 
-      page_doc = XmlReader.open_xml_file(get_page_xml_file(page, :gale, self.uri_root()))
+      page_doc = XmlReader.open_xml_file(get_page_xml_file(page, src, self.uri_root()))
 
       if include_image_info
-         img_size = self.img_size(page, page_doc, :gale)  # TODO: only gale images for now
-         img_thumb = self.img_thumb(page, :gale)          # TODO: only gale images for now
-         img_full = self.img_full(page, :gale)            # TODO: only gale images for now
+         img_size = self.img_size(page, page_doc, src )
+         img_thumb = self.img_thumb(page, src )
+         img_full = self.img_full(page, src )
       end
 
       num_pages = self.get_num_pages(doc)
@@ -490,6 +498,11 @@ class Document < ActiveRecord::Base
         xml.book {
            xml.bookInfo {
               xml.documentId "#{document_id}"
+           }
+           xml.citation {
+             xml.titleGroup {
+                xml.fullTitle "NOT SURE WHAT TO PUT HERE"
+             }
            }
            xml.text_ {
              @pages.each { |pg|

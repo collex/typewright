@@ -1,0 +1,32 @@
+<alto 
+xmlns:emop="http://emop.tamu.edu" xmlns="http://schema.ccs-gmbh.com/ALTO">
+  <Description>
+    <MeasurementUnit>pixel</MeasurementUnit>
+    <sourceImageInformation>
+      <filename>
+        /data/eebo/bla/bla/bla
+      </filename>
+    </sourceImageInformation>
+    <OCRProcessing>
+      <preProcessingStep></preProcessingStep>
+      <ocrProcessingStep>
+        <processingSoftware>
+          <softwareCreator>Google</softwareCreator>
+          <softwareName>Tesseract</softwareName>
+          <softwareVersion></softwareVersion>
+        </processingSoftware>
+      </ocrProcessingStep>
+      <postProcessingStep>
+        <processingSoftware>
+          <softwareCreator>
+            Illinois Informatics Institute, University of Illinois at Urbana-Champaign http://www.informatics.illinois.edu
+          </softwareCreator>
+          <softwareName>PageCorrector</softwareName>
+          <softwareVersion>N/A</softwareVersion>
+        </processingSoftware>
+      </postProcessingStep>
+    </OCRProcessing>
+  </Description>
+  <Layout>
+  </Layout>
+</alto>

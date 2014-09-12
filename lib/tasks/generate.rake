@@ -25,19 +25,22 @@ namespace :generate do
       uri = "lib://EEBO/#{sprintf( "%010d", work_item.wks_eebo_image_id.to_i )}-#{sprintf( "%010d", work_item.wks_eebo_citation_id)}"
       puts "Creating fake EEBO OCR for #{uri}"
 
+      puts "Images in #{work_item.wks_eebo_directory}"
       images = Dir.glob( "#{work_item.wks_eebo_directory}/*.tif")
       puts "Located #{images.size} pages"
       target_dir = "#{fake_eebo_root}/#{work_id}/0"
       FileUtils.mkdir_p( target_dir ) unless FileTest.directory?( target_dir )
 
-      images.each_with_index { |img_name, ix|
-        target_name = "#{target_dir}/#{ix + 1}.xml"
+      (1..images.size).each { |page_num|
+        target_name = "#{target_dir}/#{page_num}.xml"
         FileUtils.rm( target_name, { :force => true } ) if FileTest.file?( target_name )
         content = ""
         File.open( fake_page_xml, "r" ) { |f|
           content = f.read
         }
-        content.gsub!( "XX_FILENAME_XX", File.basename( img_name ) )
+
+        img_link_name = "#{sprintf( "%010d", work_item.wks_eebo_image_id.to_i )}-#{sprintf( "%010d%05d0", work_item.wks_eebo_citation_id,page_num)}.tif"
+        content.gsub!( "XX_FILENAME_XX", img_link_name )
         File.open( target_name, "w" ) { |f|
           f << content
         }

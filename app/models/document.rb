@@ -493,6 +493,8 @@ class Document < ActiveRecord::Base
         @pages << File.basename( self.get_document_page_xml_file( self.document_id, num ) )
      }
 
+     title = "NOT SURE WHAT TO PUT HERE"
+
      doc = Nokogiri::XML::Builder.new do |xml|
         xml.doc.create_internal_subset( 'book', nil, 'book.dtd' )
         xml.book {
@@ -501,7 +503,7 @@ class Document < ActiveRecord::Base
            }
            xml.citation {
              xml.titleGroup {
-                xml.fullTitle "NOT SURE WHAT TO PUT HERE"
+                xml.fullTitle "#{title}"
              }
            }
            xml.text_ {
@@ -513,6 +515,10 @@ class Document < ActiveRecord::Base
      end
      xml_file = get_primary_xml_file()
      File.open( xml_file, "w" ) { |f| f.write( doc.to_xml ) }
+
+     self.title = title
+     self.total_pages = num_pages
+
    end
 
    def import_page(page_num, image_file)
@@ -1022,6 +1028,7 @@ class Document < ActiveRecord::Base
            page_num += 1
          end
          document.generate_primary_xml( page_num-1 )
+         document.save!
        else
          puts "Cannot match images with pages (too many pages) for #{uri}"
        end

@@ -43,7 +43,7 @@ class XmlReader
        image_filename = page_doc.xpath('//pageInfo/imageLink')[0].content
     end
 
-    return image_filename.strip!
+    return image_filename.strip
   end
 
   def self.get_num_pages(doc)

@@ -35,7 +35,7 @@ class DocumentsController < ApplicationController
       result = [ doc.get_page_info(page, include_word_stats) ]
 
     else
-    # looking for info on the document as a whole
+      # looking for info on the document as a whole
       result = [ doc.get_doc_info( ) ]
     end
 

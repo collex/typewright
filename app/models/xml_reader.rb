@@ -120,7 +120,7 @@ class XmlReader
             hpos = wd.attributes['HPOS'].to_s.to_i
             vpos = wd.attributes['VPOS'].to_s.to_i
             word = wd.attributes['CONTENT'].to_s
-            page_src.push({ :l => hpos, :t => vpos, :r => hpos + width, :b => vpos + height, :word => word, :line => num_lines, :paragraph=>paragraph_num })
+            page_src.push({ :l => vpos, :t => hpos, :r => vpos + width, :b => hpos + height, :word => word, :line => num_lines, :paragraph=>paragraph_num })
           }
           num_lines += 1
        }

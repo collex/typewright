@@ -867,8 +867,8 @@ class Document < ActiveRecord::Base
      word['ID'] = "word_#{word_num}"
      word['WIDTH'] = wd[:r].to_i - wd[:l].to_i
      word['HEIGHT'] = wd[:b].to_i - wd[:t].to_i
-     word['HPOS'] = wd[:l]
-     word['VPOS'] = wd[:t]
+     word['HPOS'] = wd[:t]
+     word['VPOS'] = wd[:l]
      word['CONTENT'] = wd[:word]
      return( word )
    end

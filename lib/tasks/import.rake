@@ -1,3 +1,5 @@
+require 'erb'
+
 THUMBNAIL_WIDTH = 150
 IMAGE_WIDTH = 800
 SLICE_HEIGHT = 50
@@ -109,6 +111,7 @@ namespace :upload do
 
       begin
          Document.eebo_install( uri, dirname, work_item.wks_eebo_directory )
+         update_typewrite_status( uri )
       rescue Exception => e
          puts "#{e.to_s} [#{dirname}]"
       end
@@ -118,7 +121,21 @@ namespace :upload do
 
   end
 
-	desc "Install ECCO documents that are on the same server as typewright (file=path$path) [one 10-digit number per line]"
+  def update_typewrite_status( uri )
+
+    #catalogue_hostname = "localhost:2997"
+    catalogue_hostname = "edge-catalog.ar-c.org"
+    #catalogue_hostname = "dh-arc-production.tamu.edu"
+
+    cmd = "curl -X PUT #{catalogue_hostname}/documents/tw/enable?uri=#{ERB::Util.url_encode uri} -d ''"
+    puts cmd
+    resp = `#{cmd}`
+    if resp.strip != "OK"
+       puts "ERROR: updating typewrite status for #{uri}"
+    end
+  end
+
+  desc "Install ECCO documents that are on the same server as typewright (file=path$path) [one 10-digit number per line]"
 	task :install_ecco, [:file] => :environment do |t, args|
 		# It will search for a document in all the possible places for it, and stop when it finds it.
 

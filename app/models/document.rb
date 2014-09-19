@@ -486,14 +486,12 @@ class Document < ActiveRecord::Base
       return count
    end
 
-   def generate_primary_xml( num_pages )
+   def generate_primary_xml( title, num_pages )
 
      @pages = []
      (1..num_pages).each { | num |
         @pages << File.basename( self.get_document_page_xml_file( self.document_id, num ) )
      }
-
-     title = "NOT SURE WHAT TO PUT HERE"
 
      doc = Nokogiri::XML::Builder.new do |xml|
         xml.doc.create_internal_subset( 'book', nil, 'book.dtd' )
@@ -982,8 +980,9 @@ class Document < ActiveRecord::Base
       }
    end
 
-   def self.eebo_install( uri, path_to_xml, path_to_images )
+   def self.eebo_install( uri, title, path_to_xml, path_to_images )
      # example params: ('lib://EEBO/0011223300-0005567893',
+     # 'something very interesting',
      # '/data/shared/text-xml/IDHMC-ocr/0/0/153',
      # '/data/eebo/e0014/40093')
 
@@ -1043,7 +1042,7 @@ class Document < ActiveRecord::Base
            document.import_page( page_num, source_img )
            page_num += 1
          end
-         document.generate_primary_xml( page_num-1 )
+         document.generate_primary_xml( title, page_num - 1 )
          document.save!
        else
          puts "Cannot match images with pages (too many pages) for #{uri}"

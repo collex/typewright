@@ -108,9 +108,10 @@ namespace :upload do
       end
 
       uri = "lib://EEBO/#{sprintf( "%010d", work_item.wks_eebo_image_id.to_i )}-#{sprintf( "%010d", work_item.wks_eebo_citation_id)}"
+      title = get_title( uri )
 
       begin
-         Document.eebo_install( uri, dirname, work_item.wks_eebo_directory )
+         Document.eebo_install( uri, title, dirname, work_item.wks_eebo_directory )
          update_typewrite_status( uri )
       rescue Exception => e
          puts "#{e.to_s} [#{dirname}]"
@@ -123,16 +124,25 @@ namespace :upload do
 
   def update_typewrite_status( uri )
 
-    #catalogue_hostname = "localhost:2997"
     catalogue_hostname = "edge-catalog.ar-c.org"
     #catalogue_hostname = "dh-arc-production.tamu.edu"
+    catalogue_hostname = Rails.env.to_s == 'development' ? "localhost:2997" : catalogue_hostname
 
     cmd = "curl -X PUT #{catalogue_hostname}/documents/tw/enable?uri=#{ERB::Util.url_encode uri} -d ''"
-    puts cmd
     resp = `#{cmd}`
     if resp.strip != "OK"
        puts "ERROR: updating typewrite status for #{uri}"
     end
+  end
+
+  def get_title( uri )
+
+    catalogue_hostname = "edge-catalog.ar-c.org"
+    #catalogue_hostname = "dh-arc-production.tamu.edu"
+    catalogue_hostname = Rails.env.to_s == 'development' ? "localhost:2997" : catalogue_hostname
+
+    cmd = "curl -X GET #{catalogue_hostname}/documents/title?uri=#{ERB::Util.url_encode uri}"
+    `#{cmd}`
   end
 
   desc "Install ECCO documents that are on the same server as typewright (file=path$path) [one 10-digit number per line]"

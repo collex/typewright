@@ -616,9 +616,10 @@ class Document < ActiveRecord::Base
      # use the gale metadata to get a possible set of pages
      doc = XmlReader.open_xml_file(get_primary_xml_file())
 
-     alto = Nokogiri::XML::Node.new('alto', doc )
+     namespace = XmlReader.alto_namespace
 
      # for each page, attempt to get an alto page
+     xml_pages = []
      page_num = 0
      doc.xpath('//page').each { |page_node|
        page_num += 1
@@ -628,11 +629,26 @@ class Document < ActiveRecord::Base
        if src == :alto
           page_xml_path = get_page_xml_file(page_num, src, uri_root)
           xml_doc = XmlReader.open_xml_file(page_xml_path)
-          alto_page = alto_xml_to_alto_page( xml_doc, page_num )
-          alto.add_child( alto_page )
+          xml_pages.push( xml_doc )
        end
      }
-     return alto.to_xml
+
+     root = nil
+     peer = nil
+     xml_pages.each_with_index { |pg, ix|
+        if ix == 0
+          root = pg
+          peer = pg.xpath( '//ns:Page', 'ns' => namespace ).first
+        else
+          description = pg.xpath( '//ns:Description', 'ns' => namespace ).first
+          layout = pg.xpath( '//ns:Layout', 'ns' => namespace ).first
+          peer.add_next_sibling( description )
+          description.add_next_sibling( layout )
+          peer = layout
+        end
+     }
+
+     return root.to_xml
    end
 
    # attempt to create an ALTO page from gale page xml
@@ -645,17 +661,17 @@ class Document < ActiveRecord::Base
      return( page )
    end
 
-   # attempt to create an ALTO page from ALTO page xml
-   def alto_xml_to_alto_page( xml_doc, page_num )
-     namespace = XmlReader.alto_namespace
-     page = Nokogiri::XML::Node.new('page', xml_doc )
-     description_xml = xml_doc.xpath( '//ns:Description', 'ns' => namespace ).first
-     page_xml = xml_doc.xpath( '//ns:Page', 'ns' => namespace ).first
-     page_xml[ 'ID' ] = "page_#{page_num}"
-     page.add_child( description_xml )
-     page.add_child( page_xml )
-     return( page )
-   end
+   # attempt to create an ALTO page from ALTO page xml   NOT USED NOW
+   #def alto_xml_to_alto_page( xml_doc, page_num )
+   #  namespace = XmlReader.alto_namespace
+   #  page = Nokogiri::XML::Node.new('page', xml_doc )
+   #  description_xml = xml_doc.xpath( '//ns:Description', 'ns' => namespace ).first
+   #  page_xml = xml_doc.xpath( '//ns:Page', 'ns' => namespace ).first
+   #  page_xml[ 'ID' ] = "page_#{page_num}"
+   #  page.add_child( description_xml )
+   #  page.add_child( page_xml )
+   #  return( page )
+   #end
 
    def gale_xml_to_alto_description( xml_doc )
      description = Nokogiri::XML::Node.new('Description', xml_doc )

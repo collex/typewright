@@ -638,7 +638,7 @@ class Document < ActiveRecord::Base
      xml_pages.each_with_index { |pg, ix|
         if ix == 0
           root = pg
-          peer = pg.xpath( '//ns:Page', 'ns' => namespace ).first
+          peer = pg.xpath( '//ns:Layout', 'ns' => namespace ).first
         else
           description = pg.xpath( '//ns:Description', 'ns' => namespace ).first
           layout = pg.xpath( '//ns:Layout', 'ns' => namespace ).first

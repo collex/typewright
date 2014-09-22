@@ -994,14 +994,14 @@ class Document < ActiveRecord::Base
      Dir.chdir( path_to_xml )
      xml_list = []
      Dir.glob("*") { |f|
-       xml_list << f if f.end_with?( ".xml" ) || f.end_with?( ".XML" )
+       xml_list << f if f.end_with?( [ "_ALTO.XML", "_alto.xml", "_ALTO.xml", "_alto.XML" ] )
      }
 
      Dir.chdir( original_dir )
      Dir.chdir( path_to_images )
      image_list = []
      Dir.glob("*") { |f|
-       image_list << f if f.end_with?( ".tif" ) || f.end_with?( ".TIF" )
+       image_list << f if f.end_with?( [ ".tif", ".TIF" ] )
      }
 
      Dir.chdir( original_dir )

@@ -113,6 +113,7 @@ namespace :upload do
       begin
          Document.eebo_install( uri, title, dirname, work_item.wks_eebo_directory )
          update_typewrite_status( uri )
+         puts "Installed #{uri} successfully"
       rescue Exception => e
          puts "#{e.to_s} [#{dirname}]"
       end

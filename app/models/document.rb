@@ -135,7 +135,11 @@ class Document < ActiveRecord::Base
 
    def get_page_image_file(page, page_doc, src, uri_root = "")
       page_doc = XmlReader.open_xml_file(get_page_xml_file(page, src, uri_root)) if page_doc.nil?
+
+      # get the image file name and strip of the directory (which appears in ALTO files)
       image_filename = XmlReader.get_page_image_filename(page_doc,src)
+      image_filename = File.basename( image_filename ) unless image_filename.nil?
+
       image_path = File.join(self.get_image_directory(), image_filename)
       return image_path
    end
@@ -994,14 +998,14 @@ class Document < ActiveRecord::Base
      Dir.chdir( path_to_xml )
      xml_list = []
      Dir.glob("*") { |f|
-       xml_list << f if f.end_with?( [ "_ALTO.XML", "_alto.xml", "_ALTO.xml", "_alto.XML" ] )
+       xml_list << f if f.end_with?( "_ALTO.XML", "_alto.xml", "_ALTO.xml", "_alto.XML" )
      }
 
      Dir.chdir( original_dir )
      Dir.chdir( path_to_images )
      image_list = []
      Dir.glob("*") { |f|
-       image_list << f if f.end_with?( [ ".tif", ".TIF" ] )
+       image_list << f if f.end_with?( ".tif", ".TIF" )
      }
 
      Dir.chdir( original_dir )
@@ -1028,16 +1032,19 @@ class Document < ActiveRecord::Base
            source_img = "#{path_to_images}/#{image_file}"
            dest_img = dest_img_path
            dest_img = File.join( dest_img, sprintf( "%s%05d0.tif", document.document_id, page_num) )
-           #puts "copy #{source_img} -> #{dest_img}"
            FileUtils.rm( dest_img, { :force => true } ) if FileTest.file?( dest_img )
            FileUtils.cp(source_img, dest_img )
 
            xml_file = Document.get_xml_filename_for_page( xml_list, page_num )
            source_xml = "#{path_to_xml}/#{xml_file}"
            dest_xml = document.get_document_page_xml_file( document.document_id, page_num, :alto )
-           #puts "copy #{source_xml} -> #{dest_xml}"
+
            FileUtils.rm( dest_xml, { :force => true } ) if FileTest.file?( dest_xml )
-           FileUtils.cp(source_xml, dest_xml )
+#           FileUtils.cp(source_xml, dest_xml )
+           xml_doc = XmlReader.open_xml_file( source_xml )
+           img_block = xml_doc.xpath( '//ns:filename', 'ns' => XmlReader.alto_namespace ).first
+           img_block.content = File.basename( dest_img )
+           File.open( dest_xml, "w") { |f| f.write(xml_doc.to_xml) }
 
            document.import_page( page_num, source_img )
            page_num += 1

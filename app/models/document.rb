@@ -1036,14 +1036,24 @@ class Document < ActiveRecord::Base
            FileUtils.cp(source_img, dest_img )
 
            xml_file = Document.get_xml_filename_for_page( xml_list, page_num )
-           source_xml = "#{path_to_xml}/#{xml_file}"
-           dest_xml = document.get_document_page_xml_file( document.document_id, page_num, :alto )
 
-           FileUtils.rm( dest_xml, { :force => true } ) if FileTest.file?( dest_xml )
-#           FileUtils.cp(source_xml, dest_xml )
-           xml_doc = XmlReader.open_xml_file( source_xml )
+           # we have a file for this page, use it, else create a placeholder
+           if xml_file.blank? == false
+              source_xml = "#{path_to_xml}/#{xml_file}"
+              xml_doc = XmlReader.open_xml_file( source_xml )
+           else
+              # use the placeholder file
+              source_xml = "#{Rails.root}/data/empty_alto.xml"
+              xml_doc = XmlReader.open_xml_file( source_xml )
+              page_block = xml_doc.xpath( '//ns:Page', 'ns' => XmlReader.alto_namespace ).first
+              page_block[ "ID" ] = "page_#{page_num}"
+           end
+
            img_block = xml_doc.xpath( '//ns:filename', 'ns' => XmlReader.alto_namespace ).first
            img_block.content = File.basename( dest_img )
+
+           dest_xml = document.get_document_page_xml_file( document.document_id, page_num, :alto )
+           FileUtils.rm( dest_xml, { :force => true } ) if FileTest.file?( dest_xml )
            File.open( dest_xml, "w") { |f| f.write(xml_doc.to_xml) }
 
            document.import_page( page_num, source_img )
@@ -1078,7 +1088,7 @@ class Document < ActiveRecord::Base
        return name if tokens.length == 2 && tokens[ 0 ].to_i == page_num
      }
 
-     # we could not find a file for this page, return the blank template
-     return "blablabla"
+     # we could not find a file for this page, return empty
+     return ""
    end
 end

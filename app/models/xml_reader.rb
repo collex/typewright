@@ -114,14 +114,24 @@ class XmlReader
     page_doc.xpath('//ns:TextBlock', 'ns' => @alto_namespace ).each { |tb|
        paragraph_num += 1
        tb.xpath('ns:TextLine', 'ns' => @alto_namespace ).each { |ln|
-          ln.xpath('ns:String', 'ns' => @alto_namespace ).each { |wd|
-            width = wd.attributes['WIDTH'].to_s.to_i
-            height = wd.attributes['HEIGHT'].to_s.to_i
-            hpos = wd.attributes['HPOS'].to_s.to_i
-            vpos = wd.attributes['VPOS'].to_s.to_i
-            word = wd.attributes['CONTENT'].to_s
-            page_src.push({ :l => vpos, :t => hpos, :r => vpos + width, :b => hpos + height, :word => word, :line => num_lines, :paragraph=>paragraph_num })
-          }
+          words = ln.xpath('ns:String', 'ns' => @alto_namespace )
+          if words.empty? == false
+             words.each { |wd|
+               width = wd.attributes['WIDTH'].to_s.to_i
+               height = wd.attributes['HEIGHT'].to_s.to_i
+               hpos = wd.attributes['HPOS'].to_s.to_i
+               vpos = wd.attributes['VPOS'].to_s.to_i
+               word = wd.attributes['CONTENT'].to_s
+               page_src.push({ :l => vpos, :t => hpos, :r => vpos + width, :b => hpos + height, :word => word, :line => num_lines, :paragraph=>paragraph_num })
+             }
+          else
+            width = ln.attributes['WIDTH'].to_s.to_i
+            height = ln.attributes['HEIGHT'].to_s.to_i
+            hpos = ln.attributes['HPOS'].to_s.to_i
+            vpos = ln.attributes['VPOS'].to_s.to_i
+            page_src.push({ :l => vpos, :t => hpos, :r => vpos + width, :b => hpos + height, :word => "", :line => num_lines, :paragraph=>paragraph_num })
+          end
+
           num_lines += 1
        }
     }

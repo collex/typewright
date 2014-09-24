@@ -56,6 +56,7 @@ verbose_output = !option_flags.index('v').nil?
 test_only = !option_flags.index('t').nil?
 cmd_flags = "#{verbose_output ? '-v':''} #{test_only ? '-t':''}"
 
+# attempt to find batch directories...
 original_dir = Dir.pwd
 Dir.chdir(directory)
 dir_list = []
@@ -69,15 +70,18 @@ dir_list.each { |dir|
   max_batch = dir.to_i if dir.to_i > max_batch
 }
 
+# if we did not find a batch directory, assume it was already supplied as a parameter
 if max_batch == 0
-  puts "WARNING: no alto pages located here #{directory}"
-  exit( 1 )
+   max_batch = File.basename( directory )
+   directory = File.dirname( directory )
+else
+  # we found a batch directory, move to it
+  Dir.chdir( max_batch.to_s)
 end
 
-Dir.chdir( max_batch.to_s)
 page_list = []
 Dir.glob("*") { |f|
-  page_list << f
+  page_list << f if f.end_with?( "_ALTO.XML", "_alto.xml", "_ALTO.xml", "_alto.XML" )
 }
 
 Dir.chdir(original_dir)

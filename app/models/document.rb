@@ -287,11 +287,14 @@ class Document < ActiveRecord::Base
       title = XmlReader.get_full_title(doc)
       title_abbrev = title.length > 32 ? title.slice(0..30)+'...' : title
 
-      # figure out the best OCR source for this page
+      # figure out the best available OCR source for this page
       src = self.get_ocr_source( page )
 
+      # if we have an alto doc but we have gail corrections, use the gale source
+      src = :gale if src == :alto && corrections_exist?( self.id, page, :gale ) == true
+
       # open the source specific page xml document
-      unless src == :gale
+      if src != :gale
          page_doc = XmlReader.open_xml_file(get_page_xml_file(page, src, self.uri_root()))
       end
 
@@ -892,8 +895,8 @@ class Document < ActiveRecord::Base
    end
 
    # do any corrections exist for the specified page and document
-   def corrections_exist?( doc_id, page_num )
-     return Line.num_changes_for_page( doc_id, page_num ) != 0
+   def corrections_exist?( doc_id, page_num, src )
+     return Line.num_changes_for_page( doc_id, page_num, src ) != 0
    end
 
    # delete any corrections for the specified page, document and source

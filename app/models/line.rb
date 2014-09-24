@@ -9,8 +9,8 @@ class Line < ActiveRecord::Base
    end
 
    # get the number of corrections for the specified page in the specified document
-   def self.num_changes_for_page( doc_id, page_num )
-      lines = Line.where("document_id = ? AND page = ?", doc_id, page_num )
+   def self.num_changes_for_page( doc_id, page_num, src )
+      lines = Line.where("document_id = ? AND page = ? AND src = ?", doc_id, page_num, src.to_s )
       return lines.length
    end
 

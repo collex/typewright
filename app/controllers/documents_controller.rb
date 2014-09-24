@@ -175,11 +175,10 @@ class DocumentsController < ApplicationController
     else
       page_num = params[:page].to_i
       xml_file = params[:xml_file]
-      #src = params[:src]  # (optional src param)
       @document = Document.find(id)
       @document.import_page_ocr(page_num, xml_file.tempfile )
       @id = @document.id
-      @edits = @document.corrections_exist?( @document.id, page_num )
+      @edits = @document.corrections_exist?( @document.id, page_num, :gale )  # assume we are asking for gale corrections
       @page_num = page_num + 1
     end
   end

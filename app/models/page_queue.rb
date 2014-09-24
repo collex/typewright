@@ -35,8 +35,10 @@ class PageQueue < ActiveRecord::Base
   def self.get_pages( limit )
 
     pages = []
-    sql = "select distinct j.page_id, w.wks_ecco_number from job_queue j, works w, page_results p where j.job_status = #{STATUS_READY_FOR_IMPORT}" \
-    + " and j.work_id = w.wks_work_id and w.wks_ecco_number is not NULL and p.juxta_change_index >= #{CONFIDENCE_THRESHOLD} and j.page_id = p.page_id"
+    #sql = "select distinct j.page_id, w.wks_ecco_number from job_queue j, works w, page_results p where j.job_status = #{STATUS_READY_FOR_IMPORT}" \
+    #+ " and j.work_id = w.wks_work_id and w.wks_ecco_number is not NULL and p.juxta_change_index >= #{CONFIDENCE_THRESHOLD} and j.page_id = p.page_id"
+    sql = "select distinct j.page_id, w.wks_ecco_number from job_queue j, works w, where j.job_status = #{STATUS_READY_FOR_IMPORT}" \
+    + " and j.work_id = w.wks_work_id and w.wks_ecco_number is not NULL"
     sql += " limit #{limit}" unless limit.nil? || limit == 0
     results = PageQueue.find_by_sql( sql )
 
@@ -52,7 +54,8 @@ class PageQueue < ActiveRecord::Base
   private
 
   def self.get_ocr_file( page_id )
-    sql = "select id, ocr_xml_path from page_results where page_id=#{page_id} and juxta_change_index >= #{CONFIDENCE_THRESHOLD} order by 1 desc limit 1"
+    #sql = "select id, ocr_xml_path from page_results where page_id=#{page_id} and juxta_change_index >= #{CONFIDENCE_THRESHOLD} order by 1 desc limit 1"
+    sql = "select id, ocr_xml_path from page_results where page_id=#{page_id} order by 1 desc limit 1"
     results = PageQueue.find_by_sql( sql )
     return results.first.ocr_xml_path
   end

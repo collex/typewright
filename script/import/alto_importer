@@ -73,6 +73,11 @@ pages.each { |page|
   ecco_id = page[:ecco_number]
   xml_file = page[:xml_file]
 
+  # convert the names... not really sure why we have to do this but Matt said so
+  tokens = File.basename( xml_file ).split( "." )
+  new_name = "#{tokens[ 0 ]}_ALTO.#{tokens[ 1 ]}"
+  xml_file = File.join( File.dirname( xml_file ), new_name )
+
   cmd = "script/import/alto_page #{cmd_flags} #{server} #{xml_file} #{ecco_id}"
   puts "" if verbose_output
   puts "" if verbose_output

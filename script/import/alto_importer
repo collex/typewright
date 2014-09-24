@@ -69,7 +69,7 @@ end
 
 pages.each { |page|
 
-  id = page[:page_id]
+  id = page[:id]
   ecco_id = page[:ecco_number]
   xml_file = page[:xml_file]
 
@@ -84,9 +84,12 @@ pages.each { |page|
   puts cmd
   PageQueue.mark_importing( id ) unless test_only
   result = `#{cmd}`
-  status = $?
-  PageQueue.mark_imported( id ) unless test_only || status != 0
-  PageQueue.mark_errored( id ) unless test_only || status == 0
+  ok = $?.success?
+
+  if test_only == false
+    PageQueue.mark_imported( id ) if ok == true
+    PageQueue.mark_errored( id ) if ok == false
+  end
 
   puts result
 }

@@ -32,7 +32,7 @@ namespace :upload do
 	end
 
   desc "Import typewright files (ALTO format) from eMOP (limit=n)"
-  task :alto_import, :limit do |t, args|
+  task :alto_import, [:limit] => :environment do |t, args|
 
     limit = args[:limit]
     if limit == nil
@@ -42,21 +42,39 @@ namespace :upload do
     end
   end
 
-  desc "Upload typewright files (ALTO format) to the server (id=0123456789-0123456789-...)"
-  task :alto_document, :id do |t, args|
-  # It will search for a document in all the possible places for it, and stop when it finds it.
+  desc "Upload typewright documents (ALTO format) to the server (doc=path$path...)"
+  task :alto_doc, [:doc] => :environment do |t, args|
+  # Upload all pages in each of the specified documents (directories)
 
-    ids = args[:id] #ENV['id']
-    if ids == nil
-      puts "Usage: call with id=0123456789-0123456789-..."
+    docs = args[:doc]
+    if docs == nil
+      puts "Usage: call with doc=path$path..."
     else
-      ids = ids.split('-')
-      ids.each {|id|
-        full_path = find_dir(id)
-        if full_path.present?
-          upload_alto_doc(full_path)
+      docs = docs.split('$')
+      docs.each {|doc|
+        if Dir.exist?( doc )
+          upload_alto_doc( doc )
         else
-          puts "NOT FOUND: #{id}"
+          puts "NOT FOUND: #{doc}"
+        end
+      }
+    end
+  end
+
+  desc "Upload typewright pages (ALTO format) to the server (page=path$path...)"
+  task :alto_page, [:page] => :environment do |t, args|
+    # Upload all pages specified
+
+    pages = args[:page]
+    if pages == nil
+      puts "Usage: call with page=path$path..."
+    else
+      pages = pages.split('$')
+      pages.each {|page|
+        if File.exist?( page )
+          upload_alto_page( page )
+        else
+          puts "NOT FOUND: #{page}"
         end
       }
     end
@@ -218,29 +236,52 @@ namespace :upload do
 		}
 	end
 
-  desc "Upload typewright files (ALTO format) to the server from a set of files (file=path$path) [one 10-digit number per line]"
-  task :alto_from_file, :file do |t, args|
-    # It will search for a document in all the possible places for it, and stop when it finds it.
+  desc "Upload typewright documents (ALTO format) to the server from a list of directories (file=path) [one document directory per line]"
+  task :alto_doc_from_file, [:file] => :environment do |t, args|
+    # upload all alto documents (directories) specified in a file (one document directory per line)
 
-    fnames = args[:file]
-    fnames = fnames.split("$")
-    puts fnames.map { |str| ">>> #{str} <<<"}
-    fnames.each { |fname|
-      ids = File.open(fname, 'r') { |f| f.read }
-      ids = ids.split("\n")
-      if ids == nil
-        puts "Usage: call with a filename. The file contains one 10-digit number per line"
+    param = args[:file]
+    if File.exists?( param )
+       docs = File.open( param, 'r') { |f| f.read }
+       docs = docs.split("\n")
+       if docs == nil
+         puts "Usage: call with a filename. The file contains one document directory per line"
+       else
+         docs.each { |doc|
+         if Dir.exists?( doc )
+            upload_alto_doc( doc )
+         else
+            puts "NOT FOUND: #{doc}"
+         end
+        }
+       end
+    else
+      puts "NOT FOUND: #{param}"
+    end
+  end
+
+  desc "Upload typewright pages (ALTO format) to the server from a list of files (file=path) [one file per line]"
+  task :alto_page_from_file, [:file] => :environment do |t, args|
+    # upload all alto pages (files) specified in a file (one file per line)
+
+    param = args[:file]
+    if File.exists?( param )
+      files = File.open( param, 'r') { |f| f.read }
+      files = files.split("\n")
+      if files == nil
+        puts "Usage: call with a filename. The file contains one filename per line"
       else
-        ids.each { |id|
-          full_path = find_dir(id)
-          if full_path.present?
-            upload_alto_doc(full_path)
+        files.each { |file|
+          if File.exists?( file )
+            upload_alto_page( file )
           else
-            puts "NOT FOUND: #{id}"
+            puts "NOT FOUND: #{file}"
           end
         }
       end
-    }
+    else
+      puts "NOT FOUND: #{param}"
+    end
   end
 
 	desc "Create scripts to run on Brazos for all documents specified in the set of files (file=path$path) [one 10-digit number per line]"
@@ -551,15 +592,33 @@ def upload_gale(full_path)
 	`#{script} #{full_path} >> #{Rails.root}/log/manual_upload.log`
 end
 
-def upload_alto_doc(full_path)
-  script = "./script/import/alto_doc -v -f typewright.sl.performantsoftware.com"
+def upload_alto_doc( dir )
+  server = "typewright.sl.performantsoftware.com"
+  server = Rails.env.to_s == 'development' ? "localhost:2998" : server
 
-  puts "uploading: #{full_path}..."
-  `#{script} #{full_path} >> #{Rails.root}/log/manual_upload.log`
+  script = "rails runner script/import/alto_doc -- #{server}"
+
+  puts "uploading: #{dir}..."
+  #`#{script} #{dir} >> #{Rails.root}/log/manual_upload.log`
+  `#{script} #{dir}`
+end
+
+def upload_alto_page( file )
+  server = "typewright.sl.performantsoftware.com"
+  server = Rails.env.to_s == 'development' ? "localhost:2998" : server
+
+  script = "rails runner script/import/alto_page -- #{server}"
+
+  puts "uploading: #{file}..."
+  #`#{script} #{file} >> #{Rails.root}/log/manual_upload.log`
+  `#{script} #{file}`
 end
 
 def upload_eebo_doc(full_path)
-  script = "./script/import/eebo_doc -v -f typewright.sl.performantsoftware.com"
+  server = "typewright.sl.performantsoftware.com"
+  server = Rails.env.to_s == 'development' ? "localhost:2998" : server
+
+  script = "rails runner script/import/eebo_doc -- -v -f #{server}"
 
   puts "uploading: #{full_path}..."
   `#{script} #{full_path} >> #{Rails.root}/log/manual_upload.log`

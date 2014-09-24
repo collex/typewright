@@ -52,7 +52,7 @@ class PageQueue < ActiveRecord::Base
   private
 
   def self.get_ocr_file( page_id )
-    sql = "select max( juxta_change_index ), ocr_xml_path from page_results where page_id=#{page_id}"
+    sql = "select id, ocr_xml_path from page_results where page_id=#{page_id} and juxta_change_index >= #{CONFIDENCE_THRESHOLD} order by 1 desc limit 1"
     results = PageQueue.find_by_sql( sql )
     return results.first.ocr_xml_path
   end

@@ -45,6 +45,9 @@ paths:
   imagemagick: '/opt/local/bin'
   xml: '~/typewright_xml'
 
+service_settings:
+  service_url: 'typewright.tamu.edu'
+
 ##########################
 ### AUTHENTICATION
 ##########################

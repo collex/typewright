@@ -586,46 +586,35 @@ task :import do
 end
 
 def upload_gale(full_path)
-	script = "./script/import/gale_xml -v -f typewright.sl.performantsoftware.com"
+	script = "./script/import/gale_xml -v -f #{get_service_url}"
 
 	puts "uploading: #{full_path}..."
 	`#{script} #{full_path} >> #{Rails.root}/log/manual_upload.log`
 end
 
 def upload_alto_doc( dir )
-  server = "typewright.sl.performantsoftware.com"
-  server = Rails.env.to_s == 'development' ? "localhost:2998" : server
-
-  script = "rails runner script/import/alto_doc -- #{server}"
+  script = "rails runner script/import/alto_doc -- -v #{get_service_url}"
 
   puts "uploading: #{dir}..."
-  #`#{script} #{dir} >> #{Rails.root}/log/manual_upload.log`
-  `#{script} #{dir}`
+  `#{script} #{dir} >> #{Rails.root}/log/manual_upload.log`
 end
 
 def upload_alto_page( file )
-  server = "typewright.sl.performantsoftware.com"
-  server = Rails.env.to_s == 'development' ? "localhost:2998" : server
-
-  script = "rails runner script/import/alto_page -- #{server}"
+  script = "rails runner script/import/alto_page -- -v #{get_service_url}"
 
   puts "uploading: #{file}..."
-  #`#{script} #{file} >> #{Rails.root}/log/manual_upload.log`
-  `#{script} #{file}`
+  `#{script} #{file} >> #{Rails.root}/log/manual_upload.log`
 end
 
 def upload_eebo_doc(full_path)
-  server = "typewright.sl.performantsoftware.com"
-  server = Rails.env.to_s == 'development' ? "localhost:2998" : server
-
-  script = "rails runner script/import/eebo_doc -- -v -f #{server}"
+  script = "rails runner script/import/eebo_doc -- -v -f #{get_service_url}"
 
   puts "uploading: #{full_path}..."
   `#{script} #{full_path} >> #{Rails.root}/log/manual_upload.log`
 end
 
 def import_alto(limit)
-  script = "rails runner script/import/alto_importer -- -v typewright.sl.performantsoftware.com #{limit}"
+  script = "rails runner script/import/alto_importer -- -v #{get_service_url} #{limit}"
 
   puts "importing up to #{limit} page(s)..."
   `#{script} >> #{Rails.root}/log/automated_upload.log`
@@ -646,9 +635,9 @@ def up_one_folder(full_path)
 end
 
 def create_remote_script(full_path, substitutions, flags='')
-	script = "./script/import/gale_xml -f -c #{flags} typewright.sl.performantsoftware.com"
+	script = "./script/import/gale_xml -f -c #{flags} #{get_service_url}"
 	ret = `#{script} #{full_path}`
-	#script = "./gale_xml -v -f typewright.sl.performantsoftware.com"
+	#script = "./gale_xml -v -f #{get_service_url}"
 	#ret = "#{script} #{full_path} >> log/manual_upload.log"
 	ret = ret.gsub("#{base_path}ecco3/", substitutions[0])
 	ret = ret.gsub("#{base_path}ecco1/", substitutions[0])
@@ -806,5 +795,15 @@ def write_cache(xml_fname, prefix, words)
 		YAML.dump( words, out )
 	end
 end
+
+def get_service_url
+  config_file = File.join("config", "site.yml")
+  if File.exists?(config_file)
+    site_specific = YAML.load_file(config_file)
+    return site_specific['service_settings']['service_url']
+  end
+  return "unknown"
+end
+
 
 

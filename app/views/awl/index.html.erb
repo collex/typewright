@@ -1,0 +1,18 @@
+<% if @use_debug == 1 -%>
+   <p>ip: <%= @ip %></p>
+   <p>token: <%= @token %></p>
+       <p>key: <%= @sk %></p>
+       <p>iv: <%= @iv %></p>
+   <p>encrypted: <%= @step1 %></p>
+   <p>base64: <%= @step2 %></p>
+   <p>click to proceed: <a href="<%= @target_url %>"><%= @target_url %></a></p>
+   <p><a href="javascript:history.go(-1);">Back</a></p>
+<% end -%>
+
+<object data="<%= @target_url %>" type="text/html" style="width:100%; height:100%; min-height:600px; margin:0px; padding: 0px;">
+  <p style="background: MistyRose; border: DeepPink 1px solid; font: 0.8em Verdana; color: darkred; padding: 10px; ">
+  <span style="text-decoration: underline; font-weight: bold;">Notice</span><br/>
+  If you are seeing this, there is an error!</p>
+</object>
+
+<!--<a href="<%= @target_url %>">CLICK</a></p>-->

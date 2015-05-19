@@ -30,7 +30,7 @@ namespace :upload do
 			}
 		end
 	end
-
+   
   desc "Import typewright files (ALTO format) from eMOP (limit=n)"
   task :alto_import, [:limit] => :environment do |t, args|
 
@@ -143,8 +143,7 @@ namespace :upload do
 
   def update_typewrite_status( uri )
 
-    catalogue_hostname = "edge-catalog.ar-c.org"
-    #catalogue_hostname = "dh-arc-production.tamu.edu"
+    catalogue_hostname = SITE_SPECIFIC['catalog_host']
     catalogue_hostname = Rails.env.to_s == 'development' ? "localhost:2997" : catalogue_hostname
 
     cmd = "curl -X PUT #{catalogue_hostname}/documents/tw/enable?uri=#{ERB::Util.url_encode uri} -d ''"
@@ -156,8 +155,7 @@ namespace :upload do
 
   def get_title( uri )
 
-    catalogue_hostname = "edge-catalog.ar-c.org"
-    #catalogue_hostname = "dh-arc-production.tamu.edu"
+    catalogue_hostname = SITE_SPECIFIC['catalog_host']
     catalogue_hostname = Rails.env.to_s == 'development' ? "localhost:2997" : catalogue_hostname
 
     cmd = "curl -X GET #{catalogue_hostname}/documents/title?uri=#{ERB::Util.url_encode uri}"

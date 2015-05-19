@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PcGts xmlns="http://schema.primaresearch.org/PAGE/gts/pagecontent/2010-03-19" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schema.primaresearch.org/PAGE/gts/pagecontent/2010-03-19 http://schema.primaresearch.org/PAGE/gts/pagecontent/2010-03-19/pagecontent.xsd" pcGtsId="cbil1702_116_1_005">
+  <Metadata>
+    <Creator></Creator>
+    <Created></Created>
+    <LastChange></LastChange>
+  </Metadata>
+  <Page imageFilename="" imageWidth="4800" imageHeight="7707">
+      <ImageRegion id="r1">
+      <Coords>
+        <Point x="2234" y="4328" />
+        <Point x="2234" y="4421" />
+        <Point x="2110" y="4421" />
+        <Point x="2110" y="4328" />
+      </Coords>
+    </ImageRegion>
+  </Page>
+</PcGts>

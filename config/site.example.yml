@@ -9,6 +9,8 @@
 ### EMAIL
 ##########################
 
+catalog_host: edge-catalog.ar-c.org
+
 # For getting automatic emails when an error occurs
 # exception_recipients: List of all emails that should receive the notification
 # sender_address: Who the notification email will be from
@@ -62,7 +64,9 @@ awl:
 ##########################
 
 authentication:
-  private_token: 'super-secret'
+    private_token: 'super-secret'
+    emop_token: token
+    emop_root_url: http://emop-dashboard.tamu.edu/api
 
 ##########################
 ### CAPISTRANO

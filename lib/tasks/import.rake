@@ -31,54 +31,50 @@ namespace :upload do
 		end
 	end
    
-  desc "Import typewright files (ALTO format) from eMOP (limit=n)"
-  task :alto_import, [:limit] => :environment do |t, args|
+   desc "Import typewright files (ALTO format) from eMOP (limit=n)"
+   task :alto_import, [:limit] => :environment do |t, args|
 
-    limit = args[:limit]
-    if limit == nil
-      puts "Usage: call with limit=n"
-    else
-      import_alto(limit)
-    end
-  end
+      limit = args[:limit]
+      if limit == nil
+         puts "Usage: call with limit=n"
+      else
+         import_alto(limit)
+      end
+   end
 
-  desc "Upload typewright documents (ALTO format) to the server (doc=path$path...)"
-  task :alto_doc, [:doc] => :environment do |t, args|
-  # Upload all pages in each of the specified documents (directories)
+   desc "Upload typewright documents (ALTO format) to the server (doc=path$path...)"
+   task :alto_doc, [:doc] => :environment do |t, args|
+      # Upload all pages in each of the specified documents (directories)
 
-    docs = args[:doc]
-    if docs == nil
-      puts "Usage: call with doc=path$path..."
-    else
-      docs = docs.split('$')
-      docs.each {|doc|
-        if Dir.exist?( doc )
-          upload_alto_doc( doc )
-        else
-          puts "NOT FOUND: #{doc}"
-        end
-      }
-    end
-  end
+      docs = args[:doc]
+      if docs == nil
+         puts "Usage: call with doc=path$path..."
+      else
+         docs = docs.split('$')
+         docs.each do |doc|
+            if Dir.exist?( doc )
+               upload_alto_doc( doc )
+            else
+               puts "NOT FOUND: #{doc}"
+            end
+         end
+      end
+   end
 
-  desc "Upload typewright pages (ALTO format) to the server (page=path$path...)"
-  task :alto_page, [:page] => :environment do |t, args|
-    # Upload all pages specified
+   desc "Upload typewright pages (ALTO format) to the server (page=path$path...)"
+   task :alto_page, [:page] => :environment do 
+      # Upload all pages specified
 
-    pages = args[:page]
-    if pages == nil
-      puts "Usage: call with page=path$path..."
-    else
-      pages = pages.split('$')
-      pages.each {|page|
-        if File.exist?( page )
-          upload_alto_page( page )
-        else
-          puts "NOT FOUND: #{page}"
-        end
-      }
-    end
-  end
+      pages = ENV['page']
+      if pages == nil
+         puts "Usage: call with page=path$path..."
+      else
+         pages = pages.split('$')
+         pages.each do |page|
+            upload_alto_page( page )
+         end
+      end
+   end
 
   desc "Install EEBO documents that are on the same server as typewright (file=path$path) [one directory per line]"
   task :eebo_from_file, [:file] => :environment do |t, args|
@@ -590,32 +586,38 @@ def upload_gale(full_path)
 	`#{script} #{full_path} >> #{Rails.root}/log/manual_upload.log`
 end
 
+#######################################
+## ALTO Import scripts....
+##
+def import_alto(limit)
+  script = "bundle exec script/import/alto_importer.rb -- -v #{get_service_url} #{limit}"
+
+  puts "importing up to #{limit} page(s)..."
+  system("#{script} >> #{Rails.root}/log/automated_upload.log")
+end
+
 def upload_alto_doc( dir )
-  script = "rails runner script/import/alto_doc -- -v #{get_service_url}"
+  script = "bundle exec script/import/alto_doc.rb -- -v #{get_service_url} #{dir}"
 
   puts "uploading: #{dir}..."
-  `#{script} #{dir} >> #{Rails.root}/log/manual_upload.log`
+  system("#{script} >> #{Rails.root}/log/manual_upload.log")
 end
 
 def upload_alto_page( file )
-  script = "rails runner script/import/alto_page -- -v #{get_service_url}"
-
-  puts "uploading: #{file}..."
-  `#{script} #{file} >> #{Rails.root}/log/manual_upload.log`
+   script = "rails runner script/import/alto_page.rb -- -v #{get_service_url} #{file}"
+   puts "uploading: #{file}..."
+   system("#{script}")# >> #{Rails.root}/log/manual_upload.log")
+   
 end
+##
+## END ALTO
+####################################### 
 
 def upload_eebo_doc(full_path)
   script = "rails runner script/import/eebo_doc -- -v -f #{get_service_url}"
 
   puts "uploading: #{full_path}..."
   `#{script} #{full_path} >> #{Rails.root}/log/manual_upload.log`
-end
-
-def import_alto(limit)
-  script = "rails runner script/import/alto_importer -- -v #{get_service_url} #{limit}"
-
-  puts "importing up to #{limit} page(s)..."
-  `#{script} >> #{Rails.root}/log/automated_upload.log`
 end
 
 def base_path()

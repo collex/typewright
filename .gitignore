@@ -19,3 +19,5 @@
 .rbenv-version
 .ruby-version
 .ruby-gemset
+/log/
+/tmp/

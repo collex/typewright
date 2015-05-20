@@ -19,8 +19,7 @@ class DocumentsController < ApplicationController
       # call that happens when the page is opened for editing.
       doc = find_doc(params)
       page = params[:page]
-      #src = params[:src].to_sym unless params[:src].nil?
-      #src = :gale if src.nil?
+
       include_word_stats = params[:wordstats].nil? ? false : true
       if doc.nil?
          # nothing found
@@ -40,13 +39,15 @@ class DocumentsController < ApplicationController
       end
 
       # Can no longer send symbols through the web service
-      result.each { |res|
+      result.each do |res|
          if res[:lines].present?
-            res[:lines].each { |line|
+            res[:lines].each do |line|
                line[:src] = line[:src].to_s if line[:src].present?
-            }
+            end
          end
-      }
+      end
+      
+      logger.info("RESULT: #{result}")
 
       respond_to do |format|
          format.xml  { render :xml => result }

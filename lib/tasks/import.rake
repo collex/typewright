@@ -43,26 +43,22 @@ namespace :upload do
    end
 
    desc "Upload typewright documents (ALTO format) to the server (doc=path$path...)"
-   task :alto_doc, [:doc] => :environment do |t, args|
+   task :alto_doc, [:doc] => :environment do
       # Upload all pages in each of the specified documents (directories)
 
-      docs = args[:doc]
+      docs = ENV['doc']
       if docs == nil
          puts "Usage: call with doc=path$path..."
       else
          docs = docs.split('$')
          docs.each do |doc|
-            if Dir.exist?( doc )
-               upload_alto_doc( doc )
-            else
-               puts "NOT FOUND: #{doc}"
-            end
+            upload_alto_doc( doc )
          end
       end
    end
 
    desc "Upload typewright pages (ALTO format) to the server (page=path$path...)"
-   task :alto_page, [:page] => :environment do 
+   task :alto_page, [:page] => :environment do
       # Upload all pages specified
 
       pages = ENV['page']
@@ -590,23 +586,22 @@ end
 ## ALTO Import scripts....
 ##
 def import_alto(limit)
-  script = "bundle exec script/import/alto_importer.rb -- -v #{get_service_url} #{limit}"
+  script = "rails runner script/import/alto_importer.rb -- -v #{get_service_url} #{limit}"
 
   puts "importing up to #{limit} page(s)..."
   system("#{script} >> #{Rails.root}/log/automated_upload.log")
 end
 
 def upload_alto_doc( dir )
-  script = "bundle exec script/import/alto_doc.rb -- -v #{get_service_url} #{dir}"
-
+  script = "rails runner script/import/alto_doc.rb -- -v #{get_service_url} #{dir}"
   puts "uploading: #{dir}..."
-  system("#{script} >> #{Rails.root}/log/manual_upload.log")
+  system("#{script}")# >> #{Rails.root}/log/manual_upload.log")
 end
 
 def upload_alto_page( file )
    script = "rails runner script/import/alto_page.rb -- -v #{get_service_url} #{file}"
    puts "uploading: #{file}..."
-   system("#{script}")# >> #{Rails.root}/log/manual_upload.log")
+   system("#{script} >> #{Rails.root}/log/manual_upload.log")
    
 end
 ##

@@ -79,10 +79,9 @@ end
 # process each page we have identified
 page_list.sort!
 page_list.each do |page|
-   xml_file = File.join("#{max_batch}", "#{page}")
-   cmd = "script/import/alto_page #{cmd_flags} #{server} #{File.join(directory,xml_file)}"
-   puts "" 
-   puts cmd
+   xml_file = File.join(directory,page)
+   cmd = "script/import/alto_page.rb #{cmd_flags} #{server} #{xml_file}"
+   puts "========== #{cmd}"
    result = `#{cmd}`
    puts result
 end

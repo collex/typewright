@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 require "#{Dir.pwd}/app/models/xml_reader.rb"
+require "rest_client"
+require "json"
 
 # upload xml file for a book page
 

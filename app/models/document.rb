@@ -99,13 +99,16 @@ class Document < ActiveRecord::Base
 
    # get the prefered OCR source
    def get_ocr_source( page )
-
-     SUPPORTED_OCR_SOURCES.each { |ocr_src|
-       if File.exist?(get_page_xml_file(page, ocr_src, self.uri_root()))
-         return ocr_src.to_sym
-       end
-     }
-     nil
+      logger.info("GET OCR SOURCE......")
+      SUPPORTED_OCR_SOURCES.each do |ocr_src|
+         xml_file = get_page_xml_file(page, ocr_src, self.uri_root())
+         logger.info "SRC: #{ocr_src}, file #{xml_file}"
+         if File.exist?(xml_file)
+            logger.info("USE #{ocr_src}")
+            return ocr_src.to_sym
+         end
+      end
+      nil
    end
 
    def self.generate_slices(master_image, dst_path, file_name, width, height)

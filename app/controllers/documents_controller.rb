@@ -12,46 +12,46 @@ class DocumentsController < ApplicationController
     return doc
   end
 
-  # GET /documents.xml
-  def index
-	  # Called by Typewright::Document#get_page, and other places.
-	  # When it is called by get_page, it includes a user_id. That is the
-	  # call that happens when the page is opened for editing.
-    doc = find_doc(params)
-    page = params[:page]
-    #src = params[:src].to_sym unless params[:src].nil?
-    #src = :gale if src.nil?
-    include_word_stats = params[:wordstats].nil? ? false : true
-    if doc.nil?
-    # nothing found
-    result = []
+   # GET /documents.xml
+   def index
+      # Called by Typewright::Document#get_page, and other places.
+      # When it is called by get_page, it includes a user_id. That is the
+      # call that happens when the page is opened for editing.
+      doc = find_doc(params)
+      page = params[:page]
+      #src = params[:src].to_sym unless params[:src].nil?
+      #src = :gale if src.nil?
+      include_word_stats = params[:wordstats].nil? ? false : true
+      if doc.nil?
+         # nothing found
+         result = []
 
-    elsif params[:stats] == 'true'
-      # looking for document stats
-      result = [ doc.get_doc_stats(doc.id, include_word_stats ) ]
+      elsif params[:stats] == 'true'
+         # looking for document stats
+         result = [ doc.get_doc_stats(doc.id, include_word_stats ) ]
 
-    elsif !page.nil?
-      # looking for info on a particular page of the document
-      result = [ doc.get_page_info(page, include_word_stats) ]
+      elsif !page.nil?
+         # looking for info on a particular page of the document
+         result = [ doc.get_page_info(page, include_word_stats) ]
 
-    else
-      # looking for info on the document as a whole
-      result = [ doc.get_doc_info( ) ]
-    end
-
-    # Can no longer send symbols through the web service
-    result.each { |res|
-      if res[:lines].present?
-        res[:lines].each { |line|
-          line[:src] = line[:src].to_s if line[:src].present?
-        }
+      else
+         # looking for info on the document as a whole
+         result = [ doc.get_doc_info( ) ]
       end
-    }
 
-    respond_to do |format|
-      format.xml  { render :xml => result }
-    end
-  end
+      # Can no longer send symbols through the web service
+      result.each { |res|
+         if res[:lines].present?
+            res[:lines].each { |line|
+               line[:src] = line[:src].to_s if line[:src].present?
+            }
+         end
+      }
+
+      respond_to do |format|
+         format.xml  { render :xml => result }
+      end
+   end
 
 	def unload
 		token = params[:token]

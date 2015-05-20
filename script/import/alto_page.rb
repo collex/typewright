@@ -169,20 +169,19 @@ page_num = page_num_str[0..-9].to_i unless page_num_str.nil?
 
 # upload the xml file
 curl_cmd = "-F \"xml_file=@#{xml_file};type=text/xml\" -F \"page=#{page_num}\" -X POST #{server}/documents/#{doc_id}/update_page_ocr.xml"
-puts "UPLOAD CURL #{curl_cmd}"
-#if output_curl_only
-#	ret_value.push("curl #{curl_cmd} 2>&1")
-#else
-#	raw_response = do_curl_command(curl_cmd, verbose_output, test_only)
-#end
-#
-#response = parse_upload_response(raw_response) unless test_only || output_curl_only
-#puts response if verbose_output
-#puts "#{xml_file} #{File.new(xml_file).size} (DONE)" if !output_curl_only
-#puts "WARNING: user edits exist for this page" if response[:edits] == true
-#
-#if output_curl_only
-#	puts ret_value.map { |line| "#{line}\n"}
-#end
+if output_curl_only
+	ret_value.push("curl #{curl_cmd} 2>&1")
+else
+	raw_response = do_curl_command(curl_cmd, verbose_output, test_only)
+end
+
+response = parse_upload_response(raw_response) unless test_only || output_curl_only
+puts response if verbose_output
+puts "#{xml_file} #{File.new(xml_file).size} (DONE)" if !output_curl_only
+puts "WARNING: user edits exist for this page" if response[:edits] == true
+
+if output_curl_only
+	puts ret_value.map { |line| "#{line}\n"}
+end
 
 exit 0

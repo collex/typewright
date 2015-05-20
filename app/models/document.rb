@@ -533,6 +533,7 @@ class Document < ActiveRecord::Base
    def import_page_ocr(page_num, xml_file, uri_root = "")
       xml_doc = XmlReader.open_xml_file(xml_file)
       src = XmlReader.detect_ocr_source(xml_doc)
+      logger.info "DETECTED SOURCE #{src}"
       page_xml_path = get_page_xml_file(page_num, src, uri_root)
       File.open(page_xml_path, "w") { |f| f.write(xml_doc.to_xml) }
    end

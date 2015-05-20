@@ -173,6 +173,7 @@ class DocumentsController < ApplicationController
       @page_num = 1
       @id = nil
     else
+       logger.info "IN update_page_ocr"
       page_num = params[:page].to_i
       xml_file = params[:xml_file]
       @document = Document.find(id)

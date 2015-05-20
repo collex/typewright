@@ -226,29 +226,25 @@ namespace :upload do
 		}
 	end
 
-  desc "Upload typewright documents (ALTO format) to the server from a list of directories (file=path) [one document directory per line]"
-  task :alto_doc_from_file, [:file] => :environment do |t, args|
-    # upload all alto documents (directories) specified in a file (one document directory per line)
+   desc "Upload typewright documents (ALTO format) to the server from a list of directories (file=path) [one document directory per line]"
+   task :alto_doc_from_file, [:file] => :environment do
+      # upload all alto documents (directories) specified in a file (one document directory per line)
 
-    param = args[:file]
-    if File.exists?( param )
-       docs = File.open( param, 'r') { |f| f.read }
-       docs = docs.split("\n")
-       if docs == nil
-         puts "Usage: call with a filename. The file contains one document directory per line"
-       else
-         docs.each { |doc|
-         if Dir.exists?( doc )
-            upload_alto_doc( doc )
+      param = ENV['file']
+      if File.exists?( param )
+         docs = File.open( param, 'r') { |f| f.read }
+         docs = docs.split("\n")
+         if docs == nil
+            puts "Usage: call with a filename. The file contains one document directory per line"
          else
-            puts "NOT FOUND: #{doc}"
+            docs.each do |doc|
+               upload_alto_doc( doc )
+            end
          end
-        }
-       end
-    else
-      puts "NOT FOUND: #{param}"
-    end
-  end
+      else
+         puts "NOT FOUND: #{param}"
+      end
+   end
 
   desc "Upload typewright pages (ALTO format) to the server from a list of files (file=path) [one file per line]"
   task :alto_page_from_file, [:file] => :environment do |t, args|

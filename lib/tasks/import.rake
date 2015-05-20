@@ -246,29 +246,25 @@ namespace :upload do
       end
    end
 
-  desc "Upload typewright pages (ALTO format) to the server from a list of files (file=path) [one file per line]"
-  task :alto_page_from_file, [:file] => :environment do |t, args|
-    # upload all alto pages (files) specified in a file (one file per line)
+   desc "Upload typewright pages (ALTO format) to the server from a list of files (file=path) [one file per line]"
+   task :alto_page_from_file, [:file] => :environment do
+      # upload all alto pages (files) specified in a file (one file per line)
 
-    param = args[:file]
-    if File.exists?( param )
-      files = File.open( param, 'r') { |f| f.read }
-      files = files.split("\n")
-      if files == nil
-        puts "Usage: call with a filename. The file contains one filename per line"
+      param = ENV['file']
+      if File.exists?( param )
+         files = File.open( param, 'r') { |f| f.read }
+         files = files.split("\n")
+         if files == nil
+            puts "Usage: call with a filename. The file contains one filename per line"
+         else
+            files.each do |file|
+               upload_alto_page( file )
+            end
+         end
       else
-        files.each { |file|
-          if File.exists?( file )
-            upload_alto_page( file )
-          else
-            puts "NOT FOUND: #{file}"
-          end
-        }
+         puts "NOT FOUND: #{param}"
       end
-    else
-      puts "NOT FOUND: #{param}"
-    end
-  end
+   end
 
 	desc "Create scripts to run on Brazos for all documents specified in the set of files (file=path$path) [one 10-digit number per line]"
 	task :create_scripts, :file do |t, args|

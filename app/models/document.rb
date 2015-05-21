@@ -99,12 +99,11 @@ class Document < ActiveRecord::Base
 
    # get the prefered OCR source
    def get_ocr_source( page )
-      logger.info("GET OCR SOURCE......")
       SUPPORTED_OCR_SOURCES.each do |ocr_src|
          xml_file = get_page_xml_file(page, ocr_src, self.uri_root())
-         logger.info "SRC: #{ocr_src}, file #{xml_file}"
+         logger.info
          if File.exist?(xml_file)
-            logger.info("USE #{ocr_src}")
+            logger.info "file #{xml_file}  SRC #{ocr_src}"
             return ocr_src.to_sym
          end
       end
@@ -270,13 +269,16 @@ class Document < ActiveRecord::Base
 
    def get_page_info(page, include_word_stats, include_image_info = true )
 
-      src = :gale              # most documents have gale OCR (some have replaced alto pages but still mainly gale)
-      src = :alto if is_eebo?  # all EEBO documents have only alto OCR
+      # figure out the best available OCR source for this page
+      src = self.get_ocr_source( page )
 
+      # if we have an alto doc but we have gail corrections, use the gale source
+      src = :gale if src == :alto && corrections_exist?( self.id, page, :gale ) == true
+      
       doc = XmlReader.open_xml_file(get_primary_xml_file())
 
+      logger.info("Get #{src} page #{page} for #{self.uri_root()}")
       page = (page.nil?) ? 1 : page.to_i
-
       page_doc = XmlReader.open_xml_file(get_page_xml_file(page, src, self.uri_root()))
 
       if include_image_info
@@ -289,12 +291,6 @@ class Document < ActiveRecord::Base
 
       title = XmlReader.get_full_title(doc)
       title_abbrev = title.length > 32 ? title.slice(0..30)+'...' : title
-
-      # figure out the best available OCR source for this page
-      src = self.get_ocr_source( page )
-
-      # if we have an alto doc but we have gail corrections, use the gale source
-      src = :gale if src == :alto && corrections_exist?( self.id, page, :gale ) == true
 
       # open the source specific page xml document
       if src != :gale

@@ -358,13 +358,13 @@ class Document < ActiveRecord::Base
       Line.merge_changes(lines, changes)
 
       if include_image_info
-         result = { :doc_id => self.id, :page => page, :num_pages => num_pages, :img_full => img_full,
+         result = { :doc_id => self.id, :ocr_source=> src, :page => page, :num_pages => num_pages, :img_full => img_full,
             :img_thumb => img_thumb, :lines => lines, :title => title, :title_abbrev => title_abbrev,
             :img_size => img_size,
             :word_stats => page_word_stats, :doc_word_stats => doc_word_stats
          }
       else
-         result = { :doc_id => self.id, :page => page, :num_pages => num_pages, :lines => lines, :title => title,
+         result = { :doc_id => self.id, :ocr_source=> src, :page => page, :num_pages => num_pages, :lines => lines, :title => title,
             :title_abbrev => title_abbrev, :word_stats => page_word_stats, :doc_word_stats => doc_word_stats
          }
       end

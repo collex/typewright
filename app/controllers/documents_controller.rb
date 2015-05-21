@@ -17,7 +17,6 @@ class DocumentsController < ApplicationController
       # Called by Typewright::Document#get_page, and other places.
       # When it is called by get_page, it includes a user_id. That is the
       # call that happens when the page is opened for editing.
-      # src=gale&stats=true&wordstats=true
       doc = find_doc(params)
       page = params[:page]
 
@@ -34,7 +33,7 @@ class DocumentsController < ApplicationController
       elsif !page.nil?
          # looking for info on a particular page of the document
          result = [ doc.get_page_info(page, include_word_stats) ]
-
+         logger.info "PAGE RESULT: #{result}"
       else
          # looking for info on the document as a whole
          result = [ doc.get_doc_info( ) ]

@@ -274,7 +274,7 @@ class Document < ActiveRecord::Base
 
       # if we have an alto doc but we have gail corrections, use the gale source
       src = :gale if src == :alto && corrections_exist?( self.id, page, :gale ) == true
-      
+
       doc = XmlReader.open_xml_file(get_primary_xml_file())
 
       logger.info("Get #{src} page #{page} for #{self.uri_root()}")
@@ -358,13 +358,13 @@ class Document < ActiveRecord::Base
       Line.merge_changes(lines, changes)
 
       if include_image_info
-         result = { :doc_id => self.id, :src=> src, :page => page, :num_pages => num_pages, :img_full => img_full,
+         result = { :doc_id => self.id, :src=> src.to_s, :page => page, :num_pages => num_pages, :img_full => img_full,
             :img_thumb => img_thumb, :lines => lines, :title => title, :title_abbrev => title_abbrev,
             :img_size => img_size,
             :word_stats => page_word_stats, :doc_word_stats => doc_word_stats
          }
       else
-         result = { :doc_id => self.id, :src=> src, :page => page, :num_pages => num_pages, :lines => lines, :title => title,
+         result = { :doc_id => self.id, :src=> src.to_s, :page => page, :num_pages => num_pages, :lines => lines, :title => title,
             :title_abbrev => title_abbrev, :word_stats => page_word_stats, :doc_word_stats => doc_word_stats
          }
       end

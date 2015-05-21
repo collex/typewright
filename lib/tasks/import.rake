@@ -30,17 +30,6 @@ namespace :upload do
 			}
 		end
 	end
-   
-   desc "Import typewright files (ALTO format) from eMOP (limit=n)"
-   task :alto_import, [:limit] => :environment do |t, args|
-
-      limit = args[:limit]
-      if limit == nil
-         puts "Usage: call with limit=n"
-      else
-         import_alto(limit)
-      end
-   end
 
    desc "Upload typewright documents (ALTO format) to the server (doc=path$path...)"
    task :alto_doc, [:doc] => :environment do
@@ -577,17 +566,11 @@ end
 #######################################
 ## ALTO Import scripts....
 ##
-def import_alto(limit)
-  script = "rails runner script/import/alto_importer.rb -- -v #{get_service_url} #{limit}"
-
-  puts "importing up to #{limit} page(s)..."
-  system("#{script} >> #{Rails.root}/log/automated_upload.log")
-end
 
 def upload_alto_doc( dir )
   script = "rails runner script/import/alto_doc.rb -- -v #{get_service_url} #{dir}"
   puts "uploading: #{dir}..."
-  system("#{script}")# >> #{Rails.root}/log/manual_upload.log")
+  system("#{script} >> #{Rails.root}/log/manual_upload.log")
 end
 
 def upload_alto_page( file )

@@ -27,13 +27,11 @@ class DocumentsController < ApplicationController
 
       elsif params[:stats] == 'true'
          # looking for document stats
-         # note: gets correct surce for all pages
          result = [ doc.get_doc_stats(doc.id, include_word_stats ) ]
 
       elsif !page.nil?
          # looking for info on a particular page of the document
          result = [ doc.get_page_info(page, include_word_stats) ]
-         logger.info "PAGE RESULT: #{result}"
       else
          # looking for info on the document as a whole
          result = [ doc.get_doc_info( ) ]
@@ -96,8 +94,6 @@ class DocumentsController < ApplicationController
   def report
     @doc = find_doc(params)
     @page = params[:page]
-    @src = params[:src].to_sym unless params[:src].nil?
-    @src = :gale if @src.nil?
     @page_report = PageReport.new(:document_id => @doc.id, :page => @page, user_id: params[:user_id], fullname: params[:fullname], email: params[:email])
   end
 
@@ -260,76 +256,6 @@ class DocumentsController < ApplicationController
       end
     end
   end
-
-  # # GET /documents/export_corrected_text?uri=lib://{source_id}/{book_id}
-  # def export_corrected_text()
-  #   if !check_auth()
-  #     render text: "Unauthorized", status: :unauthorized
-  #     return
-  #   end
-  #   @document = find_doc(params)
-  #   if @document.present?
-  #     render :text => @document.get_corrected_text()
-  #   else
-  #     render text: "Document not found", status: :not_found
-  #   end
-  # end
-  #
-  #  # GET /documents/export_corrected_gale_xml?uri=lib://{source_id}/{book_id}
-  # def export_corrected_gale_xml()
-  #   if !check_auth()
-  #     render text: "Unauthorized", status: :unauthorized
-  #     return
-  #   end
-  #   @document = find_doc(params)
-  #   if @document.present?
-  #     render :text => @document.get_corrected_gale_xml()
-  #   else
-  #     render text: "Document not found", status: :not_found
-  #   end
-  # end
-  #
-  # # GET /documents/export_corrected_tei_a?uri=lib://{source_id}/{book_id}
-  # def export_corrected_tei_a()
-  #   if !check_auth()
-  #     render text: "Unauthorized", status: :unauthorized
-  #     return
-  #   end
-  #   @document = find_doc(params)
-  #   if @document.present?
-  #     render :text => @document.get_corrected_tei_a()
-  #   else
-  #     render text: "Document not found", status: :not_found
-  #   end
-  # end
-  #
-  # # GET /documents/export_original_gate_xml?uri=lib://{source_id}/{book_id}
-  # def export_original_gale_xml()
-  #   if !check_auth()
-  #     render text: "Unauthorized", status: :unauthorized
-  #     return
-  #   end
-  #   @document = find_doc(params)
-  #   if @document.present?
-  #     render :text => @document.get_original_gale_xml()
-  #   else
-  #     render text: "Document not found", status: :not_found
-  #   end
-  # end
-  #
-  # # GET /documents/export_original_gate_text?uri=lib://{source_id}/{book_id}
-  # def export_original_gale_text()
-  #   if !check_auth()
-  #     render text: "Unauthorized", status: :unauthorized
-  #     return
-  #   end
-  #   @document = find_doc(params)
-  #   if @document.present?
-  #     render :text => @document.get_original_gale_text()
-  #   else
-  #     render text: "Document not found", status: :not_found
-  #   end
-  # end
   
   private
   def check_auth

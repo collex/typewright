@@ -175,7 +175,9 @@ page_num = page_num_str[0..-9].to_i unless page_num_str.nil?
 # See if there are any edits to this page
 curl_cmd = "-X GET #{server}/documents/#{doc_id}/edited?page=#{page_num}"
 raw_response = do_curl_command(curl_cmd, verbose_output, false)
-if raw_response.downcase == 'true'
+rl = raw_response.length
+bits = raw_response[rl-4..rl]
+if bits.downcase == 'true'
    puts "WARNING: User edits exist for File: #{xml_file}, URI: #{doc_uri}, Page: #{page_num}. ** SKIPPED **"
 else
    # upload the xml file

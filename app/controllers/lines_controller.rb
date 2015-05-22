@@ -62,22 +62,22 @@ class LinesController < ApplicationController
 		# called when a line is modified.
 		token = params[:line]['token']
 		params[:line].delete('token')
-		line = Line.new(params[:line])
+		@line = Line.new(params[:line])
 		
 		# Can no longer send symbols through the web service
-		line.src = src.to_s
-		line = line.attributes.to_options!
-		ret = ping_processing(token, line.document_id, line.page, line.user_id, params[:revisions], nil)
+		@line.src = src.to_s
+		line = @line.attributes.to_options!
+		ret = ping_processing(token, @line.document_id, @line.page, @line.user_id, params[:revisions], nil)
 		line[:changes] = ret[:lines]
 		line[:editors] = ret[:editors]
 
 		respond_to do |format|
-			if line.save
-				line[:updated_at] = line.updated_at.getlocal.strftime("%b %e, %Y %I:%M%P")
-				line[:exact_time] = line.updated_at.getlocal.strftime("%s")
-				format.xml { render :xml => line, :status => :created, :location => line }
+			if @line.save
+				line[:updated_at] = @line.updated_at.getlocal.strftime("%b %e, %Y %I:%M%P")
+				line[:exact_time] = @line.updated_at.getlocal.strftime("%s")
+				format.xml { render :xml => line, :status => :created, :location => @line }
 			else
-				format.xml { render :xml => line.errors, :status => :unprocessable_entity }
+				format.xml { render :xml => @line.errors, :status => :unprocessable_entity }
 			end
 		end
 	end
@@ -85,8 +85,8 @@ class LinesController < ApplicationController
 	# DELETE /lines/1.xml
 	def destroy
 		# called when a line is modified, but it had already been modified by that user.
-		line = Line.find(params[:id])
-		line.destroy
+		@line = Line.find(params[:id])
+		@line.destroy
 
 		respond_to do |format|
 			format.xml  { head :ok }

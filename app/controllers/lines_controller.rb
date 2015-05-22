@@ -63,18 +63,16 @@ class LinesController < ApplicationController
 		token = params[:line]['token']
 		params[:line].delete('token')
 		line = Line.new(params[:line])
-		
-		# Can no longer send symbols through the web service
-		line = line.attributes.to_options!
-		ret = ping_processing(token, line.document_id, line.page, line.user_id, params[:revisions], nil)
-		line[:changes] = ret[:lines]
-		line[:editors] = ret[:editors]
-
+	
 		respond_to do |format|
 			if line.save
-				line[:updated_at] = line.updated_at.getlocal.strftime("%b %e, %Y %I:%M%P")
-				line[:exact_time] = line.updated_at.getlocal.strftime("%s")
-				format.xml { render :xml => line, :status => :created, :location => line }
+            ret = ping_processing(token, line.document_id, line.page, line.user_id, params[:revisions], nil)
+            line_hash = line.attributes.to_options!
+            line_hash[:changes] = ret[:lines]
+            line_hash[:editors] = ret[:editors]
+            line_hash[:updated_at] = line.updated_at.getlocal.strftime("%b %e, %Y %I:%M%P")
+            line_hash[:exact_time] = line.updated_at.getlocal.strftime("%s")
+				format.xml { render :xml => line_hash, :status => :created, :location => line }
 			else
 				format.xml { render :xml => line.errors, :status => :unprocessable_entity }
 			end

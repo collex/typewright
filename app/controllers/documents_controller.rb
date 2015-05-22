@@ -240,11 +240,9 @@ class DocumentsController < ApplicationController
     else
       doc = find_doc(params)
       page = params[:page]
-      src = params[:src].to_sym unless params[:src].nil?
-      src = :gale if src.nil?
       if doc.nil? == false
         if page.nil? == false
-           doc.delete_corrections( doc.id, page, src )
+           doc.delete_corrections( doc.id, page )
            render text: {"message" => "Corrections deleted"}.to_json(), status: :ok
         else
           render text: { "message" => "Page not specified" }.to_json(), status: :unprocessable_entity

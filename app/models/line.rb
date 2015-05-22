@@ -14,9 +14,9 @@ class Line < ActiveRecord::Base
       return lines.length
    end
 
-   # delete all corrections associated with the specified page, document and source
-   def self.delete_changes( doc_id, page_num, src )
-     Line.where("document_id = ? AND page = ? and src = ?", doc_id, page_num, src ).destroy_all
+   # delete all corrections associated with the specified document page
+   def self.delete_changes( doc_id, page_num )
+     Line.where("document_id = ? AND page = ?", doc_id, page_num ).destroy_all
    end
 
    def self.merge_changes(lines, changes)

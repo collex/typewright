@@ -900,8 +900,8 @@ class Document < ActiveRecord::Base
    end
 
    # delete any corrections for the specified page, document and source
-   def delete_corrections( doc_id, page_num, src )
-      Line.delete_changes( doc_id, page_num, src )
+   def delete_corrections( doc_id, page_num )
+      Line.delete_changes( doc_id, page_num )
    end
 
    def self.do_command(cmd)

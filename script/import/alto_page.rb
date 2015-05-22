@@ -14,6 +14,8 @@ def do_usage()
   puts " -c Output the curl commands that would have been executed."
 end
 
+# Get eMOP API credentials from settings
+#
 def get_emop_api_info
   config_file = File.join("config", "site.yml")
   if File.exists?(config_file)
@@ -53,7 +55,8 @@ def get_doc_uri(xml_file)
    return out   
 end
 
-
+# Execute a CURL command and return results
+#
 def do_curl_command(cmd, verbose, test_only)
   puts "" if verbose
   puts "curl #{cmd} 2>&1" if verbose
@@ -158,7 +161,7 @@ puts response if verbose_output
 
 # check to see if it exists; if not, bail out
 if response[:exists] == false
-   puts "Book for #{xml_file} does not exist -skipped- (DONE)" if !output_curl_only
+   puts "WARNING: Document #{doc_uri} for #{xml_file} does not exist.  ** SKIPPED **" if !output_curl_only
    exit(0)
 end
 
@@ -169,21 +172,28 @@ page_num = 0
 page_num_str = File.basename( xml_file )[/\d+_alto\.xml/i]
 page_num = page_num_str[0..-9].to_i unless page_num_str.nil?
 
-# upload the xml file
-curl_cmd = "-F \"xml_file=@#{xml_file};type=text/xml\" -F \"page=#{page_num}\" -X POST #{server}/documents/#{doc_id}/update_page_ocr.xml"
-if output_curl_only
-	ret_value.push("curl #{curl_cmd} 2>&1")
+# See if there are any edits to this page
+curl_cmd = "-X GET #{server}/documents/#{doc_id}/edited?page=#{page_num}"
+raw_response = do_curl_command(curl_cmd, verbose_output, false)
+if raw_response.downcase == 'true'
+   puts "WARNING: User edits exist for File: #{xml_file}, URI: #{doc_uri}, Page: #{page_num}. ** SKIPPED **"
 else
-	raw_response = do_curl_command(curl_cmd, verbose_output, test_only)
+   # upload the xml file
+   curl_cmd = "-F \"xml_file=@#{xml_file};type=text/xml\" -F \"page=#{page_num}\" -X POST #{server}/documents/#{doc_id}/update_page_ocr.xml"
+   if output_curl_only
+      ret_value.push("curl #{curl_cmd} 2>&1")
+   else
+      raw_response = do_curl_command(curl_cmd, verbose_output, test_only)
+   end
+   
+   response = parse_upload_response(raw_response) unless test_only || output_curl_only
+   puts response if verbose_output
+   puts "#{xml_file} #{File.new(xml_file).size} (DONE)" if !output_curl_only
+   
+   if output_curl_only
+      puts ret_value.map { |line| "#{line}\n"}
+   end
 end
 
-response = parse_upload_response(raw_response) unless test_only || output_curl_only
-puts response if verbose_output
-puts "#{xml_file} #{File.new(xml_file).size} (DONE)" if !output_curl_only
-puts "WARNING: user edits exist for this page" if response[:edits] == true
-
-if output_curl_only
-	puts ret_value.map { |line| "#{line}\n"}
-end
 
 exit 0

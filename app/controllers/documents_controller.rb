@@ -114,6 +114,14 @@ class DocumentsController < ApplicationController
   def exists
     @document = find_doc(params)
   end
+  
+  # GET /documents/:id/edited?page=:pg
+  # Check if a document page has edits
+  #
+  def edited
+     cnt = Line.where(:document_id=>params[:id], :page=>params[:page]).count
+     render :text=>(cnt > 0)
+  end
 
   # POST /documents/1/upload
   def upload

@@ -21,6 +21,7 @@ Typewright::Application.routes.draw do
 	end
 	resources :document_users
   get 'documents/exists' => 'documents#exists', :as => :exists
+  get 'documents/:id/edited' => 'documents#edited'
   post 'documents/upload' => 'documents#upload', :as => :upload
   post 'documents/update_page_ocr' => 'documents#update_page_ocr', :as => :update_page_ocr
   get 'documents/export_corrected_text' => 'documents#export_corrected_text', :as => :export_corrected_text

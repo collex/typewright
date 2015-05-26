@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+require "#{Dir.pwd}/script/import/common.rb"
 
 def do_usage()
    puts "Usage: alto_doc [flags] server /path/to/directory"
@@ -74,6 +75,25 @@ Dir.chdir(original_dir)
 if page_list.empty?
    puts "WARNING: no alto pages located here #{directory}"
    exit( 1 )
+end
+
+# Extract the URI for the work from the path and eMOP API and see if a record for it exists
+info = get_doc_info(xml_file)
+curl_cmd = "-F \"uri=#{info[:uri]}\" -X GET #{server}/documents/exists.xml"
+raw_response = do_curl_command(curl_cmd, verbose_output, false)
+response = parse_exists_response(raw_response)
+puts response if verbose_output
+
+# No record, create it
+if response[:exists] == false
+   doc = Document.new()
+   doc.uri = info[:uri]
+   doc.total_pages = page_list.length
+   doc.title =   info[:title]
+   if !doc.save
+      puts "ERROR: Unable to create document record: #{doc.full_messages.to_sentence} ** SKIPPING **"
+      exit(1)
+   end
 end
 
 # process each page we have identified

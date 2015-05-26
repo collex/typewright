@@ -86,6 +86,7 @@ puts response if verbose_output
 
 # No record, create it
 if response[:exists] == false
+   puts "INFO: Document #{info[:uri]} does not exist. Creating new record"
    doc = Document.new()
    doc.uri = info[:uri]
    doc.total_pages = page_list.length

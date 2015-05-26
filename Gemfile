@@ -23,7 +23,7 @@ end
 
 gem 'jquery-rails'
 gem 'exception_notification'
-gem 'nokogiri'
+gem 'nokogiri', '1.6.0' # TODO-PER: For some reason, the newer version won't install on the server.
 gem 'will_paginate'
 
 gem 'whenever', :require => false

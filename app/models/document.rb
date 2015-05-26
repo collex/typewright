@@ -728,7 +728,14 @@ class Document < ActiveRecord::Base
 
       saxon = "#{Rails.root}/lib/saxon"
       tmp_file = "#{Rails.root}/tmp/#{self.id}-#{Time.now.to_i}.xml"
-      xsl_file = "#{saxon}/GaleToTeiA.xsl"
+      #xsl_file = "#{saxon}/GaleToTeiA.xsl"
+      
+      # Write the XSLT from DB to filesystem because thats the wae saxon wants it
+      conv = Conversion.where(from_format: 'gale', to_format: 'tei')
+      xsl_file = "#{Rails.root}/tmp/xsl-#{Time.now.to_i}.xsl"
+      File.open(conv, "w") { |f| f.write(conv.xslt) }
+      
+      
       xsl_param = "showW='n'"
       xsl_param = "showW='y'"if include_words
 
@@ -737,6 +744,7 @@ class Document < ActiveRecord::Base
       Document.do_command(cmd)
       file = File.open(tmp_file)
       out = file.read
+      File.delete(xsl_file)
       File.delete(xml_file)
       File.delete(tmp_file)
       return out

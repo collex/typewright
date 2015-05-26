@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xd="http://www.oxygenxml.com/ns/doc/xsl" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns="http://www.tei-c.org/ns/1.0"
-    exclude-result-prefixes="xs xd tei" version="2.0">
-<!--=== Gale-convertToTEI-A_p-byFile.xsl ========================= -->
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:alto="http://schema.ccs-gmbh.com/ALTO"
+    xmlns:emop="http://emop.tamu.edu"
+    exclude-result-prefixes="xs"
+    version="2.0">
+<!--=== AltoToTeiA.xsl ========================= -->
 <!--                                                                
     === Input: 
         takes Gale OCR XML or 18thConnect Typewright XML files 
@@ -22,25 +25,12 @@
                 TW and all lines were identified and tagged with <p>. Now, 
                 all original <p> tags are retained and lines are tagged with
                 <ab>.
+            mjc, 05/26/2015: convert to ALTO to Text transform
                                                                    -->
 <!--============================================================== -->
     
-    <!--passed parameter to indicate whether to include <w> tag with
-        word coordinates -->
-    <xsl:param name="showW"/>
-    <!--mjc: set to true() to copy <wd> tags with attrs to result XML
-        as <w> tags-->
-    <xsl:variable name="copyW" as="xs:boolean">
-        <xsl:value-of>
-            <xsl:choose>
-                <xsl:when test="$showW = 'y'">
-                    <xsl:value-of select="true()"/>
-                </xsl:when>
-                <xsl:otherwise>
-                    <xsl:value-of select="false()"/>
-                </xsl:otherwise>
-            </xsl:choose>
-        </xsl:value-of>
+    <xsl:variable name="NEWLINE">
+        <xsl:text>&#xa;</xsl:text>
     </xsl:variable>
 
 
@@ -65,11 +55,11 @@
                 <fileDesc>
                     <titleStmt>
                         <title>
-                            <xsl:value-of select="//citation/titleGroup/fullTitle"/>
+                            <!-- GET FROM DB?? <xsl:value-of select="//citation/titleGroup/fullTitle"/>-->
                         </title>
                     </titleStmt>
                     <extent>
-                        <xsl:value-of select="count(//page)"/>
+                        <!-- GET FROM DB?? <xsl:value-of select="count(//page)"/>-->
                         <xsl:text> 300dpi TIFF page images</xsl:text>
                     </extent>
                     <publicationStmt>
@@ -83,12 +73,10 @@
                             <xsl:value-of select="$metadataFromTabDelimitedFile//cell[3]"/>
                         </idno>-->
                         <idno type="ESTC">
-                            <xsl:value-of
-                                select="//bookInfo/ESTCID"
-                            />
+                            <!-- GET FROM DB?? <xsl:value-of select="//bookInfo/ESTCID"/>-->
                         </idno>
                         <idno type="bookID">
-                            <xsl:value-of select="//bookInfo/documentID"></xsl:value-of>
+                            <!-- GET FROM DB?? <xsl:value-of select="//bookInfo/documentID"></xsl:value-of>-->
                         </idno>
                         <availability>
                             <p>These documents are available only to 18thConnect under the terms and
@@ -101,22 +89,24 @@
                         <biblFull>
                             <titleStmt>
                                 <title>
-                                    <xsl:value-of select="//citation/titleGroup/fullTitle"/>
+                                    <!-- GET FROM DB?? <xsl:value-of select="//citation/titleGroup/fullTitle"/>-->
                                 </title>
                                 <author>
-                                    <xsl:value-of select="//citation/authorGroup/author/marcName"/>
+                                    <!-- GET FROM DB?? <xsl:value-of select="//citation/authorGroup/author/marcName"/>-->
                                 </author>
                             </titleStmt>
-                            <extent><xsl:value-of select="count(//page)"/> p.</extent>
+                            <extent>
+                                <!-- GET FROM DB?? <xsl:value-of select="count(//page)"/>--> p.
+                            </extent>
                             <publicationStmt>
                                 <pubPlace>
-                                    <xsl:value-of select="//citation/imprint/imprintCity"/>
+                                    <!-- GET FROM DB?? <xsl:value-of select="//citation/imprint/imprintCity"/>-->
                                 </pubPlace>
                                 <publisher>
-                                    <xsl:value-of select="//citation/imprint/imprintPublisher"/>
+                                    <!-- GET FROM DB?? <xsl:value-of select="//citation/imprint/imprintPublisher"/>-->
                                 </publisher>
                                 <date>
-                                    <xsl:value-of select="//citation/imprint/imprintYear"/>
+                                    <!-- GET FROM DB?? <xsl:value-of select="//citation/imprint/imprintYear"/>-->
                                 </date>
                             </publicationStmt>
                         </biblFull>
@@ -166,14 +156,16 @@
 <!--    Here we pretty much want to just copy everything -->
             <text>
                 <body>
-                    <xsl:for-each select="//page">
-                        <div type="page" n="{pageInfo/pageID}">
-                            <xsl:for-each select="pageContent/p">
+                    <xsl:for-each select="alto:Layout/alto:Page">
+                        <div type="page" n="{ID}">
+                            <xsl:for-each select="alto:PrintSpace/alto:TextBlock">
                                 <div type="paragraph">
                                     <xsl:apply-templates/>
                                 </div>
+                                <xsl:value-of select="$NEWLINE"/>
                             </xsl:for-each>
                         </div>
+                        <xsl:value-of select="$NEWLINE"/>
                     </xsl:for-each>
                 </body>
             </text>
@@ -182,42 +174,23 @@
     
     
 
-    <!--mjc: ab template -->
-    <!--     ==          -->
-    <!-- copy each line (anonymous block)                    -->
-    <xsl:template match="p">
-        <ab>
-            <xsl:apply-templates/>
-        </ab>
+    <xsl:template match="alto:TextLine">
+        <ab><xsl:apply-templates/></ab>
+        <xsl:value-of select="$NEWLINE"/>
     </xsl:template>
         
     
-        
-    <!--mjc: wd template -->
-    <!--     ==          -->
-    <!-- If $copyWD is set to true (passed from the shell script call)  -->
-    <!-- then copy each word and its coordiantes too                    -->
-    <xsl:template match="wd">
-    <!--                 ==-->
-        <xsl:choose>
-            <xsl:when test="$copyW">
-                <w>
-                    <xsl:copy-of select="@*"/>
-                    <xsl:value-of select="text()"/>
-                </w>
-            </xsl:when>
-            
-            <xsl:otherwise>
-                <xsl:choose>
-                    <xsl:when test="name(./following-sibling::*[1])='wd'">
-                        <xsl:value-of select="concat(translate(text(), '&#8221;', '&#x0022;'), ' ')"/>
-                    </xsl:when>
-                    
-                    <xsl:otherwise>
-                        <xsl:value-of select="translate(text(), '&#8221;', '&#x0022;')"/>
-                    </xsl:otherwise>
-                </xsl:choose>
-            </xsl:otherwise>
-        </xsl:choose>
+    <xsl:template match="alto:String">
+    <!--                 =======-->
+        <xsl:value-of select="@CONTENT"/>
     </xsl:template>
+    
+    <xsl:template match="alto:SP">
+        <xsl:text> </xsl:text>
+    </xsl:template>
+    
+    <xsl:template match="alto:HYP">
+        <xsl:text>-</xsl:text>
+    </xsl:template>
+    
 </xsl:stylesheet>

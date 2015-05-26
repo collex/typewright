@@ -1,0 +1,4 @@
+alto,tei,AltoToTeiA.xsl
+alto,txt,AltoToTxt.xsl
+gale,tei,GaleToTeiA.xsl
+gale,txt,GaleToTxt.xsl

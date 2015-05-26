@@ -11,7 +11,15 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20140729180741) do
+ActiveRecord::Schema.define(:version => 20150526152557) do
+
+  create_table "conversions", :force => true do |t|
+    t.string   "from_format"
+    t.string   "to_format"
+    t.text     "xslt"
+    t.datetime "created_at",  :null => false
+    t.datetime "updated_at",  :null => false
+  end
 
   create_table "current_editors", :force => true do |t|
     t.integer  "user_id"

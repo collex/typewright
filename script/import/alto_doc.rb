@@ -78,7 +78,7 @@ if page_list.empty?
 end
 
 # Extract the URI for the work from the path and eMOP API and see if a record for it exists
-info = get_doc_info(xml_file)
+info = get_doc_info(directory)
 curl_cmd = "-F \"uri=#{info[:uri]}\" -X GET #{server}/documents/exists.xml"
 raw_response = do_curl_command(curl_cmd, verbose_output, false)
 response = parse_exists_response(raw_response)

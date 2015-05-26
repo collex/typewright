@@ -38,7 +38,7 @@ def get_doc_info(doc_path)
    # path follws a rigid directory structure:
    #    /data/shared/text-xml/IDHMC-ocr/[batch_id]/[emop_work_id]
    # Use this to get the work ID
-   bits = xml_file.split("/")
+   bits = doc_path.split("/")
    work_id = bits[bits.length-1]
    return get_work_info(work_id) 
 end

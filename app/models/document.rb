@@ -602,9 +602,9 @@ class Document < ActiveRecord::Base
          page_file = self.get_page_file(page_num, page_node['fileRef'])
          src = self.get_ocr_source( page_num )
          if src == :alto
-            output += self.transform(page_file, alto_xsl_file)
+            output += self.transform(page_file, alto_xsl_file,false)
          else
-            output += self.transform(page_file, gale_xsl_file)
+            output += self.transform(page_file, gale_xsl_file,false)
          end
          output += "\n\n"
          page_num += 1
@@ -741,7 +741,7 @@ class Document < ActiveRecord::Base
       xsl_file = "#{Rails.root}/tmp/xsl-#{Time.now.to_i}.xsl"
       File.open(xsl_file, "w") { |f| f.write(conv.xslt) }
 
-      out = self.transform(xml_file, xsl_file)
+      out = self.transform(xml_file, xsl_file,include_words)
       File.delete(xsl_file)
       File.delete(xml_file)
       return out
@@ -749,7 +749,7 @@ class Document < ActiveRecord::Base
 
    # Use saxon to apply an XSL transformation to an xml file
    #
-   def transform(xml_file, xsl_file)
+   def transform(xml_file, xsl_file,include_words)
       saxon = "#{Rails.root}/lib/saxon"
       tmp_file = "#{Rails.root}/tmp/#{self.id}-#{Time.now.to_i}.xml"
       

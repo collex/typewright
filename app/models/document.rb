@@ -533,6 +533,7 @@ class Document < ActiveRecord::Base
       page_xml_path = get_page_xml_file(page_num, src, uri_root)
       logger.info "SOURCE #{src}, PATH #{page_xml_path}"
       File.open(page_xml_path, "w") { |f| f.write(xml_doc.to_xml) }
+      return page_xml_path
    end
 
    # get the corrected document in text format (nothing to do with the source of the OCR)

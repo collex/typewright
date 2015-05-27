@@ -28,32 +28,23 @@ def get_work_info(work_id)
       # Found ECCO number. Must be ECCO document; generate the URI
       uri = "lib://ECCO/#{resp['wks_ecco_number']}"
    end
-   out = {:uri=>uri, :title=>resp['wks_title']}
+   out = {:uri=>uri, :title=>resp['wks_title'], :eebo_dir=>resp['wks_eebo_directory']}
    return out
 end
 
-# Extract the document URI/Title from file and emop API
+# Extract the document URI/Title/eeBO dir from file and emop API
 #
 def get_doc_info(doc_path)
    # path follws a rigid directory structure:
-   #    /data/shared/text-xml/IDHMC-ocr/[batch_id]/[emop_work_id]
+   #    /data/shared/text-xml/IDHMC-ocr/[batch_id]/[emop_work_id]/[name].xml
    # Use this to get the work ID
    bits = doc_path.split("/")
-   work_id = bits[bits.length-1]
-   return get_work_info(work_id) 
-end
-
-# Extract the URI from the page file path and eMOP API
-#
-def get_doc_uri(xml_file)
-   # file follws a rigid directory structure:
-   #    /data/shared/text-xml/IDHMC-ocr/[batch_id]/[emop_work_id]/[page]_ALTO.xml
-   # Use this to get the work ID
-   bits = xml_file.split("/")
-   work_id = bits[bits.length-2]
-   
-   info = get_work_info(work_id) 
-   return info[:uri]   
+   if bits.last.downcase.include? ".xml"
+      work_id = bits[bits.length-2]
+   else
+      work_id = bits[bits.length-1]
+   end
+   return get_work_info(work_id)
 end
 
 # Execute a CURL command and return results

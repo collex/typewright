@@ -90,9 +90,10 @@ if xml_doc.nil?
 end
 
 # Extract the URI for the work from the path and eMOP API
-doc_uri = get_doc_uri(xml_file)
+doc_info = get_doc_info(xml_file)
+doc_uri = doc_info[:uri]
 
-# now that we have all the parameters, determine if the book exists
+# now that we have all the parameters, determine if the document exists
 curl_cmd = "-F \"uri=#{doc_uri}\" -X GET #{server}/documents/exists.xml"
 raw_response = do_curl_command(curl_cmd, verbose_output, false)
 response = parse_exists_response(raw_response)

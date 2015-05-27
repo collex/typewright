@@ -217,7 +217,7 @@ class DocumentsController < ApplicationController
       type = params[:type]
       doc = Document.find_by_uri(uri)
       if doc.present?
-        begin
+        #begin
            case type
               when 'alto'
                 render :text => doc.get_corrected_alto_xml()
@@ -232,9 +232,9 @@ class DocumentsController < ApplicationController
               when 'original-text'
                 render :text => doc.get_original_text()
            end
-        rescue Exception => e  
-           render :text=>e.message, :status=>:error
-        end
+#        rescue Exception => e  
+#           render :text=>e.message, :status=>:error
+#        end
       else
         render text: { "message" => "Document #{uri} not found" }.to_json(), status: :not_found
       end

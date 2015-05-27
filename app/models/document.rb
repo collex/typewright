@@ -617,10 +617,12 @@ class Document < ActiveRecord::Base
    # get the original XML pages
    #
    def get_original_xml()
+      logger.info "Get original XML"
       doc = XmlReader.open_xml_file(get_primary_xml_file())
       page_num = 1
       doc.xpath('//page').each do |page_node|
          page_file = self.get_page_file(page_num, page_node['fileRef'])
+         logger.info "   * Page File: #{page_file}"
          page_doc = XmlReader.open_xml_file(page_file)
          page_doc_els = page_doc.xpath('//page')
          if page_doc_els.length > 0

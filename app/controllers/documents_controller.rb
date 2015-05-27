@@ -217,23 +217,27 @@ class DocumentsController < ApplicationController
       type = params[:type]
       doc = Document.find_by_uri(uri)
       if doc.present?
-        case type
-        when 'gale'
-          render :text => doc.get_corrected_gale_xml()
-        when 'text'
-          render :text => doc.get_corrected_text()
-        when 'alto'
-          render :text => doc.get_corrected_alto_xml()
-        when 'tei-a'
-          render :text => doc.get_corrected_tei_a(false)
-        when 'tei-a-words'
-          render :text => doc.get_corrected_tei_a(true)
-        when 'original-gale'
-          render :text => doc.get_original_gale_xml()
-        when 'original-text'
-          render :text => doc.get_original_gale_text()
-        when 'original-alto'
-          render :text => doc.get_original_alto_xml()
+        begin
+           case type
+              when 'gale'
+                render :text => doc.get_corrected_gale_xml()
+              when 'text'
+                render :text => doc.get_corrected_text()
+              when 'alto'
+                render :text => doc.get_corrected_alto_xml()
+              when 'tei-a'
+                render :text => doc.get_corrected_tei_a(false)
+              when 'tei-a-words'
+                render :text => doc.get_corrected_tei_a(true)
+              when 'original-gale'
+                render :text => doc.get_original_gale_xml()
+              when 'original-text'
+                render :text => doc.get_original_gale_text()
+              when 'original-alto'
+                render :text => doc.get_original_alto_xml()
+           end
+        rescue Exception => e  
+           render :text=>e.message, :status=>:error
         end
       else
         render text: { "message" => "Document #{uri} not found" }.to_json(), status: :not_found

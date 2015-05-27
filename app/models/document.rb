@@ -731,7 +731,7 @@ class Document < ActiveRecord::Base
       #xsl_file = "#{saxon}/GaleToTeiA.xsl"
       
       # Write the XSLT from DB to filesystem because thats the wae saxon wants it
-      conv = Conversion.where(from_format: 'gale', to_format: 'tei')
+      conv = Conversion.where(from_format: 'gale', to_format: 'tei').first
       xsl_file = "#{Rails.root}/tmp/xsl-#{Time.now.to_i}.xsl"
       File.open(xsl_file, "w") { |f| f.write(conv.xslt) }
       

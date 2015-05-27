@@ -587,6 +587,7 @@ class Document < ActiveRecord::Base
       doc = XmlReader.open_xml_file(get_primary_xml_file())
          
       # Get XSL for gale and alto
+      conv = Conversion.where(from_format: 'gale', to_format: 'txt').first
       gale_xsl_file = "#{Rails.root}/tmp/gale-xsl-#{Time.now.to_i}.xsl"
       File.open(gale_xsl_file, "w") { |f| f.write(conv.xslt) }
       conv = Conversion.where(from_format: 'alto', to_format: 'txt').first

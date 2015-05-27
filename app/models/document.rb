@@ -571,7 +571,7 @@ class Document < ActiveRecord::Base
    # 
    def get_page_file(page_num, file_ref)
       gale_dir = self.get_gale_xml_directory()
-      alto_dir = self.get_alto_directory()
+      alto_dir = self.get_alto_xml_directory()
       src = self.get_ocr_source( page_num )
       if src == :alto
          page_file = File.join(alto_dir, file_ref)

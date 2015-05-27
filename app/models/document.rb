@@ -733,8 +733,7 @@ class Document < ActiveRecord::Base
       # Write the XSLT from DB to filesystem because thats the wae saxon wants it
       conv = Conversion.where(from_format: 'gale', to_format: 'tei')
       xsl_file = "#{Rails.root}/tmp/xsl-#{Time.now.to_i}.xsl"
-      File.open(conv, "w") { |f| f.write(conv.xslt) }
-      
+      File.open(xsl_file, "w") { |f| f.write(conv.xslt) }
       
       xsl_param = "showW='n'"
       xsl_param = "showW='y'"if include_words

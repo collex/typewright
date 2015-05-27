@@ -28,8 +28,6 @@ class Document < ActiveRecord::Base
    SLICE_WIDTH = 800
    SLICE_HEIGHT = 50
 
-   SUPPORTED_OCR_SOURCES = %w(alto gale)
-
    def to_xml(options = {})
       puts @attributes
       super
@@ -99,9 +97,9 @@ class Document < ActiveRecord::Base
 
    # get the prefered OCR source
    def get_ocr_source( page )
-      SUPPORTED_OCR_SOURCES.each do |ocr_src|
+      sources = ['alto','gale']
+      sources.each do |ocr_src|
          xml_file = get_page_xml_file(page, ocr_src, self.uri_root())
-         logger.info
          if File.exist?(xml_file)
             logger.info "file #{xml_file}  SRC #{ocr_src}"
             return ocr_src.to_sym
@@ -538,36 +536,25 @@ class Document < ActiveRecord::Base
    end
 
    # get the corrected document in text format (nothing to do with the source of the OCR)
+   #
    def get_corrected_text()
       doc = XmlReader.open_xml_file(get_primary_xml_file())
       title = XmlReader.get_full_title(doc)
       num_pages = XmlReader.get_num_pages(doc)
       output = title + "\n\n"
-      num_pages.times { | page |
+      num_pages.times do | page |
          src = self.get_ocr_source( page + 1 )
          page_text = self.get_corrected_page_text(page + 1, src)
          output += "Page #{page + 1}\n\n"
          output += page_text unless page_text.nil?
          output += "(empty page)" if page_text.nil? || page_text.empty?
          output += "\n\n"
-      }
+         end
       return output
    end
 
-   # get the corrected document in gale format (nothing to do with the source of the OCR)
-   def get_corrected_gale_xml()
-      primary_file = get_primary_xml_file()
-      doc = XmlReader.open_xml_file( primary_file )
-      page_num = 0
-      doc.xpath('//page').each { |page_node|
-         page_num += 1
-         page_xml = get_corrected_page_gale_xml(page_num)
-         page_node.replace(page_xml)
-      }
-      return doc.to_xml
-   end
-
    # get the corrected document in alto format (nothing to do with the source of the OCR)
+   #
    def get_corrected_alto_xml( )
      primary_file = get_primary_xml_file()
      doc = XmlReader.open_xml_file( primary_file )
@@ -579,82 +566,111 @@ class Document < ActiveRecord::Base
      }
      return doc.to_xml
    end
+   
+   # Get the XML Page file in either ALTO or GALE format
+   # 
+   def get_page_file(page_num, file_ref)
+      gale_dir = self.get_gale_xml_directory()
+      alto_dir = self.get_alto_directory()
+      src = self.get_ocr_source( page_num )
+      if src == :alto
+         page_file = File.join(alto_dir, file_ref)
+      else
+         page_file = File.join(gale_dir, file_ref)
+      end
+      return page_file
+   end
 
-   def get_original_gale_text()
+   # Get the original text for this document
+   #
+   def get_original_text()
       doc = XmlReader.open_xml_file(get_primary_xml_file())
+         
+      # Get XSL for gale and alto
+      gale_xsl_file = "#{Rails.root}/tmp/gale-xsl-#{Time.now.to_i}.xsl"
+      File.open(gale_xsl_file, "w") { |f| f.write(conv.xslt) }
+      conv = Conversion.where(from_format: 'alto', to_format: 'txt').first
+      alto_xsl_file = "#{Rails.root}/tmp/alto-xsl-#{Time.now.to_i}.xsl"
+      File.open(alto_xsl_file, "w") { |f| f.write(conv.xslt) }
 
       title = XmlReader.get_full_title(doc)
       output = title + "\n\n"
 
-      gale_dir = self.get_gale_xml_directory()
-
-      doc.xpath('//page').each { |page_node|
-         page_file = File.join(gale_dir, page_node['fileRef'])
-         page_doc = XmlReader.open_xml_file(page_file)
-         page_doc.xpath('//p').each { |p_node|
-            output += p_node.content
-         }
+      page_num = 1
+      doc.xpath('//page').each do |page_node|
+         page_file = self.get_page_file(page_num, page_node['fileRef'])
+         src = self.get_ocr_source( page_num )
+         if src == :alto
+            output += self.transform(page_file, alto_xsl_file)
+         else
+            output += self.transform(page_file, gale_xsl_file)
+         end
          output += "\n\n"
-      }
+         page_num += 1
+      end
+      
+      File.delete(gale_xsl_file)
+      File.delete(alto_xsl_file)
       return output
    end
 
-   # get the original gale pages
-   def get_original_gale_xml()
-     doc = XmlReader.open_xml_file(get_primary_xml_file())
-     gale_dir = self.get_gale_xml_directory()
-
-     doc.xpath('//page').each { |page_node|
-       page_file = File.join(gale_dir, page_node['fileRef'])
-       page_doc = XmlReader.open_xml_file(page_file)
-       page_doc_els = page_doc.xpath('//page')
-       if page_doc_els.length > 0
-         page_node.replace(page_doc_els[0])
-       end
-     }
-     return doc.to_xml
+   # get the original XML pages
+   #
+   def get_original_xml()
+      doc = XmlReader.open_xml_file(get_primary_xml_file())
+      page_num = 1
+      doc.xpath('//page').each do |page_node|
+         page_file = self.get_page_file(page_num, page_node['fileRef'])
+         page_doc = XmlReader.open_xml_file(page_file)
+         page_doc_els = page_doc.xpath('//page')
+         if page_doc_els.length > 0
+            page_node.replace(page_doc_els[0])
+         end
+         page_num += 1
+      end
+      return doc.to_xml
    end
 
-   # get the original alto pages
-   def get_original_alto_xml()
-
-     # use the gale metadata to get a possible set of pages
-     doc = XmlReader.open_xml_file(get_primary_xml_file())
-
-     namespace = XmlReader.alto_namespace
-
-     # for each page, attempt to get an alto page
-     xml_pages = []
-     page_num = 0
-     doc.xpath('//page').each { |page_node|
-       page_num += 1
-
-       # if we have an alto page, add it to the alto document
-       src = self.get_ocr_source( page_num )
-       if src == :alto
-          page_xml_path = get_page_xml_file(page_num, src, uri_root)
-          xml_doc = XmlReader.open_xml_file(page_xml_path)
-          xml_pages.push( xml_doc )
-       end
-     }
-
-     root = nil
-     peer = nil
-     xml_pages.each_with_index { |pg, ix|
-        if ix == 0
-          root = pg
-          peer = pg.xpath( '//ns:Layout', 'ns' => namespace ).first
-        else
-          description = pg.xpath( '//ns:Description', 'ns' => namespace ).first
-          layout = pg.xpath( '//ns:Layout', 'ns' => namespace ).first
-          peer.add_next_sibling( description )
-          description.add_next_sibling( layout )
-          peer = layout
-        end
-     }
-
-     return root.to_xml
-   end
+#   # get the original alto pages
+#   def get_original_alto_xml()
+#
+#     # use the gale metadata to get a possible set of pages
+#     doc = XmlReader.open_xml_file(get_primary_xml_file())
+#
+#     namespace = XmlReader.alto_namespace
+#
+#     # for each page, attempt to get an alto page
+#     xml_pages = []
+#     page_num = 0
+#     doc.xpath('//page').each { |page_node|
+#       page_num += 1
+#
+#       # if we have an alto page, add it to the alto document
+#       src = self.get_ocr_source( page_num )
+#       if src == :alto
+#          page_xml_path = get_page_xml_file(page_num, src, uri_root)
+#          xml_doc = XmlReader.open_xml_file(page_xml_path)
+#          xml_pages.push( xml_doc )
+#       end
+#     }
+#
+#     root = nil
+#     peer = nil
+#     xml_pages.each_with_index { |pg, ix|
+#        if ix == 0
+#          root = pg
+#          peer = pg.xpath( '//ns:Layout', 'ns' => namespace ).first
+#        else
+#          description = pg.xpath( '//ns:Description', 'ns' => namespace ).first
+#          layout = pg.xpath( '//ns:Layout', 'ns' => namespace ).first
+#          peer.add_next_sibling( description )
+#          description.add_next_sibling( layout )
+#          peer = layout
+#        end
+#     }
+#
+#     return root.to_xml
+#   end
 
    # attempt to create an ALTO page from gale page xml
    def gale_xml_to_alto_page( xml_doc )
@@ -665,18 +681,6 @@ class Document < ActiveRecord::Base
      page.add_child( gale_xml_to_alto_page_content( page_xml ) )
      return( page )
    end
-
-   # attempt to create an ALTO page from ALTO page xml   NOT USED NOW
-   #def alto_xml_to_alto_page( xml_doc, page_num )
-   #  namespace = XmlReader.alto_namespace
-   #  page = Nokogiri::XML::Node.new('page', xml_doc )
-   #  description_xml = xml_doc.xpath( '//ns:Description', 'ns' => namespace ).first
-   #  page_xml = xml_doc.xpath( '//ns:Page', 'ns' => namespace ).first
-   #  page_xml[ 'ID' ] = "page_#{page_num}"
-   #  page.add_child( description_xml )
-   #  page.add_child( page_xml )
-   #  return( page )
-   #end
 
    def gale_xml_to_alto_description( xml_doc )
      description = Nokogiri::XML::Node.new('Description', xml_doc )
@@ -715,6 +719,8 @@ class Document < ActiveRecord::Base
      return( layout )
    end
 
+   # Get TEI-A with or without words
+   #
    def get_corrected_tei_a(include_words)
       document_dtd = "#{Rails.root}/tmp/book.dtd"
       found = File.exist?(document_dtd)
@@ -722,18 +728,27 @@ class Document < ActiveRecord::Base
          File.open(document_dtd, "w") { |f| f.write("") }
       end
 
+      # write corrected XML to filesysystem
       xml_txt = get_corrected_gale_xml()
       xml_file = "#{Rails.root}/tmp/orig-#{self.id}-#{Time.now.to_i}.xml"
       File.open(xml_file, "w") { |f| f.write(xml_txt) }
-
-      saxon = "#{Rails.root}/lib/saxon"
-      tmp_file = "#{Rails.root}/tmp/#{self.id}-#{Time.now.to_i}.xml"
-      #xsl_file = "#{saxon}/GaleToTeiA.xsl"
       
-      # Write the XSLT from DB to filesystem because thats the wae saxon wants it
+      # Write the XSLT from DB to filesystem because thats the way saxon wants it
       conv = Conversion.where(from_format: 'gale', to_format: 'tei').first
       xsl_file = "#{Rails.root}/tmp/xsl-#{Time.now.to_i}.xsl"
       File.open(xsl_file, "w") { |f| f.write(conv.xslt) }
+
+      out = self.transform(xml_file, xsl_file)
+      File.delete(xsl_file)
+      File.delete(xml_file)
+      return out
+   end
+
+   # Use saxon to apply an XSL transformation to an xml file
+   #
+   def transform(xml_file, xsl_file)
+      saxon = "#{Rails.root}/lib/saxon"
+      tmp_file = "#{Rails.root}/tmp/#{self.id}-#{Time.now.to_i}.xml"
       
       xsl_param = "showW='n'"
       xsl_param = "showW='y'"if include_words
@@ -743,12 +758,10 @@ class Document < ActiveRecord::Base
       Document.do_command(cmd)
       file = File.open(tmp_file)
       out = file.read
-      File.delete(xsl_file)
-      File.delete(xml_file)
       File.delete(tmp_file)
       return out
    end
-
+   
    def get_corrected_page_text(page_num, src)
       page_info = get_page_info(page_num, false, false)
       page_text = ''

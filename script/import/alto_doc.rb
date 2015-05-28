@@ -91,6 +91,8 @@ ARGV.each do |arg|
    end
 end
 
+puts "===== STARTING UPLOAD OF #{directory} ====="
+
 verbose_output = !option_flags.index('v').nil?
 test_only = !option_flags.index('t').nil?
 cmd_flags = "#{verbose_output ? '-v':''} #{test_only ? '-t':''}"

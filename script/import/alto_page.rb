@@ -28,10 +28,6 @@ def parse_upload_response(response)
   result[:auth_token] = auth_token_str[12..-14]
   uri_str = response[/<uri>\S*<\/uri>/]
   result[:uri] = uri_str[5..-7]
-
-  path_str = response[/<path>\S*<\/path>/]
-  result[:path] = path_str[6..-8] 
-
   return result
 end
 
@@ -135,24 +131,7 @@ else
    response = parse_upload_response(raw_response) unless test_only || output_curl_only
    puts response if verbose_output
    puts "#{xml_file} #{File.new(xml_file).size} (DONE)" if !output_curl_only
- 
-   # for EEBO docs, see if we need to copy over the image file as well 
-   if !doc_info[:eebo_dir].nil? && !doc_info[:eebo_dir].empty?
-      xml_path = response[:path]
-      root_path = xml_path.split("/xml")[0]
-      tw_image_path = File.join(root_path, "img").to_s
-      if !Dir.exists? tw_image_path
-         Dir.mkdir tw_image_path
-      end
-     
-      # EEBO images names look like: 00003.000.001.tif 
-      img_name = "#{page_num.to_s.rjust(5,'0')}.*"
-      img_path = File.join(doc_info[:eebo_dir], img_name).to_s
-      cmd = "cp #{img_path} #{tw_image_path}"
-      puts "Copy page images: #{cmd}"
-      system( cmd )
-   end
-   
+
    if output_curl_only
       puts ret_value.map { |line| "#{line}\n"}
    end

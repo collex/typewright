@@ -490,50 +490,12 @@ class Document < ActiveRecord::Base
       return count
    end
 
-   def generate_primary_xml( title, num_pages )
-
-     @pages = []
-     (1..num_pages).each { | num |
-        @pages << File.basename( self.get_document_page_xml_file( self.document_id, num ) )
-     }
-
-     doc = Nokogiri::XML::Builder.new do |xml|
-        xml.doc.create_internal_subset( 'book', nil, 'book.dtd' )
-        xml.book {
-           xml.bookInfo {
-              xml.documentId "#{document_id}"
-           }
-           xml.citation {
-             xml.titleGroup {
-                xml.fullTitle "#{title}"
-             }
-           }
-           xml.text_ {
-             @pages.each { |pg|
-                xml.page( :fileRef => pg )
-             }
-           }
-        }
-     end
-     xml_file = get_primary_xml_file()
-     File.open( xml_file, "w" ) { |f| f.write( doc.to_xml ) }
-
-     self.title = title
-     self.total_pages = num_pages
-
-   end
-
-   def import_page(page_num, image_file)
-     # do nothing...
-   end
-
    def import_page_ocr(page_num, xml_file, uri_root = "")
       xml_doc = XmlReader.open_xml_file(xml_file)
       src = XmlReader.detect_ocr_source(xml_doc)
       page_xml_path = get_page_xml_file(page_num, src, uri_root)
       logger.info "SOURCE #{src}, PATH #{page_xml_path}"
       File.open(page_xml_path, "w") { |f| f.write(xml_doc.to_xml) }
-      return page_xml_path
    end
 
    # get the corrected document in text format (nothing to do with the source of the OCR)
@@ -1006,94 +968,8 @@ class Document < ActiveRecord::Base
             dest_path = dest_path.gsub(".tif", ".TIF")
             FileUtils.cp(image_file, dest_path)
 
-         document.import_page(page_num+1, image_file)
          end
       }
-   end
-
-   def self.eebo_install( uri, title, path_to_xml, path_to_images )
-     # example params: ('lib://EEBO/0011223300-0005567893',
-     # 'something very interesting',
-     # '/data/shared/text-xml/IDHMC-ocr/0/0/153',
-     # '/data/eebo/e0014/40093')
-
-     #puts "URI: #{uri}"
-     #puts "XML: #{path_to_xml}"
-     #puts "IMG: #{path_to_images}"
-
-     original_dir = Dir.pwd
-     Dir.chdir( path_to_xml )
-     xml_list = []
-     Dir.glob("*") { |f|
-       xml_list << f if f.end_with?( "_ALTO.XML", "_alto.xml", "_ALTO.xml", "_alto.XML" )
-     }
-
-     Dir.chdir( original_dir )
-     Dir.chdir( path_to_images )
-     image_list = []
-     Dir.glob("*") { |f|
-       image_list << f if f.end_with?( ".tif", ".TIF" )
-     }
-
-     Dir.chdir( original_dir )
-
-     # make sure we have some images...
-     if image_list.length != 0
-       if image_list.length >= xml_list.length
-
-         #puts "Found #{image_list.length} images, #{xml_list.length} XML files"
-
-         #puts "Creating #{uri} ..."
-         document = Document.find_by_uri(uri)
-         document = Document.create!({ uri: uri }) if document.blank?
-
-         dest_img_path = document.get_image_directory()
-
-         page_num = 1
-         while true
-
-           # get the image for this page... if not, we are done
-           image_file = Document.get_image_filename_for_page( image_list, page_num )
-           break if image_file.empty?
-
-           source_img = "#{path_to_images}/#{image_file}"
-           dest_img = dest_img_path
-           dest_img = File.join( dest_img, sprintf( "%s%05d0.tif", document.document_id, page_num) )
-           FileUtils.rm( dest_img, { :force => true } ) if FileTest.file?( dest_img )
-           FileUtils.cp(source_img, dest_img )
-
-           xml_file = Document.get_xml_filename_for_page( xml_list, page_num )
-
-           # we have a file for this page, use it, else create a placeholder
-           if xml_file.blank? == false
-              source_xml = "#{path_to_xml}/#{xml_file}"
-              xml_doc = XmlReader.open_xml_file( source_xml )
-           else
-              # use the placeholder file
-              source_xml = "#{Rails.root}/data/empty_alto.xml"
-              xml_doc = XmlReader.open_xml_file( source_xml )
-              page_block = xml_doc.xpath( '//ns:Page', 'ns' => XmlReader.alto_namespace ).first
-              page_block[ "ID" ] = "page_#{page_num}"
-           end
-
-           img_block = xml_doc.xpath( '//ns:filename', 'ns' => XmlReader.alto_namespace ).first
-           img_block.content = File.basename( dest_img )
-
-           dest_xml = document.get_document_page_xml_file( document.document_id, page_num, :alto )
-           FileUtils.rm( dest_xml, { :force => true } ) if FileTest.file?( dest_xml )
-           File.open( dest_xml, "w") { |f| f.write(xml_doc.to_xml) }
-
-           document.import_page( page_num, source_img )
-           page_num += 1
-         end
-         document.generate_primary_xml( title, page_num - 1 )
-         document.save!
-       else
-         puts "Cannot match images with pages (too many pages) for #{uri}"
-       end
-     else
-       puts "No images available in #{path_to_images} for #{uri}"
-     end
    end
 
    def self.get_image_filename_for_page( image_list, page_num )

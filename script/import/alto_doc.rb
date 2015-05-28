@@ -18,15 +18,17 @@ def generate_primary_xml( doc )
    # generate a list of paths to xml files for each page
    pages = []
    (1..doc.total_pages).each do | num |
-      pages << File.basename( doc.get_document_page_xml_file( doc.id, num, :alto ) )
+      pg = File.basename( doc.get_document_page_xml_file( doc.document_id, num, :alto ) )
+      pages << pg
    end
 
+
    # Create the XML document this binds all of theses pages together with a title
-   doc = Nokogiri::XML::Builder.new do |xml|
+   xml_doc = Nokogiri::XML::Builder.new do |xml|
       xml.doc.create_internal_subset( 'book', nil, 'book.dtd' )
       xml.book {
          xml.bookInfo {
-            xml.documentId "#{doc.id}"
+            xml.documentId "#{doc.document_id}"
          }
          xml.citation {
             xml.titleGroup {
@@ -40,11 +42,11 @@ def generate_primary_xml( doc )
          }
       }
    end
-   
+
    # Dump the file to TW filesystem
    xml_file = doc.get_primary_xml_file()
-   File.open( xml_file, "w" ) { |f| f.write( doc.to_xml ) }
-   puts "Write pimary XML file #{xml_file}"
+   File.open( xml_file, "w" ) { |f| f.write( xml_doc.doc.to_xml ) }
+   puts "Wrote pimary XML file #{xml_file}"
 end
 
 # start by reading our input parameters
@@ -115,8 +117,8 @@ if page_list.empty?
 end
 
 # Extract the URI for the work from the path and eMOP API and see if a record for it exists
-info = get_doc_info(directory)
-curl_cmd = "-F \"uri=#{info[:uri]}\" -X GET #{server}/documents/exists.xml"
+doc_info = get_doc_info(directory)
+curl_cmd = "-F \"uri=#{doc_info[:uri]}\" -X GET #{server}/documents/exists.xml"
 raw_response = do_curl_command(curl_cmd, verbose_output, false)
 response = parse_exists_response(raw_response)
 puts response if verbose_output
@@ -127,16 +129,16 @@ if response[:exists] == false
    # if this is EEBO, create the doc, copy images and create the primary XML.
    # Otherwise bail
    if !doc_info[:eebo_dir].nil? && !doc_info[:eebo_dir].empty?
-      puts "INFO: Document #{info[:uri]} does not exist. Creating new record"
+      puts "INFO: Document #{doc_info[:uri]} does not exist. Creating new record"
       doc = Document.new()
-      doc.uri = info[:uri]
+      doc.uri = doc_info[:uri]
       doc.total_pages = page_list.length
-      doc.title =   info[:title]
+      doc.title =   doc_info[:title]
       if !doc.save
          puts "ERROR: Unable to create document record: #{doc.full_messages.to_sentence} ** SKIPPING **"
          exit(1)
       end
-      puts "INFO: Document #{info[:uri]} created"
+      puts "INFO: Document #{doc_info[:uri]} created. ID=#{doc.id}"
 
       # Grab the path to the 1st page of XML and use
       # this to figure out the root directory for this document
@@ -146,6 +148,7 @@ if response[:exists] == false
       if !Dir.exists? tw_image_path
          Dir.mkdir tw_image_path
       end
+      puts "INFO: Image path is #{tw_image_path}"
       
       # switch over to the EEBO image dir copy all tiffs to TW
       Dir.chdir( doc_info[:eebo_dir] )
@@ -162,7 +165,7 @@ if response[:exists] == false
 
       # Warn if image count / page count mismatch
       if img_cnt != doc.total_pages
-         puts "WARNING: Document #{info[:uri]} has #{doc.total_pages} pages and #{img_cnt} page images."
+         puts "WARNING: Document #{doc_info[:uri]} has #{doc.total_pages} pages and #{img_cnt} page images."
       end
       
       # Last; create the primary XML file for this document
@@ -170,7 +173,7 @@ if response[:exists] == false
       generate_primary_xml(doc)
       puts "INFO: Document creation success"
    else
-      puts "WARNING: Document #{info[:uri]} does not exist. ** SKIPPING **"
+      puts "WARNING: Document #{doc_info[:uri]} does not exist. ** SKIPPING **"
       exit(1)
    end
 end

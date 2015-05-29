@@ -101,7 +101,6 @@ class Document < ActiveRecord::Base
       sources.each do |ocr_src|
          xml_file = get_page_xml_file(page, ocr_src, self.uri_root())
          if File.exist?(xml_file)
-            logger.info "file #{xml_file}  SRC #{ocr_src}"
             return ocr_src.to_sym
          end
       end
@@ -547,34 +546,66 @@ class Document < ActiveRecord::Base
    # Get the original text for this document
    #
    def get_original_text()
+      logger.info "Get original TEXT dor #{self.document_id}"
       doc = XmlReader.open_xml_file(get_primary_xml_file())
-         
+
       # Get XSL for gale and alto
       conv = Conversion.where(from_format: 'gale', to_format: 'txt').first
-      gale_xsl_file = "#{Rails.root}/tmp/gale-xsl-#{Time.now.to_i}.xsl"
-      File.open(gale_xsl_file, "w") { |f| f.write(conv.xslt) }
+      gale_xsl_file = Tempfile.new(['gale', '.xsl'])
+      gale_xsl_file << conv.xslt
+      gale_xsl_file.close
+
       conv = Conversion.where(from_format: 'alto', to_format: 'txt').first
-      alto_xsl_file = "#{Rails.root}/tmp/alto-xsl-#{Time.now.to_i}.xsl"
-      File.open(alto_xsl_file, "w") { |f| f.write(conv.xslt) }
+      alto_xsl_file = Tempfile.new(['alto', '.xsl'])
+      alto_xsl_file  << conv.xslt
+      alto_xsl_file.close
 
       title = XmlReader.get_full_title(doc)
       output = title + "\n\n"
 
+      # General plan: stream XML page content into one merged XML file
+      # Do this until a page from a different source is encountered. When
+      # this happens, close out ths block, transform it, and start a new one.
       page_num = 1
+      xml_src_file = Tempfile.new(['src', '.xml'])
+      xml_src_file << "<contents>"
+      curr_src = nil
+      curr_xsl = nil
       doc.xpath('//page').each do |page_node|
          page_file = self.get_page_file(page_num, page_node['fileRef'])
          src = self.get_ocr_source( page_num )
-         if src == :alto
-            output += self.transform(page_file, alto_xsl_file,false)
-         else
-            output += self.transform(page_file, gale_xsl_file,false)
+
+         # we have been writing content for a source, and now we've got something different
+         # Close out this block of XML and transform it. Then start a new  content file
+         if !curr_src.nil? && curr_src != src
+            xml_src_file << "</contents>"
+            xml_src_file.close
+            output += self.transform(xml_src_file.path, curr_xsl, false)
+            xml_src_file.unlink
+            xml_src_file = Tempfile.new(['src', '.xml'])
          end
-         output += "\n\n"
+
+         # preserve curr src, xsl and dump xml content to it
+         curr_src = src
+         curr_xsl = alto_xsl_file.path
+         curr_xsl = gale_xsl_file.path if src == :gale
+         file = File.open(page_file, "rb")
+         contents = file.read
+         contents = contents.gsub(/<\?xml version=\"1\.0\"\?>/, "")
+         xml_src_file  << contents
+
          page_num += 1
       end
+
+      # Convert remaining block
+      xml_src_file << "</contents>"
+      xml_src_file.close
+      output += self.transform(xml_src_file.path, curr_xsl, false)
       
-      File.delete(gale_xsl_file)
-      File.delete(alto_xsl_file)
+      # cleanup
+      xml_src_file.unlink
+      gale_xsl_file.unlink
+      alto_xsl_file.unlink
       return output
    end
 

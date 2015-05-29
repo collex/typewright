@@ -666,10 +666,21 @@ class Document < ActiveRecord::Base
    
    # get the corrected page in gale format (nothing to do with the source of the OCR)
    def get_corrected_page_gale_xml(page_num)
-
-      page_xml_path = get_page_xml_file(page_num, :gale)
-
-      page_doc = XmlReader.open_xml_file(page_xml_path)
+      # Create a blank gale structure with just enough
+      # info to generate output... this is just the page number/
+      # content of the page will be filled out from the
+      # lines data in the loop below. Doing it this way
+      # lets this call work for any OCR source
+      blank_doc = Nokogiri::XML::Builder.new do |xml|
+         xml.page {
+            xml.pageInfo {
+               xml.pageID "#{page_num.to_s.rjust(4, "0")}0"
+            }
+            xml.pageContent {
+            }
+         }
+      end
+      page_doc = blank_doc.doc
       page_node = page_doc.xpath('//page')
       page_content_node = page_node.xpath('//pageContent').first()
       page_content_node.content = nil
@@ -681,7 +692,6 @@ class Document < ActiveRecord::Base
 
          output_item = apply_line_edits( line )
          if output_item.present?
-
             # if there is no paragrah node - or the first word of the
             # current object has a different paragraph number - add the
             # content to the main body and generate a new paragraph node

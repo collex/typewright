@@ -268,13 +268,7 @@ class Document < ActiveRecord::Base
 
       # figure out the best available OCR source for this page
       src = self.get_ocr_source( page )
-
-      # if we have an alto doc but we have gail corrections, use the gale source
-      src = :gale if src == :alto && corrections_exist?( self.id, page, :gale ) == true
-
       doc = XmlReader.open_xml_file(get_primary_xml_file())
-
-      logger.info("Get #{src} page #{page} for #{self.uri_root()}")
       page = (page.nil?) ? 1 : page.to_i
       page_doc = XmlReader.open_xml_file(get_page_xml_file(page, src, self.uri_root()))
 
@@ -289,10 +283,6 @@ class Document < ActiveRecord::Base
       title = XmlReader.get_full_title(doc)
       title_abbrev = title.length > 32 ? title.slice(0..30)+'...' : title
 
-      # open the source specific page xml document
-      if src != :gale
-         page_doc = XmlReader.open_xml_file(get_page_xml_file(page, src, self.uri_root()))
-      end
 
       # now get the words, line and paragraphs from the page's xml file
       page_src = XmlReader.read_all_lines_from_page(page_doc, src)
@@ -317,7 +307,7 @@ class Document < ActiveRecord::Base
       end
 
       # all the original source data is in place
-
+      
       recs = Line.find_all_by_document_id_and_page_and_src(self.id, page, src)
       changes = {}
       recs.each {|rec|
@@ -617,7 +607,6 @@ class Document < ActiveRecord::Base
       page_num = 1
       doc.xpath('//page').each do |page_node|
          page_file = self.get_page_file(page_num, page_node['fileRef'])
-         logger.info "   * Page File: #{page_file}"
          page_doc = XmlReader.open_xml_file(page_file)
          page_doc_els = page_doc.xpath('//page')
          if page_doc_els.length > 0
@@ -627,47 +616,6 @@ class Document < ActiveRecord::Base
       end
       return doc.to_xml
    end
-
-#   # get the original alto pages
-#   def get_original_alto_xml()
-#
-#     # use the gale metadata to get a possible set of pages
-#     doc = XmlReader.open_xml_file(get_primary_xml_file())
-#
-#     namespace = XmlReader.alto_namespace
-#
-#     # for each page, attempt to get an alto page
-#     xml_pages = []
-#     page_num = 0
-#     doc.xpath('//page').each { |page_node|
-#       page_num += 1
-#
-#       # if we have an alto page, add it to the alto document
-#       src = self.get_ocr_source( page_num )
-#       if src == :alto
-#          page_xml_path = get_page_xml_file(page_num, src, uri_root)
-#          xml_doc = XmlReader.open_xml_file(page_xml_path)
-#          xml_pages.push( xml_doc )
-#       end
-#     }
-#
-#     root = nil
-#     peer = nil
-#     xml_pages.each_with_index { |pg, ix|
-#        if ix == 0
-#          root = pg
-#          peer = pg.xpath( '//ns:Layout', 'ns' => namespace ).first
-#        else
-#          description = pg.xpath( '//ns:Description', 'ns' => namespace ).first
-#          layout = pg.xpath( '//ns:Layout', 'ns' => namespace ).first
-#          peer.add_next_sibling( description )
-#          description.add_next_sibling( layout )
-#          peer = layout
-#        end
-#     }
-#
-#     return root.to_xml
-#   end
 
    # attempt to create an ALTO page from gale page xml
    def gale_xml_to_alto_page( xml_doc )
@@ -714,6 +662,63 @@ class Document < ActiveRecord::Base
      }
 
      return( layout )
+   end
+   
+   # get the corrected page in gale format (nothing to do with the source of the OCR)
+   def get_corrected_page_gale_xml(page_num)
+
+      page_xml_path = get_page_xml_file(page_num, :gale)
+
+      page_doc = XmlReader.open_xml_file(page_xml_path)
+      page_node = page_doc.xpath('//page')
+      page_content_node = page_node.xpath('//pageContent').first()
+      page_content_node.content = nil
+
+      p_node = nil
+      curr_p_num = 0
+      page_info = get_page_info(page_num, false, false)
+      page_info[:lines].each do | line |
+
+         output_item = apply_line_edits( line )
+         if output_item.present?
+
+            # if there is no paragrah node - or the first word of the
+            # current object has a different paragraph number - add the
+            # content to the main body and generate a new paragraph node
+            if p_node.nil? || curr_p_num != output_item[0][:paragraph]
+               page_content_node << p_node if !p_node.nil?
+               p_node = Nokogiri::XML::Node.new('p', page_doc)
+               curr_p_num = output_item[0][:paragraph]
+            end
+
+            ab_node = Nokogiri::XML::Node.new('ab', page_doc)
+            p_node << ab_node
+            output_item.each do |word|
+               wd_node = Nokogiri::XML::Node.new('wd', page_doc)
+               wd_node.content = word[:word]
+               pos_str = "#{word[:l]},#{word[:t]},#{word[:r]},#{word[:b]}"
+               wd_node['pos'] = pos_str
+               ab_node << wd_node
+            end
+         end
+      end
+
+      # dump out the last paragraph
+      page_content_node << p_node if !p_node.nil?
+      return page_node
+   end
+   
+   # get the corrected document in gale format (nothing to do with the source of the OCR)
+   def get_corrected_gale_xml()
+      primary_file = get_primary_xml_file()
+      doc = XmlReader.open_xml_file( primary_file )
+      page_num = 0
+      doc.xpath('//page').each do |page_node|
+         page_num += 1
+         page_xml = get_corrected_page_gale_xml(page_num)
+         page_node.replace(page_xml)
+      end
+      return doc.to_xml
    end
 
    # Get TEI-A with or without words
@@ -771,50 +776,6 @@ class Document < ActiveRecord::Base
 	  page_text = page_text.gsub(/<del>.+<\/del>/, '')
 	  page_text = ActionView::Base.full_sanitizer.sanitize(page_text)
     return page_text
-   end
-
-   # get the corrected page in gale format (nothing to do with the source of the OCR)
-   def get_corrected_page_gale_xml(page_num, uri_root = "")
-
-      page_xml_path = get_page_xml_file(page_num, :gale, uri_root)          # use the gale source material and amend as appropriate
-
-      page_doc = XmlReader.open_xml_file(page_xml_path)
-      page_node = page_doc.xpath('//page')
-      page_content_node = page_node.xpath('//pageContent').first()
-      page_content_node.content = nil
-
-      p_node = nil
-      curr_p_num = 0
-      page_info = get_page_info(page_num, false, false)
-      page_info[:lines].each do | line |
-
-         output_item = apply_line_edits( line )
-         if output_item.present?
-
-            # if there is no paragrah node - or the first word of the
-            # current object has a different paragraph number - add the
-            # content to the main body and generate a new paragraph node
-            if p_node.nil? || curr_p_num != output_item[0][:paragraph]
-               page_content_node << p_node if !p_node.nil?
-               p_node = Nokogiri::XML::Node.new('p', page_doc)
-               curr_p_num = output_item[0][:paragraph]
-            end
-
-            ab_node = Nokogiri::XML::Node.new('ab', page_doc)
-            p_node << ab_node
-            output_item.each do |word|
-               wd_node = Nokogiri::XML::Node.new('wd', page_doc)
-               wd_node.content = word[:word]
-               pos_str = "#{word[:l]},#{word[:t]},#{word[:r]},#{word[:b]}"
-               wd_node['pos'] = pos_str
-               ab_node << wd_node
-            end
-         end
-      end
-
-      # dump out the last paragraph
-      page_content_node << p_node if !p_node.nil?
-      return page_node
    end
 
    # get the corrected page in alto format (nothing to do with the source of the OCR)

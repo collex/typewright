@@ -42,15 +42,19 @@ class Corrections
       # show up in the reports. TO solve this, an auto correction from a system
       # user is recorded for the document. The system user has id of 0. Don't count any
       # of these edits as progess.
+      where_clause = ""
+      where_clause = "where #{filter_phrase}" if !filter_phrase.empty?
       sql = "select d.id, uri, title, d.status as status, "
       sql = sql << " max(l.updated_at) as latest_update, "
       sql = sql << "(COUNT(DISTINCT case when user_id > 0 then `page` end) / total_pages)*100 as percent  "
       sql = sql << " from documents d inner join `lines` l on d.id = l.document_id "
-      sql = sql << " where #{filter_phrase} group by d.id ORDER BY #{sort_by} #{sort_order} LIMIT #{page} , #{page_size};"
+      sql = sql << " #{where_clause} group by d.id ORDER BY #{sort_by} #{sort_order} LIMIT #{page} , #{page_size};"
       resp = Line.find_by_sql(sql)
 
       # get a count of ALL available results
-      total = Line.find_by_sql("select COUNT(DISTINCT d.id) as cnt from documents d, `lines` l where d.id = l.document_id and #{filter_phrase};").first.cnt
+      and_clause = ""
+      and_clause = "and #{filter_phrase}" if !filter_phrase.empty?
+      total = Line.find_by_sql("select COUNT(DISTINCT d.id) as cnt from documents d, `lines` l where d.id = l.document_id #{and_clause};").first.cnt
 
       resp = resp.map { |doc|
          # Get all users that corrected at least one line

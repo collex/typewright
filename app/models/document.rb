@@ -490,19 +490,20 @@ class Document < ActiveRecord::Base
    # get the corrected document in text format (nothing to do with the source of the OCR)
    #
    def get_corrected_text()
-      doc = XmlReader.open_xml_file(get_primary_xml_file())
-      title = XmlReader.get_full_title(doc)
-      num_pages = XmlReader.get_num_pages(doc)
-      output = title + "\n\n"
-      num_pages.times do | page |
-         src = self.get_ocr_source( page + 1 )
-         page_text = self.get_corrected_page_text(page + 1, src)
-         output += "Page #{page + 1}\n\n"
-         output += page_text unless page_text.nil?
-         output += "(empty page)" if page_text.nil? || page_text.empty?
-         output += "\n\n"
-         end
-      return output
+      # write corrected XML to filesysystem
+      xml_txt = get_corrected_gale_xml()
+      xml_file = "#{Rails.root}/tmp/orig-#{self.id}-#{Time.now.to_i}.xml"
+      File.open(xml_file, "w") { |f| f.write(xml_txt) }
+      
+      # Write the XSLT from DB to filesystem because thats the way saxon wants it
+      conv = Conversion.where(from_format: 'gale', to_format: 'txt').first
+      xsl_file = "#{Rails.root}/tmp/xsl-#{Time.now.to_i}.xsl"
+      File.open(xsl_file, "w") { |f| f.write(conv.xslt) }
+
+      out = self.transform(xml_file, xsl_file,include_words)
+      File.delete(xsl_file)
+      File.delete(xml_file)
+      return out
    end
 
    # get the corrected document in alto format (nothing to do with the source of the OCR)
@@ -605,10 +606,16 @@ class Document < ActiveRecord::Base
       logger.info "Get original XML"
       doc = XmlReader.open_xml_file(get_primary_xml_file())
       page_num = 1
+      src = self.get_ocr_source( page_num )
       doc.xpath('//page').each do |page_node|
          page_file = self.get_page_file(page_num, page_node['fileRef'])
          page_doc = XmlReader.open_xml_file(page_file)
-         page_doc_els = page_doc.xpath('//page')
+         if src == :gale
+            page_doc_els = page_doc.xpath('//page')
+         else
+            page_doc.remove_namespaces!   # TODO fix... make nokogiri understand that this is in the emop namespace
+            page_doc_els = page_doc.xpath('//Page')
+         end
          if page_doc_els.length > 0
             page_node.replace(page_doc_els[0])
          end

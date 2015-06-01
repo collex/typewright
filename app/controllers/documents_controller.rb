@@ -76,7 +76,7 @@ class DocumentsController < ApplicationController
           sys_edit.document_id = doc.id
           sys_edit.page = 0
           sys_edit.line = 0
-          sys_edit.src = 'gale'
+          sys_edit.src = doc.get_ocr_source( 1 )
         sys_edit.save
         end
       elsif doc.status == 'not_complete'
@@ -182,7 +182,6 @@ class DocumentsController < ApplicationController
       @document = Document.find(id)
       @document.import_page_ocr(page_num, xml_file.tempfile )
       @id = @document.id
-      @edits = @document.corrections_exist?( @document.id, page_num, :gale )  # assume we are asking for gale corrections
       @page_num = page_num + 1
     end
   end

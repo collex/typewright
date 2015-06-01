@@ -882,11 +882,6 @@ class Document < ActiveRecord::Base
      return( word )
    end
 
-   # do any corrections exist for the specified page and document
-   def corrections_exist?( doc_id, page_num, src )
-     return Line.num_changes_for_page( doc_id, page_num, src ) != 0
-   end
-
    # delete any corrections for the specified page, document and source
    def delete_corrections( doc_id, page_num )
       Line.delete_changes( doc_id, page_num )

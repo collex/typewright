@@ -492,6 +492,7 @@ class Document < ActiveRecord::Base
    def get_corrected_text()
       # write corrected XML to filesysystem
       xml_txt = get_corrected_gale_xml()
+      xml_txt.gsub! /<!DOCTYPE book SYSTEM "book.dtd">/, ""
       xml_file = "#{Rails.root}/tmp/orig-#{self.id}-#{Time.now.to_i}.xml"
       File.open(xml_file, "w") { |f| f.write(xml_txt) }
       
@@ -500,7 +501,7 @@ class Document < ActiveRecord::Base
       xsl_file = "#{Rails.root}/tmp/xsl-#{Time.now.to_i}.xsl"
       File.open(xsl_file, "w") { |f| f.write(conv.xslt) }
 
-      out = self.transform(xml_file, xsl_file,include_words)
+      out = self.transform(xml_file, xsl_file,false)
       File.delete(xsl_file)
       File.delete(xml_file)
       return out

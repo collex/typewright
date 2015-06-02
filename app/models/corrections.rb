@@ -33,7 +33,8 @@ class Corrections
       # filter by title / uri / status
       filter_phrase = filter.blank? ? "" : " (title LIKE '%#{filter}%' or uri LIKE '%#{filter}%')"
       if !status_filter.nil? && !status_filter.blank? && status_filter != 'all'
-        filter_phrase = filter_phrase << " and d.status = '#{status_filter}'"
+        filter_phrase << " and" if !filter_phrase.blank?
+        filter_phrase = filter_phrase << " d.status = '#{status_filter}'"
       end
 
       # query for paged results

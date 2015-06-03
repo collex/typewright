@@ -4,11 +4,11 @@ class LinesController < ApplicationController
 		# called by Typewright::Line.get_undoable_record [ not passing :revisions ]
 		# called when showing the main page for a document [ passing :revisions ]
 		lines = []
-		src = params[:src].blank? ? :gale : params[:src].to_sym
 		if params[:revisions] == 'true'
 			uri = params[:uri]
 			doc = Document.find_by_uri(uri)
 			if doc
+			   src = doc.get_ocr_source( 1 )
 				id = doc.id
 				lines = Line.find_all_by_document_id_and_src(id, src)
 				lines = lines.sort do |a,b|
@@ -28,6 +28,8 @@ class LinesController < ApplicationController
 			end
 		else
 			document_id = params[:document_id]
+			doc = Document.find_by_id(document_id)
+			src = doc.get_ocr_source( page )
 			page = params[:page]
 			line = params[:line]
 			if line

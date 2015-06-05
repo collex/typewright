@@ -23,8 +23,6 @@ def parse_upload_response(response)
   exists_str = response[/<exists>\D+<\/exists>/]
   result[:exists] = (exists_str[8..11] == 'true')
   auth_token_str = response[/<auth_token>\S*<\/auth_token>/]
-  edits_str = response[/<edits>\D+<\/edits>/]
-  result[:edits] = (edits_str[7..10] == 'true')
   result[:auth_token] = auth_token_str[12..-14]
   uri_str = response[/<uri>\S*<\/uri>/]
   result[:uri] = uri_str[5..-7]

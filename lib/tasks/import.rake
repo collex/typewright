@@ -486,16 +486,23 @@ end
 ##
 
 def upload_alto_doc( dir )
-  script = "rails runner script/import/alto_doc.rb -- -v #{get_service_url} #{dir}"
-  puts "uploading: #{dir}..."
-  system("#{script} >> #{Rails.root}/log/manual_upload.log")
+   if !Dir.exists?( dir )
+      puts "ERROR: #{dir} does not exist"
+   else
+      script = "rails runner script/import/alto_doc.rb -- -v #{get_service_url} #{dir}"
+      puts "uploading: #{dir}..."
+      system("#{script} >> #{Rails.root}/log/manual_upload.log")
+   end
 end
 
 def upload_alto_page( file )
-   script = "rails runner script/import/alto_page.rb -- -v #{get_service_url} #{file}"
-   puts "uploading: #{file}..."
-   system("#{script} >> #{Rails.root}/log/manual_upload.log")
-   
+   if !File.exists?( file )
+      puts "ERROR: #{file} does not exist"
+   else
+      script = "rails runner script/import/alto_page.rb -- -v #{get_service_url} #{file}"
+      puts "uploading: #{file}..."
+      system("#{script} >> #{Rails.root}/log/manual_upload.log")
+   end
 end
 ##
 ## END ALTO

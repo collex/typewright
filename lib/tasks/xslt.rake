@@ -25,7 +25,7 @@ namespace :xslt do
       to = ENV['to']
       xsl_file = ENV['file']
 
-      c = Conversion.where(from_format: 'alto', to_format: 'txt').first
+      c = Conversion.where(from_format: from, to_format: to).first   #mjc: 9/24/15, fixing TW ingestion of ALTO
       if c.nil?
          puts "Adding new conversion from #{from} to #{to} with [#{xsl_file}]"
          c = Conversion.new()

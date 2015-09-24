@@ -710,7 +710,7 @@ class Document < ActiveRecord::Base
       xsl_file = "#{Rails.root}/tmp/xsl-#{Time.now.to_i}.xsl"
       File.open(xsl_file, "w") { |f| f.write(conv.xslt) }
       
-      out = self.transform(xml_file, xsl_file,include_words)
+      out = self.transform(xml_file, xsl_file,false) #mjc: 9/24/15, fixing TW ingestion of ALTO
       File.delete(xsl_file)
       File.delete(xml_file)
       return out

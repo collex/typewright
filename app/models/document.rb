@@ -145,9 +145,9 @@ class Document < ActiveRecord::Base
 
    def img_size(page, page_doc, src)
       image_path = self.get_page_image_file(page, page_doc, src)
-      image_filename = image_path.split('/').last
+      #image_filename = image_path.split('/').last
 
-      image_size = Rails.cache.fetch("imgsize.#{image_filename}") {
+      image_size = Rails.cache.fetch("imgsize.#{image_path}") {
       # not cached, ask imagemagic for the size
          imagemagick = XmlReader.get_path('imagemagick')
          identify = "#{imagemagick}/identify"

@@ -24,9 +24,11 @@ class LinesController < ApplicationController
             start = params[:start]
             size = params[:size]
             lines = lines[start.to_i,size.to_i]
-            lines.each { |line|
-               line.src = 'emop' if line.src == 'alto'
-            }
+            if lines.present?
+               lines.each { |line|
+                  line.src = 'emop' if line.src == 'alto'
+               }
+            end
          end
       else
          document_id = params[:document_id]

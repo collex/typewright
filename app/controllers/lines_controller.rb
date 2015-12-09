@@ -20,11 +20,13 @@ class LinesController < ApplicationController
                else
                   a.page <=> b.page
                end
-               line.src = 'emop' if line.src = 'alto'
             end
             start = params[:start]
             size = params[:size]
             lines = lines[start.to_i,size.to_i]
+            lines.each { |line|
+               line.src = 'emop' if line.src == 'alto'
+            }
          end
       else
          document_id = params[:document_id]

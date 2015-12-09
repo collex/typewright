@@ -699,7 +699,7 @@ class Document < ActiveRecord::Base
       #TODO this is missing an XSLT to work properly
       gale = get_corrected_gale_xml();
       conv = Conversion.where(from_format: 'gale', to_format: 'alto').first
-      if conv.nil
+      if conv.nil?
          logger.error "MISSING XSL for converting Gale->Alto, returning Gale"
          return gale
       end

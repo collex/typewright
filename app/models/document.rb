@@ -524,7 +524,7 @@ class Document < ActiveRecord::Base
    # Get the original text for this document
    #
    def get_original_text()
-      logger.info "Get original TEXT dor #{self.document_id}"
+      logger.info "Get original TEXT for #{self.document_id}"
       doc = XmlReader.open_xml_file(get_primary_xml_file())
 
       # Get XSL for gale and alto
@@ -543,7 +543,7 @@ class Document < ActiveRecord::Base
 
       # General plan: stream XML page content into one merged XML file
       # Do this until a page from a different source is encountered. When
-      # this happens, close out ths block, transform it, and start a new one.
+      # this happens, close out this block, transform it, and start a new one.
       page_num = 1
       xml_src_file = Tempfile.new(['src', '.xml'])
       xml_src_file << "<contents>"
@@ -561,6 +561,7 @@ class Document < ActiveRecord::Base
             output += self.transform(xml_src_file.path, curr_xsl, false)
             xml_src_file.unlink
             xml_src_file = Tempfile.new(['src', '.xml'])
+            xml_src_file << "<contents>"
          end
 
          # preserve curr src, xsl and dump xml content to it
@@ -697,14 +698,14 @@ class Document < ActiveRecord::Base
    #
    def get_corrected_alto_xml()
       #TODO this is missing an XSLT to work properly
-      gale = get_corrected_gale_xml();
+      gale = get_corrected_gale_xml()
       conv = Conversion.where(from_format: 'gale', to_format: 'alto').first
       if conv.nil?
          logger.error "MISSING XSL for converting Gale->Alto, returning Gale"
          return gale
       end
       
-      # USe XSL to convert gale -> Alto
+      # Use XSL to convert gale -> Alto
       xml_file = "#{Rails.root}/tmp/gale-#{self.id}-#{Time.now.to_i}.xml"
       File.open(xml_file, "w") { |f| f.write(gale) }
       xsl_file = "#{Rails.root}/tmp/xsl-#{Time.now.to_i}.xsl"
